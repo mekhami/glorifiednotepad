@@ -94,15 +94,15 @@ sudo systemctl stop indie || true
 # Backup current release
 if [ -d /opt/indie/releases ]; then
     echo "Backing up current release..."
-    sudo mkdir -p /opt/indie/backups
     BACKUP_NAME="backup_$(date +%Y%m%d_%H%M%S)"
-    sudo cp -r /opt/indie /opt/indie/backups/$BACKUP_NAME || true
+    sudo mkdir -p /opt/backups
+    sudo cp -r /opt/indie /opt/backups/$BACKUP_NAME || true
 fi
 
 # Preserve .env.prod before cleaning
 if [ -f /opt/indie/.env.prod ]; then
     echo "Preserving .env.prod..."
-    sudo cp /opt/indie/.env.prod /tmp/.env.prod.backup
+    cp /opt/indie/.env.prod /tmp/.env.prod.backup
 fi
 
 # Extract new release
