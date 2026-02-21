@@ -25,6 +25,13 @@ const DoodleCanvas = {
     let lastPanY = 0;
     let lastDrawX = null;
     let lastDrawY = null;
+    
+    // Server sync state
+    let pendingPixels = [];  // Batch of pixels to send to server
+    let allPixels = new Map(); // Cache of all pixels (key: "x,y", value: color)
+    
+    // Store interval ID on the hook instance so destroyed() can access it
+    this.syncInterval = null;
 
     console.log('Canvas element:', canvas);
     console.log('Canvas context:', ctx);
@@ -59,9 +66,12 @@ const DoodleCanvas = {
       if (gridX < 0 || gridX >= CANVAS_WIDTH || gridY < 0 || gridY >= CANVAS_HEIGHT) {
         return; // Out of bounds
       }
-      console.log('drawPixel called:', { gridX, gridY, color });
       ctx.fillStyle = color;
       ctx.fillRect(gridX * PIXEL_SIZE, gridY * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+      
+      // Update our pixel cache
+      const key = `${gridX},${gridY}`;
+      allPixels.set(key, color);
     };
 
     // Convert mouse coordinates to grid coordinates (accounting for zoom/pan)
@@ -78,33 +88,48 @@ const DoodleCanvas = {
         gridX: Math.floor(canvasX / PIXEL_SIZE),
         gridY: Math.floor(canvasY / PIXEL_SIZE)
       };
-      console.log('getGridCoords:', { clientX, clientY, canvasX, canvasY, coords });
       return coords;
     };
 
-    // Load saved doodles from localStorage
-    const loadDoodles = () => {
-      const saved = localStorage.getItem('doodles');
-      console.log('loadDoodles - saved data:', saved);
-      if (saved) {
-        const doodles = JSON.parse(saved);
-        console.log('loadDoodles - parsed doodles:', doodles);
-        doodles.forEach(({ x, y, color }) => {
-          drawPixel(x, y, color);
-        });
-      }
+    // Load pixels from server (initial load)
+    const loadPixelsFromServer = (pixels) => {
+      console.log('Loading pixels from server:', pixels.length);
+      pixels.forEach(pixel => {
+        drawPixel(pixel.x, pixel.y, pixel.color);
+      });
     };
 
-    // Save doodles to localStorage
-    const saveDoodle = (x, y, color) => {
+    // Paint pixels received from other users
+    const paintPixelsFromServer = (pixels) => {
+      console.log('Received pixels from other users:', pixels.length);
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+      ctx.scale(scale, scale);
+      
+      pixels.forEach(pixel => {
+        drawPixel(pixel.x, pixel.y, pixel.color);
+      });
+      
+      ctx.restore();
+    };
+
+    // Sync pending pixels with server
+    const syncPixels = () => {
+      if (pendingPixels.length === 0) return;
+      
+      console.log('Syncing pixels to server:', pendingPixels.length);
+      this.pushEvent("save_pixels", { pixels: pendingPixels });
+      
+      // Clear the batch
+      pendingPixels = [];
+    };
+
+    // Add pixel to pending batch
+    const batchPixel = (x, y, color) => {
       if (color === BACKGROUND_COLOR) {
         return; // Don't save background color pixels
       }
-      const saved = localStorage.getItem('doodles');
-      const doodles = saved ? JSON.parse(saved) : [];
-      doodles.push({ x, y, color });
-      localStorage.setItem('doodles', JSON.stringify(doodles));
-      console.log('saveDoodle - saved:', { x, y, color, total: doodles.length });
+      pendingPixels.push({ x, y, color });
     };
 
     // Draw the canvas boundary box
@@ -134,8 +159,12 @@ const DoodleCanvas = {
       ctx.fillStyle = BACKGROUND_COLOR;
       ctx.fillRect(0, 0, CANVAS_WIDTH * PIXEL_SIZE, CANVAS_HEIGHT * PIXEL_SIZE);
       
-      // Draw saved pixels
-      loadDoodles();
+      // Draw all cached pixels
+      allPixels.forEach((color, key) => {
+        const [x, y] = key.split(',').map(Number);
+        ctx.fillStyle = color;
+        ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+      });
       
       // Draw boundary if zoomed out
       drawBoundary();
@@ -193,7 +222,7 @@ const DoodleCanvas = {
       // If we have a previous position, draw a line to connect
       if (lastDrawX !== null && lastDrawY !== null) {
         drawLine(lastDrawX, lastDrawY, gridX, gridY, currentColor);
-        // Save all pixels in the line
+        // Batch all pixels in the line
         const dx = Math.abs(gridX - lastDrawX);
         const dy = Math.abs(gridY - lastDrawY);
         const sx = lastDrawX < gridX ? 1 : -1;
@@ -203,7 +232,7 @@ const DoodleCanvas = {
         let y = lastDrawY;
         
         while (true) {
-          saveDoodle(x, y, currentColor);
+          batchPixel(x, y, currentColor);
           if (x === gridX && y === gridY) break;
           const e2 = 2 * err;
           if (e2 > -dy) {
@@ -218,7 +247,7 @@ const DoodleCanvas = {
       } else {
         // First pixel
         drawPixel(gridX, gridY, currentColor);
-        saveDoodle(gridX, gridY, currentColor);
+        batchPixel(gridX, gridY, currentColor);
       }
       
       ctx.restore();
@@ -231,6 +260,23 @@ const DoodleCanvas = {
     // Initialize canvas
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
+    
+    // Start periodic sync every 2 seconds
+    this.syncInterval = setInterval(() => {
+      syncPixels();
+    }, 2000);
+    
+    // Listen for pixel broadcasts from server
+    this.handleEvent("load-pixels", ({ pixels }) => {
+      loadPixelsFromServer(pixels);
+    });
+    
+    this.handleEvent("receive-pixels", ({ pixels }) => {
+      paintPixelsFromServer(pixels);
+    });
+    
+    // Clear old localStorage data (cleanup)
+    localStorage.removeItem('doodles');
 
     // Mouse event listeners
     const controls = document.getElementById('doodle-controls');
@@ -243,10 +289,8 @@ const DoodleCanvas = {
         lastPanX = e.clientX;
         lastPanY = e.clientY;
         canvas.style.cursor = 'grabbing';
-        console.log('Start panning');
       } else if (e.button === 0) {
         // Left click - start drawing
-        console.log('mousedown event');
         isDrawing = true;
         lastDrawX = null;
         lastDrawY = null;
@@ -278,10 +322,8 @@ const DoodleCanvas = {
       if (isPanning) {
         isPanning = false;
         canvas.style.cursor = 'crosshair';
-        console.log('Stop panning');
       }
       if (isDrawing) {
-        console.log('mouseup event');
         isDrawing = false;
         lastDrawX = null;
         lastDrawY = null;
@@ -302,13 +344,9 @@ const DoodleCanvas = {
     const palette = document.getElementById('color-palette');
     const colorOptions = palette.querySelectorAll('.color-option');
     
-    console.log('Color palette:', palette);
-    console.log('Color options found:', colorOptions.length);
-    
     colorOptions.forEach(option => {
       option.addEventListener('click', () => {
         currentColor = option.dataset.color;
-        console.log('Color changed to:', currentColor);
         colorOptions.forEach(opt => opt.classList.remove('selected'));
         option.classList.add('selected');
       });
@@ -316,7 +354,13 @@ const DoodleCanvas = {
 
     // Set initial color
     colorOptions[0].classList.add('selected');
-    console.log('Initial color set to:', currentColor);
+  },
+  
+  destroyed() {
+    // Clean up interval when hook is destroyed
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval);
+    }
   }
 };
 
