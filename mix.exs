@@ -10,6 +10,7 @@ defmodule Indie.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      releases: releases(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader]
     ]
@@ -84,6 +85,18 @@ defmodule Indie.MixProject do
         "phx.digest"
       ],
       precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+    ]
+  end
+
+  # Configuration for Mix releases
+  defp releases do
+    [
+      indie: [
+        include_executables_for: [:unix],
+        applications: [runtime_tools: :permanent],
+        steps: [:assemble, :tar],
+        overlays: ["rel/overlays"]
+      ]
     ]
   end
 end

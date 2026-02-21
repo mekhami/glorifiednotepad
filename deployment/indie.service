@@ -1,0 +1,27 @@
+[Unit]
+Description=glorified notepad Phoenix application
+After=network.target
+
+[Service]
+Type=simple
+User=indie
+Group=indie
+WorkingDirectory=/opt/indie
+EnvironmentFile=/opt/indie/.env.prod
+ExecStart=/opt/indie/bin/server
+Restart=on-failure
+RestartSec=5
+RemainAfterExit=no
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=indie
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/indie /opt/indie
+
+[Install]
+WantedBy=multi-user.target

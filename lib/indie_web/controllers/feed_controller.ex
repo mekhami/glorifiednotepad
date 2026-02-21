@@ -3,7 +3,7 @@ defmodule IndieWeb.FeedController do
 
   def rss(conn, _params) do
     posts = Indie.Post.all()
-    base_url = get_base_url(conn)
+    base_url = get_base_url()
 
     xml = build_rss(posts, base_url)
 
@@ -12,7 +12,7 @@ defmodule IndieWeb.FeedController do
     |> send_resp(200, xml)
   end
 
-  defp get_base_url(conn) do
+  defp get_base_url do
     IndieWeb.Endpoint.url()
   end
 

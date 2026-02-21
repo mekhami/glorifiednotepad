@@ -38,3 +38,9 @@ npm-debug.log
 # SQLite databases
 /*.db
 /*.db-*
+
+# Production environment variables (contains secrets)
+.env.prod
+
+# Release tarballs
+*.tar.gz
