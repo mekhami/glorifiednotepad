@@ -28,6 +28,7 @@ defmodule IndieWeb.HomeLive do
       |> assign(:posts, posts)
       |> assign(:comments_by_post, comments_by_post)
       |> assign(:modal_open_for_post, nil)
+      |> assign(:doodle_help_open, false)
       |> assign(:comment_form, to_form(Comment.changeset(%Comment{}, %{}), as: :comment))
 
     # Push pixels to client after socket is connected
@@ -58,6 +59,16 @@ defmodule IndieWeb.HomeLive do
      socket
      |> assign(:modal_open_for_post, nil)
      |> assign(:comment_form, to_form(Comment.changeset(%Comment{}, %{}), as: :comment))}
+  end
+
+  @impl true
+  def handle_event("open_doodle_help", _, socket) do
+    {:noreply, assign(socket, :doodle_help_open, true)}
+  end
+
+  @impl true
+  def handle_event("close_doodle_help", _, socket) do
+    {:noreply, assign(socket, :doodle_help_open, false)}
   end
 
   @impl true

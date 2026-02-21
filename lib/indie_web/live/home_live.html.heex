@@ -4,6 +4,9 @@
 <div class="gradient-overlay-bottom"></div>
 
 <div id="doodle-controls">
+  <button id="doodle-help-btn" phx-click="open_doodle_help" aria-label="Doodle help">
+    ?
+  </button>
   <div id="color-palette">
     <div class="color-option" data-color="#000000" style="background-color: #000000;"></div>
     <div class="color-option" data-color="#FFFFFF" style="background-color: #FFFFFF;"></div>
@@ -40,9 +43,49 @@
         <div :for={comment <- @comments_by_post[post.id]} class="comment">
           <span class="comment-author">{comment.author_name}:</span>
           <span class="comment-body">{comment.body}</span>
+    </div>
+  </div>
+<% end %>
+
+<%!-- Doodle help modal --%>
+<%= if @doodle_help_open do %>
+  <div class="aim-modal-overlay" phx-click="close_doodle_help">
+    <div class="aim-window doodle-help-window" phx-click={JS.exec("stop")}>
+      <div class="aim-titlebar">
+        <span class="aim-title">Canvas Help</span>
+        <button phx-click="close_doodle_help" class="aim-close">✕</button>
+      </div>
+      <div class="aim-body">
+        <h3>Welcome to the Collaborative Canvas!</h3>
+        <p>This is a shared drawing space where everyone can contribute to a collective artwork.</p>
+        
+        <h4>How to Draw:</h4>
+        <ul>
+          <li><strong>Click & Drag</strong> - Draw with the selected color</li>
+          <li><strong>Mouse Wheel</strong> - Zoom in/out</li>
+          <li><strong>Middle/Right Click + Drag</strong> - Pan around the canvas</li>
+        </ul>
+        
+        <h4>Color Palette:</h4>
+        <p>Click any color swatch to select it. Your drawings will appear for all visitors within a few seconds.</p>
+        
+        <h4>Tips:</h4>
+        <ul>
+          <li>Everything you draw is shared with everyone</li>
+          <li>Your art is saved permanently</li>
+          <li>Be creative and have fun!</li>
+          <li>I'd encourage you not to destroy other people's art - but humans will do what humans do, I guess.</li>
+        </ul>
+        
+        <div class="aim-buttons">
+          <button type="button" phx-click="close_doodle_help" class="aim-send-btn">
+            Got it!
+          </button>
         </div>
       </div>
-    <% end %>
+    </div>
+  </div>
+<% end %>
 
     <%!-- Leave a comment button --%>
     <div class="comment-button-container">

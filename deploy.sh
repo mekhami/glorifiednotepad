@@ -3,10 +3,19 @@ set -e
 
 # Configuration
 APP_NAME="indie"
-DEPLOY_USER="indie"
-DEPLOY_HOST="45.55.203.183"
-DEPLOY_PATH="/opt/indie"
-DATA_PATH="/var/lib/indie"
+
+# Load deploy configuration from .deploy.config
+if [ -f ".deploy.config" ]; then
+    source .deploy.config
+else
+    echo "Error: .deploy.config file not found"
+    echo "Please create .deploy.config with the following variables:"
+    echo "  DEPLOY_USER"
+    echo "  DEPLOY_HOST"
+    echo "  DEPLOY_PATH"
+    echo "  DATA_PATH"
+    exit 1
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -90,10 +99,24 @@ if [ -d /opt/indie/releases ]; then
     sudo cp -r /opt/indie /opt/indie/backups/$BACKUP_NAME || true
 fi
 
+# Preserve .env.prod before cleaning
+if [ -f /opt/indie/.env.prod ]; then
+    echo "Preserving .env.prod..."
+    sudo cp /opt/indie/.env.prod /tmp/.env.prod.backup
+fi
+
 # Extract new release
 echo "Extracting new release..."
 sudo rm -rf /opt/indie/*
 sudo tar -xzf /tmp/indie.tar.gz -C /opt/indie/
+
+# Restore .env.prod
+if [ -f /tmp/.env.prod.backup ]; then
+    echo "Restoring .env.prod..."
+    sudo mv /tmp/.env.prod.backup /opt/indie/.env.prod
+    sudo chown indie:indie /opt/indie/.env.prod
+    sudo chmod 600 /opt/indie/.env.prod
+fi
 
 # Copy content files
 echo "Copying content files..."
@@ -108,7 +131,7 @@ sudo chown -R indie:indie /var/lib/indie
 # Run migrations
 echo "Running migrations..."
 cd /opt/indie
-source /opt/indie/.env.prod && /opt/indie/bin/indie eval "Indie.Release.migrate()" || echo "No migrations to run"
+sudo -u indie bash -c "set -a; source /opt/indie/.env.prod; set +a; /opt/indie/bin/indie eval 'Indie.Release.migrate()'" || echo "No migrations to run"
 
 # Start the service
 echo "Starting service..."
