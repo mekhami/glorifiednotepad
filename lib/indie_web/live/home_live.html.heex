@@ -56,7 +56,7 @@
 <%!-- AIM-style comment modal --%>
 <%= if @modal_open_for_post do %>
   <div class="aim-modal-overlay" phx-click="close_comment_modal">
-    <div class="aim-window" phx-click={JS.exec("phx-remove", to: ".aim-window")}>
+    <div class="aim-window" phx-click={JS.exec("stop")}>
       <div class="aim-titlebar">
         <span class="aim-title">Instant Message</span>
         <button phx-click="close_comment_modal" class="aim-close">✕</button>

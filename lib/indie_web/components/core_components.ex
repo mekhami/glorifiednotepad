@@ -8,16 +8,11 @@ defmodule IndieWeb.CoreComponents do
   with doc strings and declarative assigns. You may customize and style
   them in any way you want, based on your application growth and needs.
 
-  The foundation for styling is Tailwind CSS, a utility-first CSS framework,
-  augmented with daisyUI, a Tailwind CSS plugin that provides UI components
-  and themes. Here are useful references:
+  The styling uses custom CSS classes defined in `assets/css/app.css` to match
+  the retro Y2K aesthetic of the application. Here are useful references:
 
-    * [daisyUI](https://daisyui.com/docs/intro/) - a good place to get
-      started and see the available components.
-
-    * [Tailwind CSS](https://tailwindcss.com) - the foundational framework
-      we build on. You will use it for layout, sizing, flexbox, grid, and
-      spacing.
+    * [Tailwind CSS](https://tailwindcss.com) - Used for basic utilities like
+      layout, sizing, flexbox, grid, and spacing.
 
     * [Heroicons](https://heroicons.com) - see `icon/1` for usage.
 
@@ -56,23 +51,23 @@ defmodule IndieWeb.CoreComponents do
       id={@id}
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
-      class="toast toast-top toast-end z-50"
+      class="flash-toast"
       {@rest}
     >
       <div class={[
-        "alert w-80 sm:w-96 max-w-80 sm:max-w-96 text-wrap",
-        @kind == :info && "alert-info",
-        @kind == :error && "alert-error"
+        "flash-alert",
+        @kind == :info && "flash-info",
+        @kind == :error && "flash-error"
       ]}>
-        <.icon :if={@kind == :info} name="hero-information-circle" class="size-5 shrink-0" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle" class="size-5 shrink-0" />
+        <.icon :if={@kind == :info} name="hero-information-circle" class="flash-icon" />
+        <.icon :if={@kind == :error} name="hero-exclamation-circle" class="flash-icon" />
         <div>
-          <p :if={@title} class="font-semibold">{@title}</p>
+          <p :if={@title} class="flash-title">{@title}</p>
           <p>{msg}</p>
         </div>
         <div class="flex-1" />
-        <button type="button" class="group self-start cursor-pointer" aria-label={gettext("close")}>
-          <.icon name="hero-x-mark" class="size-5 opacity-40 group-hover:opacity-70" />
+        <button type="button" class="flash-close" aria-label={gettext("close")}>
+          <.icon name="hero-x-mark" class="flash-close-icon" />
         </button>
       </div>
     </div>
@@ -94,7 +89,7 @@ defmodule IndieWeb.CoreComponents do
   slot :inner_block, required: true
 
   def button(%{rest: rest} = assigns) do
-    variants = %{"primary" => "btn-primary", nil => "btn-primary btn-soft"}
+    variants = %{"primary" => "btn-primary", nil => "btn"}
 
     assigns =
       assign_new(assigns, :class, fn ->
@@ -205,7 +200,7 @@ defmodule IndieWeb.CoreComponents do
       end)
 
     ~H"""
-    <div class="fieldset mb-2">
+    <div class="input-field">
       <label>
         <input
           type="hidden"
@@ -214,14 +209,14 @@ defmodule IndieWeb.CoreComponents do
           disabled={@rest[:disabled]}
           form={@rest[:form]}
         />
-        <span class="label">
+        <span class="input-label">
           <input
             type="checkbox"
             id={@id}
             name={@name}
             value="true"
             checked={@checked}
-            class={@class || "checkbox checkbox-sm"}
+            class={@class || "input-checkbox"}
             {@rest}
           />{@label}
         </span>
@@ -233,13 +228,13 @@ defmodule IndieWeb.CoreComponents do
 
   def input(%{type: "select"} = assigns) do
     ~H"""
-    <div class="fieldset mb-2">
+    <div class="input-field">
       <label>
-        <span :if={@label} class="label mb-1">{@label}</span>
+        <span :if={@label} class="input-label">{@label}</span>
         <select
           id={@id}
           name={@name}
-          class={[@class || "w-full select", @errors != [] && (@error_class || "select-error")]}
+          class={[@class || "input-select", @errors != [] && (@error_class || "input-error")]}
           multiple={@multiple}
           {@rest}
         >
@@ -254,15 +249,15 @@ defmodule IndieWeb.CoreComponents do
 
   def input(%{type: "textarea"} = assigns) do
     ~H"""
-    <div class="fieldset mb-2">
+    <div class="input-field">
       <label>
-        <span :if={@label} class="label mb-1">{@label}</span>
+        <span :if={@label} class="input-label">{@label}</span>
         <textarea
           id={@id}
           name={@name}
           class={[
-            @class || "w-full textarea",
-            @errors != [] && (@error_class || "textarea-error")
+            @class || "input-textarea",
+            @errors != [] && (@error_class || "input-error")
           ]}
           {@rest}
         >{Phoenix.HTML.Form.normalize_value("textarea", @value)}</textarea>
@@ -275,16 +270,16 @@ defmodule IndieWeb.CoreComponents do
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
     ~H"""
-    <div class="fieldset mb-2">
+    <div class="input-field">
       <label>
-        <span :if={@label} class="label mb-1">{@label}</span>
+        <span :if={@label} class="input-label">{@label}</span>
         <input
           type={@type}
           name={@name}
           id={@id}
           value={Phoenix.HTML.Form.normalize_value(@type, @value)}
           class={[
-            @class || "w-full input",
+            @class || "input-text",
             @errors != [] && (@error_class || "input-error")
           ]}
           {@rest}
@@ -298,8 +293,8 @@ defmodule IndieWeb.CoreComponents do
   # Helper used by inputs to generate form errors
   defp error(assigns) do
     ~H"""
-    <p class="mt-1.5 flex gap-2 items-center text-sm text-error">
-      <.icon name="hero-exclamation-circle" class="size-5" />
+    <p class="input-error-text">
+      <.icon name="hero-exclamation-circle" class="input-error-icon" />
       {render_slot(@inner_block)}
     </p>
     """
@@ -360,7 +355,7 @@ defmodule IndieWeb.CoreComponents do
       end
 
     ~H"""
-    <table class="table table-zebra">
+    <table class="data-table">
       <thead>
         <tr>
           <th :for={col <- @col}>{col[:label]}</th>
@@ -374,12 +369,12 @@ defmodule IndieWeb.CoreComponents do
           <td
             :for={col <- @col}
             phx-click={@row_click && @row_click.(row)}
-            class={@row_click && "hover:cursor-pointer"}
+            class={@row_click && "clickable-cell"}
           >
             {render_slot(col, @row_item.(row))}
           </td>
-          <td :if={@action != []} class="w-0 font-semibold">
-            <div class="flex gap-4">
+          <td :if={@action != []} class="table-actions">
+            <div class="table-actions-wrapper">
               <%= for action <- @action do %>
                 {render_slot(action, @row_item.(row))}
               <% end %>
@@ -407,10 +402,10 @@ defmodule IndieWeb.CoreComponents do
 
   def list(assigns) do
     ~H"""
-    <ul class="list">
-      <li :for={item <- @item} class="list-row">
-        <div class="list-col-grow">
-          <div class="font-bold">{item.title}</div>
+    <ul class="data-list">
+      <li :for={item <- @item} class="data-list-item">
+        <div class="data-list-content">
+          <div class="data-list-title">{item.title}</div>
           <div>{render_slot(item)}</div>
         </div>
       </li>

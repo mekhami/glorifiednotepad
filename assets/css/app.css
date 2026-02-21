@@ -109,31 +109,6 @@ body {
   z-index: 1000;
 }
 
-#clear-canvas {
-  background-color: transparent;
-  color: #000000;
-  border: 2px solid transparent;
-  width: 2.5rem;
-  height: 2.5rem;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.1s ease;
-  padding: 0;
-}
-
-#clear-canvas:hover {
-  transform: scale(1.05);
-  border-color: #ac9d9e;
-}
-
-#clear-canvas svg {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
 #color-palette {
   display: flex;
   flex-wrap: wrap;
@@ -356,4 +331,240 @@ body {
 .aim-send-btn:active,
 .aim-cancel-btn:active {
   border-style: inset;
+}
+
+/* Core Components Styling */
+
+/* Flash/Toast Components */
+.flash-toast {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 50;
+}
+
+.flash-alert {
+  background-color: #444c72;
+  color: #ac9d9e;
+  padding: 1rem;
+  border: 2px solid #5a6285;
+  box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 320px;
+  max-width: 384px;
+  word-wrap: break-word;
+}
+
+.flash-info {
+  border-color: #5a6285;
+}
+
+.flash-error {
+  border-color: #8b0000;
+  background-color: #3d1a1a;
+}
+
+.flash-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+.flash-title {
+  font-weight: bold;
+}
+
+.flash-close {
+  background: transparent;
+  border: none;
+  color: #ac9d9e;
+  cursor: pointer;
+  padding: 0;
+  align-self: flex-start;
+}
+
+.flash-close-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.flash-close:hover .flash-close-icon {
+  opacity: 0.7;
+}
+
+/* Button Components */
+.btn {
+  background-color: transparent;
+  color: #ac9d9e;
+  border: 1px solid #ac9d9e;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn:hover {
+  background-color: #5a6285;
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+.btn-primary {
+  background-color: #5a6285;
+  color: #ffffff;
+  border-color: #5a6285;
+}
+
+.btn-primary:hover {
+  background-color: #444c72;
+  border-color: #ac9d9e;
+}
+
+/* Form Input Components */
+.input-field {
+  margin-bottom: 0.5rem;
+}
+
+.input-label {
+  display: block;
+  color: #000000;
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.input-text,
+.input-textarea,
+.input-select {
+  width: 100%;
+  padding: 0.375rem;
+  border: 2px inset #d0d0d0;
+  background-color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.9rem;
+  color: #000000;
+}
+
+.input-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.input-checkbox {
+  margin-right: 0.5rem;
+}
+
+.input-error {
+  border-color: #8b0000;
+  background-color: #ffe0e0;
+}
+
+.input-error-text {
+  margin-top: 0.375rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #8b0000;
+}
+
+.input-error-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Table Components */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #444c72;
+  color: #ac9d9e;
+}
+
+.data-table thead {
+  background-color: #5a6285;
+  color: #ffffff;
+}
+
+.data-table th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: bold;
+  border-bottom: 2px solid #ac9d9e;
+}
+
+.data-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #5a6285;
+}
+
+.data-table tbody tr:nth-child(even) {
+  background-color: #3d4459;
+}
+
+.data-table tbody tr:hover {
+  background-color: #4d5469;
+}
+
+.clickable-cell {
+  cursor: pointer;
+}
+
+.table-actions {
+  width: 0;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.table-actions-wrapper {
+  display: flex;
+  gap: 1rem;
+}
+
+/* List Components */
+.data-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.data-list-item {
+  padding: 1rem;
+  border-bottom: 1px solid #5a6285;
+  background-color: #444c72;
+  color: #ac9d9e;
+}
+
+.data-list-item:hover {
+  background-color: #4d5469;
+}
+
+.data-list-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.data-list-title {
+  font-weight: bold;
+  color: #ffffff;
+}
+
+/* Utility Classes */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
