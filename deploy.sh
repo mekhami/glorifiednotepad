@@ -60,9 +60,10 @@ MIX_ENV=prod mix release --overwrite
 
 # Step 5: Create tarball
 info "Creating tarball..."
-cd _build/prod/rel/$APP_NAME
-tar -czf $APP_NAME.tar.gz .
-cd -
+tar -czf _build/prod/rel/$APP_NAME/$APP_NAME.tar.gz -C _build/prod/rel/$APP_NAME --exclude='*.tar.gz' . 2>&1 | grep -v "file changed as we read it" || true
+if [ ! -f "_build/prod/rel/$APP_NAME/$APP_NAME.tar.gz" ]; then
+    error "Failed to create tarball"
+fi
 
 # Step 6: Upload release to server
 info "Uploading release to server..."
@@ -106,9 +107,8 @@ sudo chown -R indie:indie /var/lib/indie
 
 # Run migrations
 echo "Running migrations..."
-source /opt/indie/.env.prod
 cd /opt/indie
-sudo -u indie bash -c 'source /opt/indie/.env.prod && /opt/indie/bin/indie eval "Indie.Release.migrate()"' || echo "No migrations to run"
+source /opt/indie/.env.prod && /opt/indie/bin/indie eval "Indie.Release.migrate()" || echo "No migrations to run"
 
 # Start the service
 echo "Starting service..."

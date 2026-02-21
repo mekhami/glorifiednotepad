@@ -74,20 +74,27 @@ defmodule Indie.Post do
   defp parse_date(_), do: Date.utc_today()
 
   defp content_dir_path(dir) do
-    # In development and production, look for content relative to the project root
-    cond do
-      File.dir?("content") ->
-        # Running from project root
-        "content"
+    # Use environment variable if set, otherwise try relative paths
+    case System.get_env("CONTENT_DIR") do
+      nil ->
+        # In development, look for content relative to the project root
+        cond do
+          File.dir?("content") ->
+            # Running from project root
+            "content"
 
-      File.dir?(Path.join(["..", "..", "..", dir])) ->
-        # Running from _build directory
-        Path.join(["..", "..", "..", dir])
+          File.dir?(Path.join(["..", "..", "..", dir])) ->
+            # Running from _build directory
+            Path.join(["..", "..", "..", dir])
 
-      true ->
-        # Fallback: use absolute path from app dir
-        Path.join(Application.app_dir(:indie), "../../../#{dir}")
-        |> Path.expand()
+          true ->
+            # Fallback: use absolute path from app dir
+            Path.join(Application.app_dir(:indie), "../../../#{dir}")
+            |> Path.expand()
+        end
+
+      content_dir ->
+        content_dir
     end
   end
 end
