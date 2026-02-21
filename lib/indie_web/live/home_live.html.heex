@@ -1,0 +1,234 @@
+<canvas id="doodle-canvas" phx-hook=".DoodleCanvas" phx-update="ignore"></canvas>
+
+<div class="gradient-overlay-top"></div>
+<div class="gradient-overlay-bottom"></div>
+
+<div id="doodle-controls">
+  <button id="clear-canvas" title="Clear canvas">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 6h18"></path>
+      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+    </svg>
+  </button>
+  <div id="color-palette">
+    <div class="color-option" data-color="#000000" style="background-color: #000000;"></div>
+    <div class="color-option" data-color="#FFFFFF" style="background-color: #FFFFFF;"></div>
+    <div class="color-option" data-color="#FF0000" style="background-color: #FF0000;"></div>
+    <div class="color-option" data-color="#00FF00" style="background-color: #00FF00;"></div>
+    <div class="color-option" data-color="#0000FF" style="background-color: #0000FF;"></div>
+    <div class="color-option" data-color="#FFFF00" style="background-color: #FFFF00;"></div>
+    <div class="color-option" data-color="#FF00FF" style="background-color: #FF00FF;"></div>
+    <div class="color-option" data-color="#00FFFF" style="background-color: #00FFFF;"></div>
+    <div class="color-option" data-color="#FFA500" style="background-color: #FFA500;"></div>
+    <div class="color-option" data-color="#800080" style="background-color: #800080;"></div>
+    <div class="color-option" data-color="#df9390" style="background-color: #df9390;"></div>
+    <div class="color-option" data-color="#A52A2A" style="background-color: #A52A2A;"></div>
+  </div>
+</div>
+
+<%= for {post, index} <- Enum.with_index(@posts) do %>
+  <div class="post-header" id={post.id} style={"width: #{post.width};"}>
+    <h2><a href={"##{post.id}"}>{post.title}</a></h2>
+  </div>
+
+  <div id={"post-content-#{index}"} class="post-content collapsed" style={"width: #{post.width};"} phx-click={JS.toggle_class("collapsed", to: "#post-content-#{index}")}>
+    <%= Phoenix.HTML.raw(post.html) %>
+    
+    <%!-- Comments section --%>
+    <%= if @comments_by_post[post.id] != [] do %>
+      <div class="comments-section">
+        <p>comments:</p>
+        <div :for={comment <- @comments_by_post[post.id]} class="comment">
+          <span class="comment-author">{comment.author_name}:</span>
+          <span class="comment-body">{comment.body}</span>
+        </div>
+      </div>
+    <% end %>
+    
+    <%!-- Leave a comment button --%>
+    <div class="comment-button-container">
+      <button class="leave-comment-btn" phx-click="open_comment_modal" phx-value-post-id={post.id}>
+        leave a comment
+      </button>
+    </div>
+  </div>
+<% end %>
+
+<%!-- AIM-style comment modal --%>
+<%= if @modal_open_for_post do %>
+  <div class="aim-modal-overlay" phx-click="close_comment_modal">
+    <div class="aim-window" phx-click={JS.exec("phx-remove", to: ".aim-window")}>
+      <div class="aim-titlebar">
+        <span class="aim-title">Instant Message</span>
+        <button phx-click="close_comment_modal" class="aim-close">✕</button>
+      </div>
+      <div class="aim-body">
+        <.form for={@comment_form} id="comment-form" phx-submit="submit_comment" phx-change="validate_comment">
+          <input type="hidden" name="comment[post_id]" value={@modal_open_for_post} />
+          
+          <div class="aim-field">
+            <label>Screen Name:</label>
+            <.input field={@comment_form[:author_name]} type="text" />
+          </div>
+          
+          <div class="aim-field">
+            <label>Message:</label>
+            <.input field={@comment_form[:body]} type="textarea" rows="6" />
+            <span class="char-count">
+              {1000 - String.length(Phoenix.HTML.Form.input_value(@comment_form, :body) || "")} characters remaining
+            </span>
+          </div>
+          
+          <div class="aim-buttons">
+            <button type="submit" class="aim-send-btn">Send</button>
+            <button type="button" phx-click="close_comment_modal" class="aim-cancel-btn">Cancel</button>
+          </div>
+        </.form>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<script :type={Phoenix.LiveView.ColocatedHook} name=".DoodleCanvas">
+  export default {
+    mounted() {
+      console.log('DoodleCanvas hook mounted');
+      const canvas = this.el;
+      const ctx = canvas.getContext('2d');
+      const pixelSize = 8;
+      let currentColor = '#000000';
+      let isDrawing = false;
+
+      console.log('Canvas element:', canvas);
+      console.log('Canvas context:', ctx);
+
+      // Draw a pixel at grid coordinates
+      const drawPixel = (gridX, gridY, color) => {
+        console.log('drawPixel called:', { gridX, gridY, color });
+        ctx.fillStyle = color;
+        ctx.fillRect(gridX * pixelSize, gridY * pixelSize, pixelSize, pixelSize);
+      };
+
+      // Convert mouse coordinates to grid coordinates
+      const getGridCoords = (clientX, clientY) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+        const coords = {
+          gridX: Math.floor(x / pixelSize),
+          gridY: Math.floor(y / pixelSize)
+        };
+        console.log('getGridCoords:', { clientX, clientY, rect, coords });
+        return coords;
+      };
+
+      // Load saved doodles from localStorage
+      const loadDoodles = () => {
+        const saved = localStorage.getItem('doodles');
+        console.log('loadDoodles - saved data:', saved);
+        if (saved) {
+          const doodles = JSON.parse(saved);
+          console.log('loadDoodles - parsed doodles:', doodles);
+          doodles.forEach(({ x, y, color }) => {
+            drawPixel(x, y, color);
+          });
+        }
+      };
+
+      // Save doodles to localStorage
+      const saveDoodle = (x, y, color) => {
+        const saved = localStorage.getItem('doodles');
+        const doodles = saved ? JSON.parse(saved) : [];
+        doodles.push({ x, y, color });
+        localStorage.setItem('doodles', JSON.stringify(doodles));
+        console.log('saveDoodle - saved:', { x, y, color, total: doodles.length });
+      };
+
+      // Set canvas size to fill window
+      const resizeCanvas = () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        console.log('Canvas resized to:', canvas.width, 'x', canvas.height);
+        // Fill with pink background
+        ctx.fillStyle = '#df9390';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        loadDoodles();
+      };
+
+      // Handle drawing
+      const draw = (e) => {
+        console.log('draw called, mouse event:', e.type, e.clientX, e.clientY);
+        const { gridX, gridY } = getGridCoords(e.clientX, e.clientY);
+        drawPixel(gridX, gridY, currentColor);
+        saveDoodle(gridX, gridY, currentColor);
+      };
+
+      // Initialize canvas
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      // Mouse event listeners for drawing
+      const controls = document.getElementById('doodle-controls');
+      
+      canvas.addEventListener('mousedown', (e) => {
+        console.log('mousedown event');
+        isDrawing = true;
+        // Disable pointer events on content so dragging works through it
+        document.body.style.pointerEvents = 'none';
+        canvas.style.pointerEvents = 'auto';
+        controls.style.pointerEvents = 'auto';
+        draw(e);
+      });
+
+      // Listen on document for mousemove so it works even over content
+      document.addEventListener('mousemove', (e) => {
+        if (isDrawing) {
+          console.log('mousemove while drawing');
+          draw(e);
+        }
+      });
+
+      // Listen on document for mouseup so it works anywhere
+      document.addEventListener('mouseup', () => {
+        if (isDrawing) {
+          console.log('mouseup event');
+          isDrawing = false;
+          // Re-enable pointer events on content
+          document.body.style.pointerEvents = '';
+        }
+      });
+
+      // Color palette handling
+      const palette = document.getElementById('color-palette');
+      const colorOptions = palette.querySelectorAll('.color-option');
+      
+      console.log('Color palette:', palette);
+      console.log('Color options found:', colorOptions.length);
+      
+      colorOptions.forEach(option => {
+        option.addEventListener('click', () => {
+          currentColor = option.dataset.color;
+          console.log('Color changed to:', currentColor);
+          colorOptions.forEach(opt => opt.classList.remove('selected'));
+          option.classList.add('selected');
+        });
+      });
+
+      // Set initial color
+      colorOptions[0].classList.add('selected');
+      console.log('Initial color set to:', currentColor);
+
+      // Clear canvas button
+      const clearButton = document.getElementById('clear-canvas');
+      clearButton.addEventListener('click', () => {
+        console.log('Clearing canvas');
+        // Clear localStorage
+        localStorage.removeItem('doodles');
+        // Redraw canvas with just the background
+        ctx.fillStyle = '#df9390';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      });
+    }
+  }
+</script>
