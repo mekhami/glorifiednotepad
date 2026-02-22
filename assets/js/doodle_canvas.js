@@ -6,12 +6,12 @@ const DoodleCanvas = {
     
     // Canvas configuration
     const PIXEL_SIZE = 2;
-    const CANVAS_WIDTH = 3840;
-    const CANVAS_HEIGHT = 2160;
+    const CANVAS_WIDTH = 1920;
+    const CANVAS_HEIGHT = 1080;
     const BACKGROUND_COLOR = '#df9390';
     
     // Zoom/Pan state
-    let scale = 1.0;
+    let scale = 2.0;
     let offsetX = 0;
     let offsetY = 0;
     const MIN_SCALE = 0.1;
