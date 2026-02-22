@@ -1,8 +1,8 @@
 ---
-title: "The Indie Web"
+title: "The OSR and the Indie Web"
 id: "the-indie-web"
 date: 2026-02-21
 width: 40%
 ---
 
-This is a post about the indie web.
+Post coming soon...
