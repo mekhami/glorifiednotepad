@@ -3,6 +3,15 @@
 @source "../js";
 @source "../../lib/indie_web";
 
+/* Color Scheme Variables */
+:root {
+  --dusty-rose: #df9390;     /* (223,147,144) - background */
+  --mauve: #ac9d9e;          /* (172,157,158) - text */
+  --blue-gray: #6c868f;      /* (108,134,143) - borders */
+  --teal-dark: #4d6f7c;      /* (77,111,124) - unused */
+  --slate-blue: #444c72;     /* (68,76,114) - post content bg */
+}
+
 /* Minimal indie site styling */
 body {
   background-color: #df9390;
@@ -111,6 +120,150 @@ body {
 
 .post-content ol li:last-child {
   margin-bottom: 0;
+}
+
+/* Markdown Element Styling */
+
+/* Headings */
+.post-content h1 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #c5b8b9;
+  line-height: 1.2;
+}
+
+.post-content h1:first-child {
+  margin-top: 0;
+}
+
+.post-content h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  color: #c5b8b9;
+  line-height: 1.3;
+}
+
+.post-content h2:first-child {
+  margin-top: 0;
+}
+
+.post-content h3 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #b8aaab;
+  line-height: 1.4;
+}
+
+.post-content h4,
+.post-content h5,
+.post-content h6 {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: #b8aaab;
+  line-height: 1.4;
+}
+
+/* Code Blocks */
+.post-content pre {
+  background-color: #3a4160;
+  color: #c5b8b9;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: visible;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin-bottom: 1rem;
+  font-family: sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  border: 1px solid #5a6285;
+}
+
+.post-content pre code {
+  background: none;
+  padding: 0;
+  border: none;
+  font-family: inherit;
+}
+
+/* Inline Code */
+.post-content code.inline {
+  background-color: #3a4160;
+  color: #c5b8b9;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-family: sans-serif;
+  font-size: 0.9em;
+}
+
+/* Unordered Lists */
+.post-content ul {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+  list-style-type: disc;
+}
+
+.post-content ul li {
+  margin-bottom: 0.5rem;
+}
+
+.post-content ul li:last-child {
+  margin-bottom: 0;
+}
+
+/* Links */
+.post-content a {
+  color: #8fa9b5;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.post-content a:hover {
+  color: #b5c9d2;
+}
+
+/* Text Emphasis */
+.post-content strong {
+  font-weight: bold;
+  color: #b8aaab;
+}
+
+.post-content em {
+  font-style: italic;
+  color: #ac9d9e;
+}
+
+/* Blockquotes */
+.post-content blockquote {
+  border-left: 3px solid #6c868f;
+  padding-left: 1rem;
+  margin-left: 0;
+  margin-bottom: 1rem;
+  color: #9a8d8e;
+  font-style: italic;
+}
+
+.post-content blockquote p {
+  margin-bottom: 0.5rem;
+}
+
+.post-content blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* Horizontal Rules */
+.post-content hr {
+  border: none;
+  border-top: 1px solid #5a6285;
+  margin: 2rem 0;
 }
 
 /* Canvas doodling */
