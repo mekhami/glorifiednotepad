@@ -24,12 +24,13 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 import DoodleCanvas from "./doodle_canvas"
+import ExpandOnClick from "./expand_on_click"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {DoodleCanvas},
+  hooks: {DoodleCanvas, ExpandOnClick},
 })
 
 // Show progress bar on live navigation and form submits

@@ -43,13 +43,33 @@ body {
   font-weight: bold;
 }
 
-.post-header h2 a {
+.expand-collapse-btn {
+  background: none;
+  border: none;
   color: #ac9d9e;
-  text-decoration: none;
+  cursor: pointer;
+  padding: 0;
+  margin-right: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: bold;
+  font-family: inherit;
 }
 
-.post-header h2 a:hover {
-  text-decoration: underline;
+.expand-collapse-btn:hover {
+  opacity: 0.7;
+}
+
+/* Show [-] when expanded */
+.expand-collapse-btn.expanded::before {
+  content: '[-]';
+}
+
+.expand-collapse-btn.expanded {
+  font-size: 0; /* Hide the default [+] text */
+}
+
+.expand-collapse-btn.expanded::before {
+  font-size: 1.25rem; /* Restore font size for the ::before content */
 }
 
 .post-header-link {
@@ -92,6 +112,15 @@ body {
 
 .post-content.collapsed {
   max-height: 10rem;
+}
+
+/* Remove pointer cursor when expanded - clicking won't collapse */
+.post-content:not(.collapsed) {
+  cursor: default;
+}
+
+.post-content:not(.collapsed):hover {
+  opacity: 1;
 }
 
 .post-content.collapsed::after {

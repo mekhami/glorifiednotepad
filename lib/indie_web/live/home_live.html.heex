@@ -25,7 +25,20 @@
 
 <%= for {post, index} <- Enum.with_index(@posts) do %>
   <div class="post-header" id={post.id} style={"width: #{post.width};"}>
-    <h2><a href={"##{post.id}"}>{post.title}</a></h2>
+    <h2>
+      <button
+        id={"expand-btn-#{index}"}
+        class="expand-collapse-btn"
+        phx-click={
+          JS.toggle_class("collapsed", to: "#post-content-#{index}")
+          |> JS.toggle_class("expanded", to: "#expand-btn-#{index}")
+        }
+        aria-label="Expand or collapse post"
+      >
+        [+]
+      </button>
+      {post.title}
+    </h2>
     <.link navigate={"/p/#{post.id}"} class="post-header-link">[link]</.link>
   </div>
 
@@ -33,7 +46,8 @@
     id={"post-content-#{index}"}
     class="post-content collapsed"
     style={"width: #{post.width};"}
-    phx-click={JS.toggle_class("collapsed", to: "#post-content-#{index}")}
+    phx-hook="ExpandOnClick"
+    data-btn-id={"expand-btn-#{index}"}
   >
     {Phoenix.HTML.raw(post.html)}
 
