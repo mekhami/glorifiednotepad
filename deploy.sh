@@ -133,10 +133,10 @@ echo "Running migrations..."
 cd /opt/indie
 sudo -u indie bash -c "set -a; source /opt/indie/.env.prod; set +a; /opt/indie/bin/indie eval 'Indie.Release.migrate()'" || echo "No migrations to run"
 
-# Start the service
-echo "Starting service..."
-sudo systemctl start indie || {
-  echo "ERROR: Failed to start service!"
+# Restart the service (works whether running or stopped)
+echo "Restarting service..."
+sudo systemctl restart indie || {
+  echo "ERROR: Failed to restart service!"
   sudo journalctl -u indie -n 20 --no-pager
   exit 1
 }

@@ -376,27 +376,6 @@ body {
   box-shadow: 0 0 0 1px #000000;
 }
 
-/* Gradient overlays at top and bottom */
-.gradient-overlay-top,
-.gradient-overlay-bottom {
-  position: fixed;
-  left: 0;
-  right: 0;
-  height: 8rem;
-  pointer-events: none;
-  z-index: 999;
-}
-
-.gradient-overlay-top {
-  top: 0;
-  background: linear-gradient(to bottom, #df9390, transparent);
-}
-
-.gradient-overlay-bottom {
-  bottom: 0;
-  background: linear-gradient(to top, #df9390, transparent);
-}
-
 /* Comments */
 .comments-section {
   margin-top: 2rem;
