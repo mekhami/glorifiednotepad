@@ -1,3 +1,6 @@
+import 'vanilla-colorful/hex-color-picker.js';
+import 'vanilla-colorful/hex-input.js';
+
 const DoodleCanvas = {
   mounted() {
     console.log('DoodleCanvas hook mounted');
@@ -25,6 +28,11 @@ const DoodleCanvas = {
     let lastPanY = 0;
     let lastDrawX = null;
     let lastDrawY = null;
+    
+    // Color picker state
+    let isPickerOpen = false;
+    let isPipetteMode = false;
+    let customColor = null;
     
     // Server sync state
     let pendingPixels = [];  // Batch of pixels to send to server
@@ -120,7 +128,7 @@ const DoodleCanvas = {
       if (pendingPixels.length === 0) return;
       
       console.log('Syncing pixels to server:', pendingPixels.length);
-      this.pushEvent("save_pixels", { pixels: pendingPixels });
+      this.pushEventTo(this.el, "save_pixels", { pixels: pendingPixels });
       
       // Clear the batch
       pendingPixels = [];
@@ -162,6 +170,7 @@ const DoodleCanvas = {
       ctx.fillRect(0, 0, CANVAS_WIDTH * PIXEL_SIZE, CANVAS_HEIGHT * PIXEL_SIZE);
       
       // Draw all cached pixels
+      console.log('Redrawing canvas with', allPixels.size, 'pixels');
       allPixels.forEach((color, key) => {
         const [x, y] = key.split(',').map(Number);
         ctx.fillStyle = color;
@@ -198,8 +207,8 @@ const DoodleCanvas = {
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
       
-      // Calculate zoom direction
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      // Calculate zoom direction (2% change per scroll for ultra-smooth control)
+      const delta = e.deltaY > 0 ? 0.98 : 1.02;
       const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * delta));
       
       // Zoom towards mouse cursor
@@ -259,9 +268,152 @@ const DoodleCanvas = {
       lastDrawY = gridY;
     };
 
+    // ===== Color Picker Functions =====
+    
+    // Initialize vanilla-colorful hex color picker
+    const initColorPicker = () => {
+      const pickerContainer = document.getElementById('color-picker-container');
+      const hexPicker = document.createElement('hex-color-picker');
+      hexPicker.color = currentColor;
+      pickerContainer.appendChild(hexPicker);
+      
+      // Listen for color changes
+      hexPicker.addEventListener('color-changed', (e) => {
+        const newColor = e.detail.value;
+        applyCustomColor(newColor);
+      });
+      
+      return hexPicker;
+    };
+    
+    // Initialize vanilla-colorful hex input
+    const initHexInput = () => {
+      const inputContainer = document.getElementById('hex-input-container');
+      const hexInput = document.createElement('hex-input');
+      hexInput.color = currentColor;
+      hexInput.setAttribute('prefixed', '');
+      inputContainer.appendChild(hexInput);
+      
+      // Listen for color changes
+      hexInput.addEventListener('color-changed', (e) => {
+        const newColor = e.detail.value;
+        applyCustomColor(newColor);
+      });
+      
+      return hexInput;
+    };
+    
+    // Setup color picker UI interactions
+    const setupColorPickerUI = (hexPicker, hexInput) => {
+      const pickerTrigger = document.getElementById('color-picker-trigger');
+      const pickerPopup = document.getElementById('color-picker-popup');
+      const closePicker = document.querySelector('.close-picker');
+      const pipetteToggle = document.getElementById('pipette-mode-toggle');
+      
+      // Open color picker
+      pickerTrigger.addEventListener('click', () => {
+        if (isPickerOpen) {
+          closeColorPicker();
+        } else {
+          openColorPicker(hexPicker, hexInput);
+        }
+      });
+      
+      // Close picker button
+      closePicker.addEventListener('click', () => {
+        closeColorPicker();
+      });
+      
+      // Pipette mode toggle
+      pipetteToggle.addEventListener('click', () => {
+        togglePipetteMode();
+      });
+      
+      // Close picker on outside click
+      document.addEventListener('click', (e) => {
+        if (isPickerOpen && 
+            !pickerPopup.contains(e.target) && 
+            !pickerTrigger.contains(e.target)) {
+          closeColorPicker();
+        }
+      });
+      
+      // Close picker on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && isPickerOpen) {
+          closeColorPicker();
+        }
+      });
+    };
+    
+    // Open color picker popup
+    const openColorPicker = (hexPicker, hexInput) => {
+      const pickerPopup = document.getElementById('color-picker-popup');
+      pickerPopup.classList.remove('hidden');
+      isPickerOpen = true;
+      
+      // Set picker to current custom color or current color
+      const colorToShow = customColor || currentColor;
+      hexPicker.color = colorToShow;
+      hexInput.color = colorToShow;
+    };
+    
+    // Close color picker popup
+    const closeColorPicker = () => {
+      const pickerPopup = document.getElementById('color-picker-popup');
+      pickerPopup.classList.add('hidden');
+      isPickerOpen = false;
+      
+      // Exit pipette mode if active
+      if (isPipetteMode) {
+        togglePipetteMode();
+      }
+    };
+    
+    // Apply custom color
+    const applyCustomColor = (hexColor) => {
+      currentColor = hexColor;
+      customColor = hexColor;
+      
+      // Update picker trigger to show custom color
+      const pickerTrigger = document.getElementById('color-picker-trigger');
+      pickerTrigger.style.backgroundColor = hexColor;
+      pickerTrigger.classList.add('has-custom-color');
+      
+      // Deselect all palette colors
+      const colorOptions = document.querySelectorAll('.color-option:not(.picker-trigger)');
+      colorOptions.forEach(opt => opt.classList.remove('selected'));
+    };
+    
+    // Toggle pipette mode
+    const togglePipetteMode = () => {
+      isPipetteMode = !isPipetteMode;
+      const pipetteToggle = document.getElementById('pipette-mode-toggle');
+      
+      if (isPipetteMode) {
+        canvas.classList.add('pipette-mode');
+        pipetteToggle.classList.add('active');
+      } else {
+        canvas.classList.remove('pipette-mode');
+        pipetteToggle.classList.remove('active');
+      }
+    };
+    
+    // Handle canvas click in pipette mode
+    const handleCanvasClickInPipetteMode = (gridX, gridY) => {
+      const key = `${gridX},${gridY}`;
+      const pixelColor = allPixels.get(key) || BACKGROUND_COLOR;
+      
+      applyCustomColor(pixelColor);
+      closeColorPicker();
+    };
+
     // Initialize canvas
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    
+    // Store resize handler so we can clean it up
+    this.resizeHandler = () => resizeCanvas();
+    window.addEventListener('resize', this.resizeHandler);
     
     // Start periodic sync every 2 seconds
     this.syncInterval = setInterval(() => {
@@ -292,15 +444,22 @@ const DoodleCanvas = {
         lastPanY = e.clientY;
         canvas.style.cursor = 'grabbing';
       } else if (e.button === 0) {
-        // Left click - start drawing
-        isDrawing = true;
-        lastDrawX = null;
-        lastDrawY = null;
-        // Disable pointer events on content so dragging works through it
-        document.body.style.pointerEvents = 'none';
-        canvas.style.pointerEvents = 'auto';
-        controls.style.pointerEvents = 'auto';
-        draw(e);
+        // Left click
+        if (isPipetteMode) {
+          // Pipette mode - pick color from canvas
+          const { gridX, gridY } = getGridCoords(e.clientX, e.clientY);
+          handleCanvasClickInPipetteMode(gridX, gridY);
+        } else {
+          // Normal drawing mode
+          isDrawing = true;
+          lastDrawX = null;
+          lastDrawY = null;
+          // Disable pointer events on content so dragging works through it
+          document.body.style.pointerEvents = 'none';
+          canvas.style.pointerEvents = 'auto';
+          controls.style.pointerEvents = 'auto';
+          draw(e);
+        }
       }
     });
 
@@ -344,24 +503,42 @@ const DoodleCanvas = {
 
     // Color palette handling
     const palette = document.getElementById('color-palette');
-    const colorOptions = palette.querySelectorAll('.color-option');
+    const colorOptions = palette.querySelectorAll('.color-option:not(.picker-trigger)');
     
     colorOptions.forEach(option => {
       option.addEventListener('click', () => {
         currentColor = option.dataset.color;
+        customColor = null;
+        
+        // Remove selected class from all
         colorOptions.forEach(opt => opt.classList.remove('selected'));
         option.classList.add('selected');
+        
+        // Reset picker trigger appearance
+        const pickerTrigger = document.getElementById('color-picker-trigger');
+        pickerTrigger.style.backgroundColor = '';
+        pickerTrigger.classList.remove('has-custom-color');
       });
     });
 
     // Set initial color
     colorOptions[0].classList.add('selected');
+    
+    // Initialize color picker
+    const hexPicker = initColorPicker();
+    const hexInput = initHexInput();
+    setupColorPickerUI(hexPicker, hexInput);
   },
   
   destroyed() {
     // Clean up interval when hook is destroyed
     if (this.syncInterval) {
       clearInterval(this.syncInterval);
+    }
+    
+    // Clean up resize listener
+    if (this.resizeHandler) {
+      window.removeEventListener('resize', this.resizeHandler);
     }
   }
 };

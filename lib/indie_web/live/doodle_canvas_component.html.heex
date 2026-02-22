@@ -1,0 +1,115 @@
+<div>
+  <canvas id="doodle-canvas" phx-hook="DoodleCanvas" phx-target={@myself} phx-update="ignore">
+  </canvas>
+
+  <div id="doodle-controls">
+    <button
+      id="doodle-help-btn"
+      phx-click="open_doodle_help"
+      phx-target={@myself}
+      aria-label="Doodle help"
+    >
+      ?
+    </button>
+    <div id="color-palette">
+      <div class="color-option" data-color="#000000" style="background-color: #000000;"></div>
+      <div class="color-option" data-color="#FFFFFF" style="background-color: #FFFFFF;"></div>
+      <div class="color-option" data-color="#FF0000" style="background-color: #FF0000;"></div>
+      <div class="color-option" data-color="#00FF00" style="background-color: #00FF00;"></div>
+      <div class="color-option" data-color="#0000FF" style="background-color: #0000FF;"></div>
+      <div class="color-option" data-color="#FFFF00" style="background-color: #FFFF00;"></div>
+      <div class="color-option" data-color="#FF00FF" style="background-color: #FF00FF;"></div>
+      <div class="color-option" data-color="#00FFFF" style="background-color: #00FFFF;"></div>
+      <div class="color-option" data-color="#FFA500" style="background-color: #FFA500;"></div>
+      <div class="color-option" data-color="#800080" style="background-color: #800080;"></div>
+      <div class="color-option" data-color="#df9390" style="background-color: #df9390;"></div>
+      <div class="color-option" data-color="#A52A2A" style="background-color: #A52A2A;"></div>
+
+      <%!-- Color picker trigger --%>
+      <button
+        id="color-picker-trigger"
+        class="color-option picker-trigger"
+        type="button"
+        title="Custom color picker"
+        aria-label="Open custom color picker"
+      >
+        <.icon name="hero-eye-dropper" class="size-4" />
+      </button>
+    </div>
+  </div>
+
+  <%!-- Color picker popup --%>
+  <div id="color-picker-popup" class="color-picker-popup hidden">
+    <div class="color-picker-header">
+      <span>Pick a color</span>
+      <button type="button" class="close-picker" aria-label="Close color picker">
+        <.icon name="hero-x-mark" class="size-4" />
+      </button>
+    </div>
+
+    <div class="color-picker-body">
+      <%!-- vanilla-colorful hex picker (initialized in JS) --%>
+      <div id="color-picker-container"></div>
+
+      <%!-- Hex input field (vanilla-colorful component) --%>
+      <div id="hex-input-container"></div>
+
+      <%!-- Pixel pipette toggle --%>
+      <button type="button" id="pipette-mode-toggle" class="pipette-toggle">
+        <.icon name="hero-eye-dropper" class="size-4" />
+        <span>Pick color from canvas</span>
+      </button>
+    </div>
+  </div>
+
+  <%!-- Doodle help modal --%>
+  <%= if @doodle_help_open do %>
+    <div class="aim-modal-overlay" phx-click="close_doodle_help" phx-target={@myself}>
+      <div class="aim-window doodle-help-window" phx-click={JS.exec("stop")}>
+        <div class="aim-titlebar">
+          <span class="aim-title">Canvas Help</span>
+          <button phx-click="close_doodle_help" phx-target={@myself} class="aim-close">✕</button>
+        </div>
+        <div class="aim-body">
+          <h3>Welcome to the Collaborative Canvas!</h3>
+          <p>
+            This is a shared drawing space where everyone can contribute to a collective artwork.
+          </p>
+
+          <h4>How to Draw:</h4>
+          <ul>
+            <li><strong>Click & Drag</strong> - Draw with the selected color</li>
+            <li><strong>Mouse Wheel</strong> - Zoom in/out</li>
+            <li><strong>Middle/Right Click + Drag</strong> - Pan around the canvas</li>
+          </ul>
+
+          <h4>Color Palette:</h4>
+          <p>
+            Click any color swatch to select it. Use the pipette icon for custom colors or to pick existing colors from the canvas.
+          </p>
+
+          <h4>Tips:</h4>
+          <ul>
+            <li>Everything you draw is shared with everyone</li>
+            <li>Your art is saved permanently</li>
+            <li>Be creative and have fun!</li>
+            <li>
+              I'd encourage you not to destroy other people's art - but humans will do what humans do, I guess.
+            </li>
+          </ul>
+
+          <div class="aim-buttons">
+            <button
+              type="button"
+              phx-click="close_doodle_help"
+              phx-target={@myself}
+              class="aim-send-btn"
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

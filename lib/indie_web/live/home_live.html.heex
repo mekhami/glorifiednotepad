@@ -1,24 +1,4 @@
-<canvas id="doodle-canvas" phx-hook="DoodleCanvas" phx-update="ignore"></canvas>
-
-<div id="doodle-controls">
-  <button id="doodle-help-btn" phx-click="open_doodle_help" aria-label="Doodle help">
-    ?
-  </button>
-  <div id="color-palette">
-    <div class="color-option" data-color="#000000" style="background-color: #000000;"></div>
-    <div class="color-option" data-color="#FFFFFF" style="background-color: #FFFFFF;"></div>
-    <div class="color-option" data-color="#FF0000" style="background-color: #FF0000;"></div>
-    <div class="color-option" data-color="#00FF00" style="background-color: #00FF00;"></div>
-    <div class="color-option" data-color="#0000FF" style="background-color: #0000FF;"></div>
-    <div class="color-option" data-color="#FFFF00" style="background-color: #FFFF00;"></div>
-    <div class="color-option" data-color="#FF00FF" style="background-color: #FF00FF;"></div>
-    <div class="color-option" data-color="#00FFFF" style="background-color: #00FFFF;"></div>
-    <div class="color-option" data-color="#FFA500" style="background-color: #FFA500;"></div>
-    <div class="color-option" data-color="#800080" style="background-color: #800080;"></div>
-    <div class="color-option" data-color="#df9390" style="background-color: #df9390;"></div>
-    <div class="color-option" data-color="#A52A2A" style="background-color: #A52A2A;"></div>
-  </div>
-</div>
+<.live_component module={IndieWeb.DoodleCanvasComponent} id="doodle-canvas" />
 
 <%= for {post, index} <- Enum.with_index(@posts) do %>
   <div class="post-header" id={post.id} style={"width: #{post.width};"}>
@@ -74,52 +54,6 @@
     <button phx-click="load_more" style="cursor: pointer;">
       [more]
     </button>
-  </div>
-<% end %>
-
-<%!-- Doodle help modal --%>
-<%= if @doodle_help_open do %>
-  <div class="aim-modal-overlay" phx-click="close_doodle_help">
-    <div class="aim-window doodle-help-window" phx-click={JS.exec("stop")}>
-      <div class="aim-titlebar">
-        <span class="aim-title">Canvas Help</span>
-        <button phx-click="close_doodle_help" class="aim-close">✕</button>
-      </div>
-      <div class="aim-body">
-        <h3>Welcome to the Collaborative Canvas!</h3>
-        <p>
-          This is a shared drawing space where everyone can contribute to a collective artwork.
-        </p>
-
-        <h4>How to Draw:</h4>
-        <ul>
-          <li><strong>Click & Drag</strong> - Draw with the selected color</li>
-          <li><strong>Mouse Wheel</strong> - Zoom in/out</li>
-          <li><strong>Middle/Right Click + Drag</strong> - Pan around the canvas</li>
-        </ul>
-
-        <h4>Color Palette:</h4>
-        <p>
-          Click any color swatch to select it. Your drawings will appear for all visitors within a few seconds.
-        </p>
-
-        <h4>Tips:</h4>
-        <ul>
-          <li>Everything you draw is shared with everyone</li>
-          <li>Your art is saved permanently</li>
-          <li>Be creative and have fun!</li>
-          <li>
-            I'd encourage you not to destroy other people's art - but humans will do what humans do, I guess.
-          </li>
-        </ul>
-
-        <div class="aim-buttons">
-          <button type="button" phx-click="close_doodle_help" class="aim-send-btn">
-            Got it!
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 <% end %>
 

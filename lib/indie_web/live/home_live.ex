@@ -1,7 +1,7 @@
 defmodule IndieWeb.HomeLive do
   use IndieWeb, :live_view
 
-  alias Indie.{Post, Comments, Comment, Doodle}
+  alias Indie.{Post, Comments, Comment}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -22,9 +22,6 @@ defmodule IndieWeb.HomeLive do
       end)
       |> Map.new()
 
-    # Load all pixels from database
-    pixels = Doodle.list_pixels()
-
     socket =
       socket
       |> assign(:posts, posts_to_show)
@@ -33,16 +30,7 @@ defmodule IndieWeb.HomeLive do
       |> assign(:has_more, has_more)
       |> assign(:comments_by_post, comments_by_post)
       |> assign(:modal_open_for_post, nil)
-      |> assign(:doodle_help_open, false)
       |> assign(:comment_form, to_form(Comment.changeset(%Comment{}, %{}), as: :comment))
-
-    # Push pixels to client after socket is connected
-    socket =
-      if connected?(socket) do
-        push_event(socket, "load-pixels", %{pixels: format_pixels(pixels)})
-      else
-        socket
-      end
 
     {:ok, socket}
   end
@@ -93,16 +81,6 @@ defmodule IndieWeb.HomeLive do
   end
 
   @impl true
-  def handle_event("open_doodle_help", _, socket) do
-    {:noreply, assign(socket, :doodle_help_open, true)}
-  end
-
-  @impl true
-  def handle_event("close_doodle_help", _, socket) do
-    {:noreply, assign(socket, :doodle_help_open, false)}
-  end
-
-  @impl true
   def handle_event("validate_comment", %{"comment" => comment_params}, socket) do
     changeset =
       %Comment{}
@@ -134,29 +112,8 @@ defmodule IndieWeb.HomeLive do
   end
 
   @impl true
-  def handle_event("save_pixels", %{"pixels" => pixels}, socket) do
-    # Save to database
-    saved_pixels = Doodle.save_pixels(pixels)
-
-    # Broadcast to all other clients (not including sender)
-    Phoenix.PubSub.broadcast_from(
-      Indie.PubSub,
-      self(),
-      "doodle:pixels",
-      {:new_pixels, saved_pixels}
-    )
-
-    {:noreply, socket}
-  end
-
-  @impl true
   def handle_info({:new_pixels, pixels}, socket) do
     # Push pixels to this client's JavaScript hook
     {:noreply, push_event(socket, "receive-pixels", %{pixels: pixels})}
-  end
-
-  # Helper function to format pixels for JSON
-  defp format_pixels(pixels) do
-    Enum.map(pixels, fn p -> %{x: p.x, y: p.y, color: p.color} end)
   end
 end
