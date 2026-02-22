@@ -18,6 +18,7 @@ defmodule IndieWeb.Router do
     pipe_through(:browser)
 
     live("/", HomeLive)
+    live("/p/:slug", PostLive)
     get("/feed.rss", FeedController, :rss)
   end
 

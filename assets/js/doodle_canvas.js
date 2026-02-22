@@ -95,22 +95,24 @@ const DoodleCanvas = {
     const loadPixelsFromServer = (pixels) => {
       console.log('Loading pixels from server:', pixels.length);
       pixels.forEach(pixel => {
-        drawPixel(pixel.x, pixel.y, pixel.color);
+        // Add to cache without drawing (redraw will handle rendering)
+        const key = `${pixel.x},${pixel.y}`;
+        allPixels.set(key, pixel.color);
       });
+      // Redraw the canvas after loading all pixels
+      redraw();
     };
 
     // Paint pixels received from other users
     const paintPixelsFromServer = (pixels) => {
       console.log('Received pixels from other users:', pixels.length);
-      ctx.save();
-      ctx.translate(offsetX, offsetY);
-      ctx.scale(scale, scale);
-      
       pixels.forEach(pixel => {
-        drawPixel(pixel.x, pixel.y, pixel.color);
+        // Add to cache without drawing (redraw will handle rendering)
+        const key = `${pixel.x},${pixel.y}`;
+        allPixels.set(key, pixel.color);
       });
-      
-      ctx.restore();
+      // Redraw to show the new pixels
+      redraw();
     };
 
     // Sync pending pixels with server

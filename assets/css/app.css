@@ -11,7 +11,6 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: flex-start;
 }
 
@@ -20,8 +19,13 @@ body {
   color: #ac9d9e;
   padding: 0.5rem 1.5rem;
   width: 25%;
+  min-width: 300px;
+  max-width: 800px;
   margin: 0 auto 0.5rem auto;
   border: 2px solid #6c868f;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .post-header h2 {
@@ -39,11 +43,23 @@ body {
   text-decoration: underline;
 }
 
+.post-header-link {
+  color: #ac9d9e;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.post-header-link:hover {
+  text-decoration: underline;
+}
+
 .post-content {
   background-color: #444c72;
   color: #ac9d9e;
   padding: 1.5rem 1.5rem 3rem 1.5rem;
   width: 25%;
+  min-width: 300px;
+  max-width: 800px;
   margin: 0 auto 3rem auto;
   max-height: none;
   overflow: hidden;
@@ -54,6 +70,15 @@ body {
 
 .post-content:hover {
   opacity: 0.95;
+}
+
+.post-content.post-page {
+  cursor: default;
+  overflow: visible;
+}
+
+.post-content.post-page:hover {
+  opacity: 1;
 }
 
 .post-content.collapsed {

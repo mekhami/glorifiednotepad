@@ -10,11 +10,13 @@ defmodule IndieWeb.HomeLive do
       Phoenix.PubSub.subscribe(Indie.PubSub, "doodle:pixels")
     end
 
-    posts = Post.all()
+    all_posts = Post.all()
+    posts_to_show = Enum.take(all_posts, 10)
+    has_more = length(all_posts) > 10
 
     # Load comments for all posts
     comments_by_post =
-      posts
+      posts_to_show
       |> Enum.map(fn post ->
         {post.id, Comments.list_comments_for_post(post.id)}
       end)
@@ -25,7 +27,10 @@ defmodule IndieWeb.HomeLive do
 
     socket =
       socket
-      |> assign(:posts, posts)
+      |> assign(:posts, posts_to_show)
+      |> assign(:all_posts, all_posts)
+      |> assign(:posts_shown, 10)
+      |> assign(:has_more, has_more)
       |> assign(:comments_by_post, comments_by_post)
       |> assign(:modal_open_for_post, nil)
       |> assign(:doodle_help_open, false)
@@ -51,6 +56,32 @@ defmodule IndieWeb.HomeLive do
        :comment_form,
        to_form(Comment.changeset(%Comment{}, %{"post_id" => post_id}), as: :comment)
      )}
+  end
+
+  @impl true
+  def handle_event("load_more", _, socket) do
+    new_count = socket.assigns.posts_shown + 10
+    posts_to_show = Enum.take(socket.assigns.all_posts, new_count)
+    has_more = length(socket.assigns.all_posts) > new_count
+
+    # Load comments for newly shown posts
+    new_posts = Enum.drop(posts_to_show, socket.assigns.posts_shown)
+
+    new_comments =
+      new_posts
+      |> Enum.map(fn post ->
+        {post.id, Comments.list_comments_for_post(post.id)}
+      end)
+      |> Map.new()
+
+    updated_comments = Map.merge(socket.assigns.comments_by_post, new_comments)
+
+    {:noreply,
+     socket
+     |> assign(:posts, posts_to_show)
+     |> assign(:posts_shown, new_count)
+     |> assign(:has_more, has_more)
+     |> assign(:comments_by_post, updated_comments)}
   end
 
   @impl true

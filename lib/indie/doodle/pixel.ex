@@ -3,9 +3,9 @@ defmodule Indie.Doodle.Pixel do
   import Ecto.Changeset
 
   schema "doodle_pixels" do
-    field :x, :integer
-    field :y, :integer
-    field :color, :string
+    field(:x, :integer)
+    field(:y, :integer)
+    field(:color, :string)
 
     timestamps(type: :utc_datetime)
   end

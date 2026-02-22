@@ -23,25 +23,29 @@
   </div>
 </div>
 
-<%= for {post, index} <- Enum.with_index(@posts) do %>
-  <div class="post-header" id={post.id} style={"width: #{post.width};"}>
-    <h2><a href={"##{post.id}"}>{post.title}</a></h2>
-    <.link navigate={"/p/#{post.id}"} class="post-header-link">[link]</.link>
+<%= if @post_not_found do %>
+  <div class="post-header" style="width: 40%;">
+    <h2>404: Post Not Found</h2>
   </div>
 
-  <div
-    id={"post-content-#{index}"}
-    class="post-content collapsed"
-    style={"width: #{post.width};"}
-    phx-click={JS.toggle_class("collapsed", to: "#post-content-#{index}")}
-  >
-    {Phoenix.HTML.raw(post.html)}
+  <div class="post-content" style="width: 40%;">
+    <p>The post you're looking for doesn't exist.</p>
+    <p><.link navigate="/">[home]</.link></p>
+  </div>
+<% else %>
+  <div class="post-header" id={@post.id} style={"width: #{@post.width};"}>
+    <h2>{@post.title}</h2>
+    <.link navigate={"/p/#{@post.id}"} class="post-header-link">[link]</.link>
+  </div>
+
+  <div id="post-content" class="post-content post-page" style={"width: #{@post.width};"}>
+    {Phoenix.HTML.raw(@post.html)}
 
     <%!-- Comments section --%>
-    <%= if @comments_by_post[post.id] != [] do %>
+    <%= if @comments != [] do %>
       <div class="comments-section">
         <p>comments:</p>
-        <div :for={comment <- @comments_by_post[post.id]} class="comment">
+        <div :for={comment <- @comments} class="comment">
           <span class="comment-author">{comment.author_name}:</span>
           <span class="comment-body">{comment.body}</span>
         </div>
@@ -50,19 +54,15 @@
 
     <%!-- Leave a comment button --%>
     <div class="comment-button-container">
-      <button class="leave-comment-btn" phx-click="open_comment_modal" phx-value-post-id={post.id}>
+      <button class="leave-comment-btn" phx-click="open_comment_modal">
         leave a comment
       </button>
     </div>
-  </div>
-<% end %>
 
-<%!-- More button --%>
-<%= if @has_more do %>
-  <div style="margin-top: 2rem; text-align: center;">
-    <button phx-click="load_more" style="cursor: pointer;">
-      [more]
-    </button>
+    <%!-- Home link --%>
+    <div style="margin-top: 1rem;">
+      <.link navigate="/">[home]</.link>
+    </div>
   </div>
 <% end %>
 
@@ -113,7 +113,7 @@
 <% end %>
 
 <%!-- AIM-style comment modal --%>
-<%= if @modal_open_for_post do %>
+<%= if @modal_open do %>
   <div class="aim-modal-overlay" phx-click="close_comment_modal">
     <div class="aim-window" phx-click={JS.exec("stop")}>
       <div class="aim-titlebar">
@@ -127,7 +127,7 @@
           phx-submit="submit_comment"
           phx-change="validate_comment"
         >
-          <input type="hidden" name="comment[post_id]" value={@modal_open_for_post} />
+          <input type="hidden" name="comment[post_id]" value={@post.id} />
 
           <div class="aim-field">
             <label>Screen Name:</label>

@@ -55,7 +55,7 @@ defmodule Indie.Doodle do
   Useful for eraser functionality if needed later.
   """
   def delete_pixel(x, y) do
-    query = from p in Pixel, where: p.x == ^x and p.y == ^y
+    query = from(p in Pixel, where: p.x == ^x and p.y == ^y)
     Repo.delete_all(query)
   end
 end

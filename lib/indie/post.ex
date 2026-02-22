@@ -20,6 +20,14 @@ defmodule Indie.Post do
   end
 
   @doc """
+  Gets a single post by its ID. Returns nil if not found.
+  """
+  def get_by_id(id) do
+    all()
+    |> Enum.find(&(&1.id == id))
+  end
+
+  @doc """
   Loads a single post from a filename.
   """
   def load_post(filename) do

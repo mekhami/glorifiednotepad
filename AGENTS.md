@@ -6,6 +6,16 @@ This is a web application written using the Phoenix web framework.
 - Use the already included and available `:req` (`Req`) library for HTTP requests, **avoid** `:httpoison`, `:tesla`, and `:httpc`. Req is included by default and is the preferred HTTP client for Phoenix apps
 - **NEVER** start or stop the Phoenix server with `mix phx.server`. The user runs the server in a separate terminal and manages it themselves
 
+### Indie Web Philosophy
+
+This project embraces the indie web philosophy:
+- **NEVER** optimize for SEO or search engine rankings
+- **NEVER** consider social media integration, Open Graph tags, or sharing previews
+- **NEVER** add analytics, tracking, or metrics for "growth"
+- Focus on human-to-human connections and sharing, not algorithmic discovery
+- Embrace quirky minimalism and reject corporate web patterns
+- URLs and features should serve humans sharing with other humans, not machines indexing content
+
 ### Phoenix v1.8 guidelines
 
 - **Always** begin your LiveView templates with `<Layouts.app flash={@flash} ...>` which wraps all inner content
