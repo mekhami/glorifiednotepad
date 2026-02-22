@@ -135,11 +135,18 @@ sudo -u indie bash -c "set -a; source /opt/indie/.env.prod; set +a; /opt/indie/b
 
 # Start the service
 echo "Starting service..."
-sudo systemctl start indie
+sudo systemctl start indie || {
+  echo "ERROR: Failed to start service!"
+  sudo journalctl -u indie -n 20 --no-pager
+  exit 1
+}
 
 # Check status
 sleep 2
-sudo systemctl status indie --no-pager
+sudo systemctl status indie --no-pager || {
+  echo "WARNING: Service status check failed"
+  sudo journalctl -u indie -n 30 --no-pager
+}
 
 # Cleanup
 rm -f /tmp/indie.tar.gz
