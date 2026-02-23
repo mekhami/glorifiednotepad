@@ -128,10 +128,17 @@ sudo chown -R indie:indie /opt/indie/content
 sudo mkdir -p /var/lib/indie
 sudo chown -R indie:indie /var/lib/indie
 
-# Run migrations
+# Run migrations (backgrounded to prevent SSH session termination)
 echo "Running migrations..."
 cd /opt/indie
-sudo -u indie bash -c "set -a; source /opt/indie/.env.prod; set +a; /opt/indie/bin/indie eval 'Indie.Release.migrate()'" || echo "No migrations to run"
+sudo -u indie bash -c "set -a; source /opt/indie/.env.prod; set +a; /opt/indie/bin/indie eval 'Indie.Release.migrate()'" 2>&1 &
+wait $!
+MIGRATION_EXIT=$?
+if [ $MIGRATION_EXIT -eq 0 ]; then
+  echo "Migrations completed successfully"
+else
+  echo "Migrations failed with exit code $MIGRATION_EXIT (continuing anyway)"
+fi
 
 # Restart the service (works whether running or stopped)
 echo "Restarting service..."
