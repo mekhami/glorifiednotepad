@@ -4,6 +4,22 @@ set -e
 # Configuration
 APP_NAME="indie"
 BLUE='\033[0;34m'
+FORCE_DEPLOY=false
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -f|--force)
+            FORCE_DEPLOY=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: $0 [--force|-f]"
+            exit 1
+            ;;
+    esac
+done
 
 # Load deploy configuration from .deploy.config
 if [ -f ".deploy.config" ]; then
@@ -73,11 +89,33 @@ if [ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]; then
     error "Your local branch is not in sync with origin/main. Pull or push first."
 fi
 
-# Check 4: Show deployment info
+# Get commit info for display
 COMMIT_SHA=$(git rev-parse --short HEAD)
 COMMIT_MSG=$(git log -1 --pretty=%B)
 COMMIT_AUTHOR=$(git log -1 --pretty=format:'%an')
 COMMIT_DATE=$(git log -1 --pretty=format:'%ar')
+
+# Check 4: Check if there are new commits to deploy
+info "Checking for new commits on server..."
+SERVER_COMMIT=$(ssh $DEPLOY_USER@$DEPLOY_HOST "cd $REPO_PATH && git rev-parse HEAD 2>/dev/null || echo 'none'")
+
+if [ "$SERVER_COMMIT" = "$LOCAL_COMMIT" ]; then
+    if [ "$FORCE_DEPLOY" = false ]; then
+        warn "Server is already at commit $COMMIT_SHA"
+        warn "No new commits to deploy."
+        echo ""
+        error "Use --force flag to deploy anyway: ./deploy.sh --force"
+    else
+        warn "Server is already at commit $COMMIT_SHA (deploying anyway due to --force flag)"
+    fi
+elif [ "$SERVER_COMMIT" = "none" ]; then
+    info "Server repository not found or first deployment"
+else
+    SERVER_COMMIT_SHORT=$(echo "$SERVER_COMMIT" | cut -c1-7)
+    info "Server is at commit $SERVER_COMMIT_SHORT, will update to $COMMIT_SHA"
+fi
+
+# Check 5: Show deployment info
 
 echo ""
 info "📦 Deployment Summary:"
