@@ -8,7 +8,7 @@ width: 60%
 ## Session 1
 *Date: 2026-02-19*
 
-**What the PCs now:**
+**What the PCs know:**
 - You were taken by raiders in a flying ship
 - You've been locked up at least a week, up to a month
 - You've been able to talk in whispers and know a fair bit about each other
