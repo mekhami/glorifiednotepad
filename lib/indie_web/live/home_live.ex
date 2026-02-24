@@ -116,4 +116,10 @@ defmodule IndieWeb.HomeLive do
     # Push pixels to this client's JavaScript hook
     {:noreply, push_event(socket, "receive-pixels", %{pixels: pixels})}
   end
+
+  @impl true
+  def handle_info({:deleted_pixels, coords}, socket) do
+    # Push deleted pixel coordinates to this client's JavaScript hook
+    {:noreply, push_event(socket, "delete-pixels", %{coords: coords})}
+  end
 end

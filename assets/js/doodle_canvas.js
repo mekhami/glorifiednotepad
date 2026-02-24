@@ -119,7 +119,19 @@ const DoodleCanvas = {
         const key = `${pixel.x},${pixel.y}`;
         allPixels.set(key, pixel.color);
       });
-      // Redraw to show the new pixels
+      // Redraw the canvas
+      redraw();
+    };
+
+    // Delete pixels received from other users (eraser sync)
+    const deletePixelsFromServer = (coords) => {
+      console.log('Received deleted pixels from other users:', coords.length);
+      coords.forEach(coord => {
+        // Remove from cache
+        const key = `${coord.x},${coord.y}`;
+        allPixels.delete(key);
+      });
+      // Redraw the canvas
       redraw();
     };
 
@@ -136,9 +148,7 @@ const DoodleCanvas = {
 
     // Add pixel to pending batch
     const batchPixel = (x, y, color) => {
-      if (color === BACKGROUND_COLOR) {
-        return; // Don't save background color pixels
-      }
+      // Include background color pixels for deletion on server
       pendingPixels.push({ x, y, color });
     };
 
@@ -427,6 +437,10 @@ const DoodleCanvas = {
     
     this.handleEvent("receive-pixels", ({ pixels }) => {
       paintPixelsFromServer(pixels);
+    });
+
+    this.handleEvent("delete-pixels", ({ coords }) => {
+      deletePixelsFromServer(coords);
     });
     
     // Clear old localStorage data (cleanup)

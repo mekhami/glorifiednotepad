@@ -18,14 +18,27 @@ defmodule Indie.Doodle do
 
   @doc """
   Saves a batch of pixels to the database.
-  Filters out background color pixels and uses upsert to replace existing pixels.
-  Returns the list of saved pixels.
+  Background color pixels are deleted (eraser functionality).
+  Other pixels are upserted to replace existing pixels.
+  Returns a map with :saved and :deleted pixel lists.
   """
   def save_pixels(pixels) do
-    # Filter out background color pixels
-    pixels_to_save =
+    # Separate background color pixels (to delete) from regular pixels (to save)
+    {pixels_to_delete, pixels_to_save} =
       pixels
-      |> Enum.reject(fn p -> p["color"] == @background_color end)
+      |> Enum.split_with(fn p -> p["color"] == @background_color end)
+
+    # Delete background color pixels
+    deleted_coords =
+      pixels_to_delete
+      |> Enum.map(fn p ->
+        delete_pixel(p["x"], p["y"])
+        %{x: p["x"], y: p["y"]}
+      end)
+
+    # Save non-background pixels
+    saved_pixels =
+      pixels_to_save
       |> Enum.map(fn p ->
         %{
           x: p["x"],
@@ -37,17 +50,17 @@ defmodule Indie.Doodle do
       end)
 
     # Only proceed if we have pixels to save
-    if pixels_to_save != [] do
+    if saved_pixels != [] do
       # Upsert all pixels at once
       Repo.insert_all(
         Pixel,
-        pixels_to_save,
+        saved_pixels,
         on_conflict: {:replace, [:color, :updated_at]},
         conflict_target: [:x, :y]
       )
     end
 
-    pixels_to_save
+    %{saved: saved_pixels, deleted: deleted_coords}
   end
 
   @doc """

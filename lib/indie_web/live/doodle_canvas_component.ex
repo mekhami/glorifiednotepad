@@ -44,16 +44,28 @@ defmodule IndieWeb.DoodleCanvasComponent do
 
   @impl true
   def handle_event("save_pixels", %{"pixels" => pixels}, socket) do
-    # Save to database
-    saved_pixels = Doodle.save_pixels(pixels)
+    # Save to database and get results (saved and deleted pixels)
+    result = Doodle.save_pixels(pixels)
 
-    # Broadcast to all other clients (not including sender)
-    Phoenix.PubSub.broadcast_from(
-      Indie.PubSub,
-      self(),
-      "doodle:pixels",
-      {:new_pixels, saved_pixels}
-    )
+    # Broadcast saved pixels to all other clients (not including sender)
+    if result.saved != [] do
+      Phoenix.PubSub.broadcast_from(
+        Indie.PubSub,
+        self(),
+        "doodle:pixels",
+        {:new_pixels, result.saved}
+      )
+    end
+
+    # Broadcast deleted pixels to all other clients (not including sender)
+    if result.deleted != [] do
+      Phoenix.PubSub.broadcast_from(
+        Indie.PubSub,
+        self(),
+        "doodle:pixels",
+        {:deleted_pixels, result.deleted}
+      )
+    end
 
     {:noreply, socket}
   end
