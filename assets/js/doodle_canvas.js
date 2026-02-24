@@ -211,6 +211,30 @@ const DoodleCanvas = {
 
     // Handle zoom
     const handleZoom = (e) => {
+      // Check if mouse is over a canvas margin zone (left or right)
+      const leftZone = document.getElementById('canvas-zone-left');
+      const rightZone = document.getElementById('canvas-zone-right');
+      
+      let isOverCanvasZone = false;
+      if (leftZone || rightZone) {
+        const leftRect = leftZone?.getBoundingClientRect();
+        const rightRect = rightZone?.getBoundingClientRect();
+        
+        if (leftRect && e.clientX >= leftRect.left && e.clientX <= leftRect.right &&
+            e.clientY >= leftRect.top && e.clientY <= leftRect.bottom) {
+          isOverCanvasZone = true;
+        } else if (rightRect && e.clientX >= rightRect.left && e.clientX <= rightRect.right &&
+                   e.clientY >= rightRect.top && e.clientY <= rightRect.bottom) {
+          isOverCanvasZone = true;
+        }
+      }
+      
+      // Only handle canvas pan/zoom if mouse is over canvas zones
+      // Otherwise, allow default page scrolling
+      if (!isOverCanvasZone) {
+        return; // Let the page scroll naturally
+      }
+      
       e.preventDefault();
       
       const rect = canvas.getBoundingClientRect();

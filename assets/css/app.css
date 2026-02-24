@@ -323,6 +323,25 @@ body {
   cursor: crosshair;
 }
 
+/* Canvas margin zones for wheel interaction */
+.canvas-margin-zone {
+  position: fixed;
+  top: 0;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none; /* Don't block other interactions */
+}
+
+#canvas-zone-left {
+  left: 0;
+  right: calc(50% + 400px); /* Center + half of max-width (800px / 2) */
+}
+
+#canvas-zone-right {
+  left: calc(50% + 400px); /* Center + half of max-width (800px / 2) */
+  right: 0;
+}
+
 #doodle-controls {
   position: fixed;
   bottom: 1rem;

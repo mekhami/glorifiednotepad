@@ -1,5 +1,9 @@
 <.live_component module={IndieWeb.DoodleCanvasComponent} id="doodle-canvas" />
 
+<%!-- Canvas interaction zones for left/right margins --%>
+<div id="canvas-zone-left" class="canvas-margin-zone"></div>
+<div id="canvas-zone-right" class="canvas-margin-zone"></div>
+
 <%= for {post, index} <- Enum.with_index(@posts) do %>
   <div class="post-header" id={post.id} style={"width: #{post.width};"}>
     <h2>
