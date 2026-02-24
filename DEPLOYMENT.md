@@ -1,6 +1,6 @@
 # Deployment Guide: glorifiednotepad.net
 
-This guide covers deploying your Phoenix application to Digital Ocean at **45.55.203.183** using mix release, systemd, and nginx.
+This guide covers deploying your Phoenix application to Digital Ocean at **redactedip** using mix release, systemd, and nginx.
 
 ## Table of Contents
 
@@ -22,7 +22,7 @@ This guide covers deploying your Phoenix application to Digital Ocean at **45.55
 3. Add an A record:
    - **Name/Host:** `@` (root domain)
    - **Type:** A
-   - **Value:** `45.55.203.183`
+   - **Value:** `redactedip`
    - **TTL:** 3600 (or default)
 
 4. Optional - Add www subdomain:
@@ -41,7 +41,7 @@ dig glorifiednotepad.net
 nslookup glorifiednotepad.net
 ```
 
-Should return `45.55.203.183`
+Should return `redactedip`
 
 ---
 
@@ -54,7 +54,7 @@ These steps are performed **once** on your Digital Ocean droplet.
 SSH into your server:
 
 ```bash
-ssh root@45.55.203.183
+ssh root@redactedip
 ```
 
 Install required packages:
@@ -106,7 +106,7 @@ On your **local machine**, copy your SSH public key to the deployment user:
 
 ```bash
 # Copy your public key to the server
-ssh-copy-id indie@45.55.203.183
+ssh-copy-id indie@redactedip
 ```
 
 If that doesn't work, manually add your public key:
@@ -126,7 +126,7 @@ Test it:
 
 ```bash
 # From your local machine
-ssh indie@45.55.203.183
+ssh indie@redactedip
 ```
 
 ### 5. Configure Nginx
@@ -308,10 +308,10 @@ This will:
 
 ```bash
 # Check service status
-ssh indie@45.55.203.183 'sudo systemctl status indie'
+ssh indie@redactedip 'sudo systemctl status indie'
 
 # View logs
-ssh indie@45.55.203.183 'sudo journalctl -u indie -f'
+ssh indie@redactedip 'sudo journalctl -u indie -f'
 ```
 
 ### 4. Test the Site
@@ -382,20 +382,20 @@ The script will:
 ### Check Service Status
 
 ```bash
-ssh indie@45.55.203.183 'sudo systemctl status indie'
+ssh indie@redactedip 'sudo systemctl status indie'
 ```
 
 ### View Logs
 
 ```bash
 # Follow live logs
-ssh indie@45.55.203.183 'sudo journalctl -u indie -f'
+ssh indie@redactedip 'sudo journalctl -u indie -f'
 
 # View last 100 lines
-ssh indie@45.55.203.183 'sudo journalctl -u indie -n 100'
+ssh indie@redactedip 'sudo journalctl -u indie -n 100'
 
 # Check nginx logs
-ssh indie@45.55.203.183 'sudo tail -f /var/log/nginx/glorifiednotepad_error.log'
+ssh indie@redactedip 'sudo tail -f /var/log/nginx/glorifiednotepad_error.log'
 ```
 
 ### Service Won't Start
@@ -403,7 +403,7 @@ ssh indie@45.55.203.183 'sudo tail -f /var/log/nginx/glorifiednotepad_error.log'
 Check logs for errors:
 
 ```bash
-ssh indie@45.55.203.183 'sudo journalctl -u indie -xe'
+ssh indie@redactedip 'sudo journalctl -u indie -xe'
 ```
 
 Common issues:
@@ -416,16 +416,16 @@ Common issues:
 
 ```bash
 # Check database file exists and has correct permissions
-ssh indie@45.55.203.183 'ls -la /var/lib/indie/'
+ssh indie@redactedip 'ls -la /var/lib/indie/'
 
 # Fix permissions if needed
-ssh indie@45.55.203.183 'sudo chown indie:indie /var/lib/indie/indie_prod.db*'
+ssh indie@redactedip 'sudo chown indie:indie /var/lib/indie/indie_prod.db*'
 ```
 
 ### Run Migration Manually
 
 ```bash
-ssh indie@45.55.203.183
+ssh indie@redactedip
 sudo -u indie bash -c 'source /opt/indie/.env.prod && /opt/indie/bin/indie eval "Indie.Release.migrate()"'
 ```
 
@@ -433,27 +433,27 @@ sudo -u indie bash -c 'source /opt/indie/.env.prod && /opt/indie/bin/indie eval 
 
 ```bash
 # Test nginx config
-ssh indie@45.55.203.183 'sudo nginx -t'
+ssh indie@redactedip 'sudo nginx -t'
 
 # Reload nginx
-ssh indie@45.55.203.183 'sudo systemctl reload nginx'
+ssh indie@redactedip 'sudo systemctl reload nginx'
 
 # Check nginx status
-ssh indie@45.55.203.183 'sudo systemctl status nginx'
+ssh indie@redactedip 'sudo systemctl status nginx'
 ```
 
 ### Port Not Listening
 
 ```bash
 # Check if app is listening on port 4000
-ssh indie@45.55.203.183 'sudo netstat -tulpn | grep 4000'
+ssh indie@redactedip 'sudo netstat -tulpn | grep 4000'
 ```
 
 ### Can't SSH as indie User
 
 ```bash
 # Login as root and check SSH keys
-ssh root@45.55.203.183
+ssh root@redactedip
 cat /home/indie/.ssh/authorized_keys
 # Ensure your public key is there
 
@@ -471,35 +471,35 @@ ls -la /home/indie/.ssh
 ### View Application Logs
 
 ```bash
-ssh indie@45.55.203.183 'sudo journalctl -u indie -f'
+ssh indie@redactedip 'sudo journalctl -u indie -f'
 ```
 
 ### Restart Service
 
 ```bash
-ssh indie@45.55.203.183 'sudo systemctl restart indie'
+ssh indie@redactedip 'sudo systemctl restart indie'
 ```
 
 ### Stop Service
 
 ```bash
-ssh indie@45.55.203.183 'sudo systemctl stop indie'
+ssh indie@redactedip 'sudo systemctl stop indie'
 ```
 
 ### Start Service
 
 ```bash
-ssh indie@45.55.203.183 'sudo systemctl start indie'
+ssh indie@redactedip 'sudo systemctl start indie'
 ```
 
 ### Backup Database
 
 ```bash
 # Manual backup
-ssh indie@45.55.203.183 'sudo cp /var/lib/indie/indie_prod.db /var/lib/indie/backups/indie_prod_$(date +%Y%m%d_%H%M%S).db'
+ssh indie@redactedip 'sudo cp /var/lib/indie/indie_prod.db /var/lib/indie/backups/indie_prod_$(date +%Y%m%d_%H%M%S).db'
 
 # Set up automated daily backups with cron
-ssh indie@45.55.203.183
+ssh indie@redactedip
 sudo crontab -e -u indie
 # Add this line:
 0 2 * * * cp /var/lib/indie/indie_prod.db /var/lib/indie/backups/indie_prod_$(date +\%Y\%m\%d).db
@@ -510,7 +510,7 @@ sudo crontab -e -u indie
 Use the delete script on the server:
 
 ```bash
-ssh indie@45.55.203.183
+ssh indie@redactedip
 cd /opt/indie
 sudo -u indie bash -c 'source /opt/indie/.env.prod && /opt/indie/bin/indie eval "File.cd!(\"/opt/indie\"); Code.eval_file(\"priv/scripts/delete_comment.exs\")"'
 ```
@@ -518,7 +518,7 @@ sudo -u indie bash -c 'source /opt/indie/.env.prod && /opt/indie/bin/indie eval 
 Or manually via IEx console:
 
 ```bash
-ssh indie@45.55.203.183
+ssh indie@redactedip
 sudo -u indie bash -c 'source /opt/indie/.env.prod && /opt/indie/bin/indie remote'
 # Then in IEx:
 # Indie.Comments.delete_comment(comment_id)
@@ -527,32 +527,32 @@ sudo -u indie bash -c 'source /opt/indie/.env.prod && /opt/indie/bin/indie remot
 ### Check SSL Certificate Status
 
 ```bash
-ssh indie@45.55.203.183 'sudo certbot certificates'
+ssh indie@redactedip 'sudo certbot certificates'
 ```
 
 ### Manually Renew SSL Certificate
 
 ```bash
-ssh indie@45.55.203.183 'sudo certbot renew'
+ssh indie@redactedip 'sudo certbot renew'
 ```
 
 ### Check Disk Space
 
 ```bash
-ssh indie@45.55.203.183 'df -h'
+ssh indie@redactedip 'df -h'
 ```
 
 ### Check Memory Usage
 
 ```bash
-ssh indie@45.55.203.183 'free -m'
+ssh indie@redactedip 'free -m'
 ```
 
 ### Clean Old Backups
 
 ```bash
 # Delete backups older than 30 days
-ssh indie@45.55.203.183 'find /opt/indie/backups -type d -mtime +30 -exec rm -rf {} +'
+ssh indie@redactedip 'find /opt/indie/backups -type d -mtime +30 -exec rm -rf {} +'
 ```
 
 ---
@@ -581,19 +581,19 @@ For systemd failure notifications, you can set up email alerts, but that require
 ./deploy.sh production
 
 # View logs
-ssh indie@45.55.203.183 'sudo journalctl -u indie -f'
+ssh indie@redactedip 'sudo journalctl -u indie -f'
 
 # Restart service
-ssh indie@45.55.203.183 'sudo systemctl restart indie'
+ssh indie@redactedip 'sudo systemctl restart indie'
 
 # Check status
-ssh indie@45.55.203.183 'sudo systemctl status indie'
+ssh indie@redactedip 'sudo systemctl status indie'
 
 # Backup database
-ssh indie@45.55.203.183 'sudo cp /var/lib/indie/indie_prod.db /var/lib/indie/backups/backup_$(date +%Y%m%d_%H%M%S).db'
+ssh indie@redactedip 'sudo cp /var/lib/indie/indie_prod.db /var/lib/indie/backups/backup_$(date +%Y%m%d_%H%M%S).db'
 
 # Check SSL certificate
-ssh indie@45.55.203.183 'sudo certbot certificates'
+ssh indie@redactedip 'sudo certbot certificates'
 ```
 
 ---

@@ -18,6 +18,7 @@ defmodule IndieWeb.PostLive do
          |> assign(:post, nil)
          |> assign(:comments, [])
          |> assign(:modal_open, false)
+         |> assign(:image_modal_src, nil)
          |> assign(:comment_form, to_form(Comment.changeset(%Comment{}, %{}), as: :comment))}
 
       post ->
@@ -30,6 +31,7 @@ defmodule IndieWeb.PostLive do
           |> assign(:post, post)
           |> assign(:comments, comments)
           |> assign(:modal_open, false)
+          |> assign(:image_modal_src, nil)
           |> assign(:comment_form, to_form(Comment.changeset(%Comment{}, %{}), as: :comment))
 
         {:ok, socket}
@@ -83,6 +85,16 @@ defmodule IndieWeb.PostLive do
       {:error, changeset} ->
         {:noreply, assign(socket, :comment_form, to_form(changeset, as: :comment))}
     end
+  end
+
+  @impl true
+  def handle_event("open_image_modal", %{"src" => src}, socket) do
+    {:noreply, assign(socket, :image_modal_src, src)}
+  end
+
+  @impl true
+  def handle_event("close_image_modal", _, socket) do
+    {:noreply, assign(socket, :image_modal_src, nil)}
   end
 
   @impl true

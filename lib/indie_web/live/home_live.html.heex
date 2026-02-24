@@ -26,7 +26,9 @@
     phx-hook="ExpandOnClick"
     data-btn-id={"expand-btn-#{index}"}
   >
-    {Phoenix.HTML.raw(post.html)}
+    <div id={"post-images-#{index}"} phx-hook=".ImageMagnifier">
+      {Phoenix.HTML.raw(post.html)}
+    </div>
 
     <%!-- Comments section --%>
     <%= if @comments_by_post[post.id] != [] do %>
@@ -54,6 +56,21 @@
     <button phx-click="load_more" style="cursor: pointer;">
       [more]
     </button>
+  </div>
+<% end %>
+
+<%!-- Image magnify modal --%>
+<%= if @image_modal_src do %>
+  <div
+    class="image-modal-overlay"
+    phx-click="close_image_modal"
+    phx-window-keydown="close_image_modal"
+    phx-key="Escape"
+  >
+    <div class="image-modal-container" phx-click={JS.exec("stop")}>
+      <img src={@image_modal_src} alt="" class="image-modal-img" />
+      <button phx-click="close_image_modal" class="image-modal-close">✕</button>
+    </div>
   </div>
 <% end %>
 
@@ -98,3 +115,25 @@
     </div>
   </div>
 <% end %>
+
+<%!-- Colocated JS hook for image magnification --%>
+<script :type={Phoenix.LiveView.ColocatedHook} name=".ImageMagnifier">
+  export default {
+    mounted() {
+      this.handleImageClick = (e) => {
+        if (e.target.tagName === 'IMG') {
+          const src = e.target.getAttribute('src');
+          if (src) {
+            this.pushEvent("open_image_modal", { src: src });
+          }
+        }
+      };
+      
+      this.el.addEventListener("click", this.handleImageClick);
+    },
+    
+    destroyed() {
+      this.el.removeEventListener("click", this.handleImageClick);
+    }
+  }
+</script>
