@@ -143,11 +143,8 @@ mkdir -p /var/lib/indie
 log "Running migrations..."
 cd "$DEPLOY_DIR"
 set +e
-# Enable auto-export so environment variables are passed to child processes
-set -a
-source "$DEPLOY_DIR/.env.prod"
-set +a
-"$DEPLOY_DIR/bin/indie" eval 'Indie.Release.migrate()' 2>&1
+# Run migration with environment variables from .env.prod
+env $(cat "$DEPLOY_DIR/.env.prod" | xargs) "$DEPLOY_DIR/bin/indie" eval 'Indie.Release.migrate()' 2>&1
 MIGRATION_EXIT=$?
 set -e
 
