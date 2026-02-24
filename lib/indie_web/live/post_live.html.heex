@@ -22,7 +22,7 @@
     id="post-content"
     class="post-content post-page"
     style={"width: #{@post.width};"}
-    phx-hook=".ImageMagnifier"
+    phx-hook="ImageMagnifier"
   >
     {Phoenix.HTML.raw(@post.html)}
 
@@ -107,25 +107,3 @@
     </div>
   </div>
 <% end %>
-
-<%!-- Colocated JS hook for image magnification --%>
-<script :type={Phoenix.LiveView.ColocatedHook} name=".ImageMagnifier">
-  export default {
-    mounted() {
-      this.handleImageClick = (e) => {
-        if (e.target.tagName === 'IMG') {
-          const src = e.target.getAttribute('src');
-          if (src) {
-            this.pushEvent("open_image_modal", { src: src });
-          }
-        }
-      };
-      
-      this.el.addEventListener("click", this.handleImageClick);
-    },
-    
-    destroyed() {
-      this.el.removeEventListener("click", this.handleImageClick);
-    }
-  }
-</script>
