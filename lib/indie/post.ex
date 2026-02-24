@@ -36,7 +36,7 @@ defmodule Indie.Post do
 
     {front_matter, markdown} = parse_front_matter(content)
 
-    html = Earmark.as_html!(markdown)
+    html = Earmark.as_html!(markdown, breaks: true)
 
     %__MODULE__{
       title: front_matter["title"],
