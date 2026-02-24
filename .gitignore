@@ -1,6 +1,9 @@
 # The directory Mix will write compiled artifacts to.
 /_build/
 
+# Exception: Keep esbuild binary for reliable deployments (tailwind downloads from GitHub)
+!/_build/esbuild-linux-x64
+
 # If you run "mix test --cover", coverage assets end up here.
 /cover/
 
