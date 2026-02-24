@@ -10,7 +10,7 @@ defmodule IndieWeb.HomeLive do
       Phoenix.PubSub.subscribe(Indie.PubSub, "doodle:pixels")
     end
 
-    all_posts = Post.all()
+    all_posts = Post.published()
     posts_to_show = Enum.take(all_posts, 10)
     has_more = length(all_posts) > 10
 

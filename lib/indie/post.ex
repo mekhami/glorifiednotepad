@@ -3,7 +3,7 @@ defmodule Indie.Post do
   Module for parsing and loading markdown posts with YAML front matter.
   """
 
-  defstruct [:title, :id, :date, :html, :path, width: "25%"]
+  defstruct [:title, :id, :date, :html, :path, draft: false, width: "25%"]
 
   @content_dir "content"
 
@@ -20,10 +20,19 @@ defmodule Indie.Post do
   end
 
   @doc """
+  Gets all published posts (excludes drafts), sorted by date (newest first).
+  """
+  def published do
+    all()
+    |> Enum.reject(& &1.draft)
+  end
+
+  @doc """
   Gets a single post by its ID. Returns nil if not found.
+  Only returns published posts (excludes drafts).
   """
   def get_by_id(id) do
-    all()
+    published()
     |> Enum.find(&(&1.id == id))
   end
 
@@ -44,6 +53,7 @@ defmodule Indie.Post do
       date: parse_date(front_matter["date"]),
       html: html,
       path: path,
+      draft: parse_boolean(front_matter["draft"]),
       width: front_matter["width"] || "25%"
     }
   end
@@ -80,6 +90,10 @@ defmodule Indie.Post do
 
   defp parse_date(%Date{} = date), do: date
   defp parse_date(_), do: Date.utc_today()
+
+  defp parse_boolean("true"), do: true
+  defp parse_boolean(true), do: true
+  defp parse_boolean(_), do: false
 
   defp content_dir_path(dir) do
     # Use environment variable if set, otherwise try relative paths

@@ -2,7 +2,7 @@ defmodule IndieWeb.FeedController do
   use IndieWeb, :controller
 
   def rss(conn, _params) do
-    posts = Indie.Post.all()
+    posts = Indie.Post.published()
     base_url = get_base_url()
 
     xml = build_rss(posts, base_url)
