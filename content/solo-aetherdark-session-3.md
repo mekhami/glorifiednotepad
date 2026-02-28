@@ -6,7 +6,7 @@ width: 60%
 ---
 # Setup
 
-After defeating Amelia and scouring the ship for weapons to use against the cosmic beast that is tearing the ship apart, the crew ready themselves to free themselves for good. Unbeknownst to them, a group of pirates below have rallied to retake the ship, and the captain of the ship, injured, waits in the cabin to ambush whoever enters. The entire situation teeters on the brink! 
+After [defeating Amelia](/p/solo-aetherdark-session-2) and scouring the ship for weapons to use against the cosmic beast that is tearing the ship apart, the crew ready themselves to free themselves for good. Unbeknownst to them, a group of pirates below have rallied to retake the ship, and the captain of the ship, injured, waits in the cabin to ambush whoever enters. The entire situation teeters on the brink! 
 
 At the end of our last session, most of the people on board the ship were shaken to the ground by the convulsions of the astral kraken. I will say that it takes the full round for everyone to regain their footing, which will advance the kraken timer and call for yet another random encounter check.
 

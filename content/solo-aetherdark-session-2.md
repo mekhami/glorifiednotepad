@@ -5,7 +5,7 @@ date: 2026-02-24
 width: 60%
 ---
 # Setup
-In part 1, our players escaped from captivity when the ship they were imprisoned on, sailing the vast astral sea, was seemingly attacked by a cosmic kraken which threatened to tear the ship apart. There were some hints that there had also been a mutinous event, and it certainly seemed as though the crew were living in terror of the First Mate, named Amelia. While the captive players scrounged for supplies in the chaos, they stumbled upon Amelia herself, covered in blood, wielding a wicked cleaver, and apparently feasting on the flesh of the mutineers. Fighting for their lives, the crew tried to subdue her.  The bestial woman slew Pavya, the Calrivian Dwarf, before Amchutchen threw a jar of bottled lightning and electrocuted her to death.
+In [part 1](/p/solo-aetherdark-session-1), our players escaped from captivity when the ship they were imprisoned on, sailing the vast astral sea, was seemingly attacked by a cosmic kraken which threatened to tear the ship apart. There were some hints that there had also been a mutinous event, and it certainly seemed as though the crew were living in terror of the First Mate, named Amelia. While the captive players scrounged for supplies in the chaos, they stumbled upon Amelia herself, covered in blood, wielding a wicked cleaver, and apparently feasting on the flesh of the mutineers. Fighting for their lives, the crew tried to subdue her.  The bestial woman slew Pavya, the Calrivian Dwarf, before Amchutchen threw a jar of bottled lightning and electrocuted her to death.
 
 As before, we will notate the events of this session using Lonelog format, use Triple-O to emulate the *party*, not the GM, and fill in the blanks with various oracles, primarily using Solodark's tools.
 # The Party
@@ -153,3 +153,5 @@ d: d6=5 -> Obvious
 The ship shakes violently as the captives try to turn the heavy bombards to face the cosmic horror that's trying to devour them. Stars flicker, and flames burn on the back of the ship. Within the cabin, Captain Ca'Resh holds his hand to the bandage hastily wounda around his right shoulder. It is soaked through with blood. His other hand is on his saber, which trembles with rage at both the mutiny and the assault on HIS ship by this upjumped lobster!
 
 Whatever poor fool stumbles into the cabin first is going to be gutted... He relishes the thought, licking his lips in anticipation.
+
+Continues in [Session 3](/p/solo-aetherdark-session-3)

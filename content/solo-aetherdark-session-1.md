@@ -215,4 +215,4 @@ d: d20=16
 => Amelia convulses as the bottled lightning explodes at her feet, collapsing to the ground, smoking and dead.
 ```
 
-To be continued...
+Continued in [Session 2!](/p/solo-aetherdark-session-2)
