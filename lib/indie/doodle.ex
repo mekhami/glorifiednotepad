@@ -22,6 +22,9 @@ defmodule Indie.Doodle do
   Other pixels are upserted to replace existing pixels.
   Returns a map with :saved and :deleted pixel lists.
   """
+  @canvas_width 1920
+  @canvas_height 1080
+
   def save_pixels(pixels) do
     # Separate background color pixels (to delete) from regular pixels (to save)
     {pixels_to_delete, pixels_to_save} =
@@ -36,9 +39,14 @@ defmodule Indie.Doodle do
         %{x: p["x"], y: p["y"]}
       end)
 
-    # Save non-background pixels
+    # Save non-background pixels, filtering out-of-bounds coordinates
     saved_pixels =
       pixels_to_save
+      |> Enum.reject(fn p ->
+        x = p["x"]
+        y = p["y"]
+        x < 0 or x >= @canvas_width or y < 0 or y >= @canvas_height
+      end)
       |> Enum.map(fn p ->
         %{
           x: p["x"],

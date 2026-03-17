@@ -183,6 +183,7 @@ const DoodleCanvas = {
       console.log('Redrawing canvas with', allPixels.size, 'pixels');
       allPixels.forEach((color, key) => {
         const [x, y] = key.split(',').map(Number);
+        if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) return;
         ctx.fillStyle = color;
         ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
       });
@@ -277,7 +278,9 @@ const DoodleCanvas = {
         let y = lastDrawY;
         
         while (true) {
-          batchPixel(x, y, currentColor);
+          if (x >= 0 && x < CANVAS_WIDTH && y >= 0 && y < CANVAS_HEIGHT) {
+            batchPixel(x, y, currentColor);
+          }
           if (x === gridX && y === gridY) break;
           const e2 = 2 * err;
           if (e2 > -dy) {
