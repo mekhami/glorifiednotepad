@@ -21,6 +21,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .post-header {
@@ -30,11 +31,12 @@ body {
   width: 25%;
   min-width: 300px;
   max-width: 800px;
-  margin: 0 auto 0.5rem auto;
-  border: 2px solid #6c868f;
+  margin: 0 auto 6px auto;
+  border: 2px solid #000;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  box-shadow: 3px 3px 0 #000;
 }
 
 .post-header h2 {
@@ -94,7 +96,8 @@ body {
   overflow: hidden;
   transition: max-height 0.3s ease-out;
   cursor: pointer;
-  border: 2px solid #6c868f;
+  border: 2px solid #000;
+  box-shadow: 3px 3px 0 #000;
 }
 
 .post-content:hover {
