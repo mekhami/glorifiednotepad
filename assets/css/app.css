@@ -1096,73 +1096,105 @@ canvas.pipette-mode {
   cursor: crosshair !important;
 }
 
-/* Rootring webring widget */
+/* ── Rootring webring widget ── */
+
 .rootring-widget {
   position: fixed;
   bottom: 1rem;
   left: 1rem;
   z-index: 100;
-  font-family: inherit;
-  font-size: 0.84rem;
+  font-family: monospace;
+  font-size: 11px;
+  transform: rotate(-1deg);
+  transform-origin: bottom left;
 }
 
+/* hide default summary marker */
+.rootring-widget summary::-webkit-details-marker { display: none; }
+.rootring-widget summary { list-style: none; }
+
+/* pixel strip */
+.rr-pixels {
+  display: grid;
+  grid-template-columns: repeat(12, 7px);
+  gap: 1px;
+  padding: 3px;
+  background: #000;
+}
+.rr-pixels span {
+  display: block;
+  width: 7px;
+  height: 7px;
+  image-rendering: pixelated;
+}
+
+/* collapsed summary */
 .rootring-widget summary {
   display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
+  flex-direction: column;
   cursor: pointer;
-  list-style: none;
-  padding: 0.35rem 0.7rem;
-  border: 1px solid var(--blue-gray);
-  border-radius: 999px;
-  background: var(--slate-blue);
-  color: var(--mauve);
   user-select: none;
+  border: 2px solid #000;
+  box-shadow: 3px 3px 0 #000;
+  overflow: hidden;
 }
 
-.rootring-widget summary::-webkit-details-marker {
-  display: none;
+.rr-pill-label {
+  background: #000;
+  color: #FF00FF;
+  font-family: monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  white-space: nowrap;
 }
 
-.rootring-widget .summary-title {
-  letter-spacing: 0.05em;
-  text-transform: lowercase;
+.rr-pill-label a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.rootring-widget .summary-hint {
-  opacity: 0.6;
-  font-size: 0.78rem;
-}
-
-.rootring-widget summary::after {
-  content: "▾";
-  opacity: 0.7;
-}
-
-.rootring-widget[open] summary::after {
-  content: "▴";
-}
-
-.rootring-widget nav {
+/* expanded nav */
+.rr-nav-links {
   display: inline-flex;
   flex-direction: column;
-  gap: 0.3rem;
-  margin-top: 0.4rem;
-  padding: 0.55rem 0.7rem;
-  border: 1px solid var(--blue-gray);
-  border-radius: 0.6rem;
-  background: var(--slate-blue);
-  color: var(--mauve);
-  min-width: 9rem;
+  border: 2px solid #000;
+  border-top: none;
+  box-shadow: 3px 3px 0 #000;
+  overflow: hidden;
+  background: #fff;
 }
 
-.rootring-widget nav a {
-  color: var(--mauve);
+.rr-label-bar {
+  background: #000;
+  color: #FF00FF;
+  font-family: monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+}
+
+.rr-link {
+  font-size: 10px;
+  padding: 3px 7px;
+  color: #000;
   text-decoration: none;
-  padding: 0.1rem 0;
+  border-bottom: 1px solid #000;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.rootring-widget nav a:hover {
-  text-decoration: underline;
-  opacity: 0.85;
+.rr-link:last-child { border-bottom: none; }
+
+.rr-link .sym {
+  color: #800080;
+  font-weight: bold;
+  font-size: 9px;
 }
+
+.rr-link:hover { background: #000; color: #FFFF00; }
+.rr-link:hover .sym { color: #FFFF00; }
