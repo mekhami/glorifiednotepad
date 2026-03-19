@@ -1108,13 +1108,11 @@ canvas.pipette-mode {
   z-index: 100;
   font-family: monospace;
   font-size: 11px;
-  transform: rotate(-1deg) translateZ(0);
+  transform: rotate(-1deg);
   transform-origin: bottom left;
-  /* Improve rendering on Firefox */
-  backface-visibility: hidden;
-  -webkit-font-smoothing: subpixel-antialiased;
-  text-rendering: geometricPrecision;
-  outline: 1px solid transparent;
+  /* Firefox-specific fix: force new stacking context without 3D */
+  filter: blur(0px);
+  will-change: transform;
 }
 
 /* hide default summary marker */
