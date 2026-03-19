@@ -99,9 +99,7 @@ defmodule Mix.Tasks.Images.Optimize do
 
       case png_tool do
         nil ->
-          Mix.shell().error(
-            "⚠️  PNG optimizer not found. Install with: sudo apt install optipng"
-          )
+          Mix.shell().error("⚠️  PNG optimizer not found. Install with: sudo apt install optipng")
 
           {0, 0}
 

@@ -1095,3 +1095,74 @@ hex-input::part(input):focus {
 canvas.pipette-mode {
   cursor: crosshair !important;
 }
+
+/* Rootring webring widget */
+.rootring-widget {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 100;
+  font-family: inherit;
+  font-size: 0.84rem;
+}
+
+.rootring-widget summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  list-style: none;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--blue-gray);
+  border-radius: 999px;
+  background: var(--slate-blue);
+  color: var(--mauve);
+  user-select: none;
+}
+
+.rootring-widget summary::-webkit-details-marker {
+  display: none;
+}
+
+.rootring-widget .summary-title {
+  letter-spacing: 0.05em;
+  text-transform: lowercase;
+}
+
+.rootring-widget .summary-hint {
+  opacity: 0.6;
+  font-size: 0.78rem;
+}
+
+.rootring-widget summary::after {
+  content: "▾";
+  opacity: 0.7;
+}
+
+.rootring-widget[open] summary::after {
+  content: "▴";
+}
+
+.rootring-widget nav {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--blue-gray);
+  border-radius: 0.6rem;
+  background: var(--slate-blue);
+  color: var(--mauve);
+  min-width: 9rem;
+}
+
+.rootring-widget nav a {
+  color: var(--mauve);
+  text-decoration: none;
+  padding: 0.1rem 0;
+}
+
+.rootring-widget nav a:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}

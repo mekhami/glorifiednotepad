@@ -19,5 +19,34 @@
   </head>
   <body>
     {@inner_content}
+    <details id="rootring-widget" class="rootring-widget">
+      <summary>
+        <span class="summary-title">
+          <a href="https://rootr.ing/" style="color: inherit; text-decoration: none;">rootring</a>
+        </span>
+        <span class="summary-hint">webring</span>
+      </summary>
+      <nav aria-label="Webring">
+        <a href="https://rootr.ing/prev?site=https://glorifiednotepad.net">← Prev</a>
+        <a href="https://rootr.ing/random">Random</a>
+        <a href="https://rootr.ing/directory">Directory</a>
+        <a href="https://rootr.ing/next?site=https://glorifiednotepad.net">Next →</a>
+      </nav>
+    </details>
+    <script>
+      (function() {
+        var w = document.getElementById('rootring-widget');
+        if (!sessionStorage.getItem('rootring-closed')) {
+          w.setAttribute('open', '');
+        }
+        w.addEventListener('toggle', function() {
+          if (w.open) {
+            sessionStorage.removeItem('rootring-closed');
+          } else {
+            sessionStorage.setItem('rootring-closed', '1');
+          }
+        });
+      })();
+    </script>
   </body>
 </html>
