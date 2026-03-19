@@ -21,7 +21,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: monospace;
 }
 
 .post-header {
