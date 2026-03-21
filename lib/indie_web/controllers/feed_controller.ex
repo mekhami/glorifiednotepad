@@ -43,8 +43,8 @@ defmodule IndieWeb.FeedController do
     """
         <item>
           <title>#{escape_xml(post.title)}</title>
-          <link>#{base_url}##{post.id}</link>
-          <guid>#{base_url}##{post.id}</guid>
+          <link>#{base_url}/p/#{post.id}</link>
+          <guid>#{base_url}/p/#{post.id}</guid>
           <pubDate>#{pubdate}</pubDate>
           <description><![CDATA[#{post.html}]]></description>
         </item>
