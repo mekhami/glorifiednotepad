@@ -12,7 +12,7 @@ A woman's voice calls out through the wind behind him. "It was always going to e
 
 Gen's head lowers. He wants to sob, to scream into the storm, but despair had, in so few hours, dug roots deep within him, choking out the will even to express his animalistic grief. He yells over the din, "Who is they? There are countless innocents, ten thousand for every one who is to blame. Not everyone chose this, and far fewer of those are responsible for it being done."
 
-Yelein walked up and puts her hand on his shoulder. Her voice is still strained even so close to him, but there is less edge in her voice. The tied leather thongs of her ceremonial armor are blown about furiously in the gale, whip-cracking sounds punctuating her words. "No, you're right. I don't know. But we did everything we could. I believe that."
+Yelein walked up and puts her hand on his shoulder. Her voice is still strained even so close to him, but there is less edge in it. The tied leather thongs of her ceremonial armor are blown about furiously in the gale, whip-cracking sounds punctuating her words. "No, you're right. I don't know. But we did everything we could. I believe that."
 
 Another booming arrival of water from unnatural waves, many reaching hundreds of feet high and destroying the coastline. The water rips trees from their roots and upturns the grassland as it retreats back into the Whorl. The landscape that remains is patchwork dirt and rocks and pools of water sea water, only the mightiest trees remaining and those stripped of most of their branches. In the distance along the western coastline of the Whorl, a flotilla of debris from the homes of a fishing village swirls around in the frothing eddies.
 
