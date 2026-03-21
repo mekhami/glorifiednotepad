@@ -3,7 +3,7 @@ title: "Worlds are Series of Worlds"
 id: "worlds-are-series-of-worlds"
 date: 2026-03-21
 width: 50%
-draft: true
+draft: false
 ---
 
 In Science Fantasy, one of my favorite tropes is "deep history" or "deep time". I.e., time scales of civilizations that stretch beyond understanding. Hundreds of empires rising and falling. The world changes drastically from one eon to the next, to accommodate its dominant lifeforms and eventually the world changes without their consent and ends that collective civilization. Rinse and repeat as desired.
