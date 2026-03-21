@@ -61,3 +61,5 @@ npm-debug.log
 *.tar.gz
 
 .*.swp
+.superpowers/
+docs/
