@@ -14,6 +14,9 @@ defmodule IndieWeb.HomeLive do
     posts_to_show = Enum.take(all_posts, 10)
     has_more = length(all_posts) > 10
 
+    # Add pixel colors to each post
+    posts_with_pixels = add_pixel_colors_to_posts(posts_to_show)
+
     # Load comments for all posts
     comments_by_post =
       posts_to_show
@@ -24,7 +27,7 @@ defmodule IndieWeb.HomeLive do
 
     socket =
       socket
-      |> assign(:posts, posts_to_show)
+      |> assign(:posts, posts_with_pixels)
       |> assign(:all_posts, all_posts)
       |> assign(:posts_shown, 10)
       |> assign(:has_more, has_more)
@@ -53,6 +56,9 @@ defmodule IndieWeb.HomeLive do
     posts_to_show = Enum.take(socket.assigns.all_posts, new_count)
     has_more = length(socket.assigns.all_posts) > new_count
 
+    # Add pixel colors to posts
+    posts_with_pixels = add_pixel_colors_to_posts(posts_to_show)
+
     # Load comments for newly shown posts
     new_posts = Enum.drop(posts_to_show, socket.assigns.posts_shown)
 
@@ -67,7 +73,7 @@ defmodule IndieWeb.HomeLive do
 
     {:noreply,
      socket
-     |> assign(:posts, posts_to_show)
+     |> assign(:posts, posts_with_pixels)
      |> assign(:posts_shown, new_count)
      |> assign(:has_more, has_more)
      |> assign(:comments_by_post, updated_comments)}
@@ -134,8 +140,13 @@ defmodule IndieWeb.HomeLive do
     {:noreply, push_event(socket, "delete-pixels", %{coords: coords})}
   end
 
+  defp add_pixel_colors_to_posts(posts) do
+    Enum.map(posts, fn post ->
+      Map.put(post, :pixel_colors, generate_pixel_colors(post.id))
+    end)
+  end
+
   # Generate deterministic pixel colors based on post ID
-  # Make public in test environment for testing
   @doc false
   def generate_pixel_colors(post_id, count \\ 18)
 
