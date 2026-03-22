@@ -1,7 +1,22 @@
 defmodule IndieWeb.Plugs.RequireBasicAuthTest do
-  use IndieWeb.ConnCase, async: true
+  use IndieWeb.ConnCase, async: false
 
   alias IndieWeb.Plugs.RequireBasicAuth
+
+  setup do
+    old_username = System.get_env("ADMIN_USERNAME")
+    old_password = System.get_env("ADMIN_PASSWORD")
+
+    System.put_env("ADMIN_USERNAME", "testadmin")
+    System.put_env("ADMIN_PASSWORD", "testpass")
+
+    on_exit(fn ->
+      restore_env("ADMIN_USERNAME", old_username)
+      restore_env("ADMIN_PASSWORD", old_password)
+    end)
+
+    :ok
+  end
 
   describe "call/2" do
     test "returns 401 when no credentials provided", %{conn: conn} do
@@ -13,10 +28,6 @@ defmodule IndieWeb.Plugs.RequireBasicAuthTest do
     end
 
     test "allows request through with valid credentials", %{conn: conn} do
-      # Set environment variables for test
-      System.put_env("ADMIN_USERNAME", "testadmin")
-      System.put_env("ADMIN_PASSWORD", "testpass")
-
       # Encode credentials
       credentials = Base.encode64("testadmin:testpass")
 
@@ -30,9 +41,6 @@ defmodule IndieWeb.Plugs.RequireBasicAuthTest do
     end
 
     test "returns 401 with invalid credentials", %{conn: conn} do
-      System.put_env("ADMIN_USERNAME", "testadmin")
-      System.put_env("ADMIN_PASSWORD", "testpass")
-
       # Wrong password
       credentials = Base.encode64("testadmin:wrongpassword")
 
@@ -45,4 +53,7 @@ defmodule IndieWeb.Plugs.RequireBasicAuthTest do
       assert conn.halted == true
     end
   end
+
+  defp restore_env(_key, nil), do: :ok
+  defp restore_env(key, value), do: System.put_env(key, value)
 end
