@@ -24,6 +24,12 @@ body {
   font-family: monospace;
 }
 
+/* Admin pages get clean white background */
+body:has(.admin-container) {
+  background-color: #ffffff;
+  padding: 0;
+}
+
 .post-header {
   background-color: #444c72;
   color: #ac9d9e;
@@ -1253,4 +1259,217 @@ canvas.pipette-mode {
   display: block;
   height: 4px;
   image-rendering: pixelated;
+}
+
+/* ── Admin Interface Styles ── */
+.admin-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.admin-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border-bottom: 2px solid #000;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-header h1 {
+  font-family: monospace;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #444c72;
+  margin: 0;
+}
+
+.admin-count {
+  font-family: monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #6c868f;
+}
+
+.admin-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.filter-label {
+  font-family: monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #6c868f;
+}
+
+.admin-select,
+.admin-select select {
+  font-family: monospace;
+  font-size: 0.875rem;
+  padding: 0.375rem 0.75rem;
+  border: 2px solid #6c868f;
+  background-color: #fff;
+  color: #444c72;
+  cursor: pointer;
+}
+
+.admin-select:hover,
+.admin-select select:hover {
+  border-color: #444c72;
+}
+
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  border: 2px solid #6c868f;
+  background-color: #f5f5f5;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #6c868f;
+}
+
+.admin-list {
+  border: 2px solid #000;
+  background-color: #fff;
+}
+
+.admin-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #6c868f;
+}
+
+.admin-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.2s ease;
+}
+
+.admin-item:last-child {
+  border-bottom: none;
+}
+
+.admin-item:hover {
+  background-color: #f9f9f9;
+}
+
+.admin-item-content {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-item-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.comment-author {
+  font-family: monospace;
+  font-size: 0.875rem;
+  font-weight: bold;
+  color: #444c72;
+}
+
+.comment-post {
+  font-family: monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #6c868f;
+}
+
+.comment-body {
+  font-family: monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #333;
+  margin: 0;
+}
+
+.admin-item-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .admin-item-actions {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.comment-timestamp {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #6c868f;
+  white-space: nowrap;
+}
+
+.admin-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-btn {
+  font-family: monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.375rem 0.75rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-btn-danger {
+  color: #6c868f;
+}
+
+.admin-btn-danger:hover {
+  color: #444c72;
+  text-decoration: underline;
+}
+
+.admin-btn-danger-confirm {
+  color: #dc2626;
+  font-weight: bold;
+}
+
+.admin-btn-danger-confirm:hover {
+  color: #991b1b;
+  text-decoration: underline;
 }
