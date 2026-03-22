@@ -54,6 +54,38 @@ defmodule IndieWeb.PostLiveTest do
     end
   end
 
+  describe "pixel strip rendering" do
+    test "renders pixel strip HTML with correct structure", %{conn: conn} do
+      {:ok, _view, html} = live(conn, "/p/d20-ways-get-rpg-unstuck")
+
+      assert html =~ ~s(<div class="post-header-pixels")
+      assert html =~ ~s(role="presentation")
+      assert html =~ ~s(aria-hidden="true")
+    end
+
+    test "renders 18 pixel spans", %{conn: conn} do
+      {:ok, _view, html} = live(conn, "/p/d20-ways-get-rpg-unstuck")
+
+      # Count pixel spans by counting occurrences of 'class="pixel"'
+      pixel_count = html |> String.split(~s(class="pixel")) |> length() |> Kernel.-(1)
+
+      assert pixel_count == 18
+    end
+
+    test "pixel spans have background color inline styles", %{conn: conn} do
+      {:ok, _view, html} = live(conn, "/p/d20-ways-get-rpg-unstuck")
+
+      # Verify that pixel spans have inline styles with hex color codes
+      assert html =~ ~r/<span[^>]*class="pixel"[^>]*style="background: #[0-9A-F]{6};"/i
+    end
+
+    test "does not render pixel strip for 404 page", %{conn: conn} do
+      {:ok, _view, html} = live(conn, "/p/non-existent-post")
+
+      refute html =~ ~s(<div class="post-header-pixels")
+    end
+  end
+
   describe "generate_pixel_colors/2" do
     test "generates 18 colors by default" do
       colors = IndieWeb.Pixels.generate_pixel_colors("test-post-1")
