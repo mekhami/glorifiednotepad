@@ -1,7 +1,7 @@
 ---
 title: "Flash Fiction: The Swordsman at the Promontory"
 id: "flash-fiction-the-swordsman-at-the-promontory"
-date: 2026-03-22
+date: 2026-03-21
 width: 50%
 draft: false
 ---
