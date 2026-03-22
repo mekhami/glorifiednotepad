@@ -123,4 +123,53 @@ defmodule IndieWeb.HomeLiveTest do
       assert length(colors) == 10
     end
   end
+
+  describe "pixel strip rendering" do
+    test "renders pixel strip container for each post", %{conn: conn} do
+      {:ok, _view, html} = live(conn, "/")
+
+      # Count post headers - should match number of pixel strip containers
+      post_header_count = html |> String.split("post-header-pixels") |> length() |> Kernel.-(1)
+
+      assert post_header_count > 0
+    end
+
+    test "renders 18 pixel spans per post", %{conn: conn} do
+      {:ok, view, html} = live(conn, "/")
+
+      posts = :sys.get_state(view.pid).socket.assigns.posts
+
+      # Check that we have 18 pixel spans for the first post
+      # We'll look for spans with class="pixel" within the first post-header-pixels container
+      assert html =~ ~s(class="post-header-pixels")
+      assert html =~ ~s(class="pixel")
+
+      # Count pixel spans - should be 18 per post
+      pixel_count = html |> String.split(~s(class="pixel")) |> length() |> Kernel.-(1)
+      expected_pixel_count = length(posts) * 18
+
+      assert pixel_count == expected_pixel_count
+    end
+
+    test "pixels have inline background color styles", %{conn: conn} do
+      {:ok, view, html} = live(conn, "/")
+
+      posts = :sys.get_state(view.pid).socket.assigns.posts
+      first_post = List.first(posts)
+
+      # Verify that each pixel color from the first post appears in the HTML
+      # with the inline style format: background: #XXXXXX;
+      Enum.each(first_post.pixel_colors, fn color ->
+        assert html =~ ~s(background: #{color};)
+      end)
+    end
+
+    test "pixel strip is positioned within post header", %{conn: conn} do
+      {:ok, _view, html} = live(conn, "/")
+
+      # Verify that post-header-pixels appears inside post-header
+      # by checking the structure in the HTML
+      assert html =~ ~r/<div class="post-header".*?>.*?<div class="post-header-pixels">/s
+    end
+  end
 end

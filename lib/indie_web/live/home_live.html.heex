@@ -21,6 +21,11 @@
       {post.title}
     </h2>
     <.link navigate={"/p/#{post.id}"} class="post-header-link">[link]</.link>
+
+    <div class="post-header-pixels">
+      <span :for={color <- post.pixel_colors} class="pixel" style={"background: #{color};"}>
+      </span>
+    </div>
   </div>
 
   <div
