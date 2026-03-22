@@ -56,13 +56,13 @@ defmodule IndieWeb.PostLiveTest do
 
   describe "generate_pixel_colors/2" do
     test "generates 18 colors by default" do
-      colors = IndieWeb.PostLive.generate_pixel_colors("test-post-1")
+      colors = IndieWeb.Pixels.generate_pixel_colors("test-post-1")
 
       assert length(colors) == 18
     end
 
     test "all colors are valid hex codes" do
-      colors = IndieWeb.PostLive.generate_pixel_colors("test-post-1")
+      colors = IndieWeb.Pixels.generate_pixel_colors("test-post-1")
 
       Enum.each(colors, fn color ->
         assert String.match?(color, ~r/^#[0-9A-F]{6}$/i)
@@ -70,33 +70,33 @@ defmodule IndieWeb.PostLiveTest do
     end
 
     test "same post ID generates same pattern" do
-      colors1 = IndieWeb.PostLive.generate_pixel_colors("same-id")
-      colors2 = IndieWeb.PostLive.generate_pixel_colors("same-id")
+      colors1 = IndieWeb.Pixels.generate_pixel_colors("same-id")
+      colors2 = IndieWeb.Pixels.generate_pixel_colors("same-id")
 
       assert colors1 == colors2
     end
 
     test "different post IDs generate different patterns" do
-      colors1 = IndieWeb.PostLive.generate_pixel_colors("post-1")
-      colors2 = IndieWeb.PostLive.generate_pixel_colors("post-2")
+      colors1 = IndieWeb.Pixels.generate_pixel_colors("post-1")
+      colors2 = IndieWeb.Pixels.generate_pixel_colors("post-2")
 
       assert colors1 != colors2
     end
 
     test "respects custom pixel count" do
-      colors = IndieWeb.PostLive.generate_pixel_colors("test-post", 10)
+      colors = IndieWeb.Pixels.generate_pixel_colors("test-post", 10)
 
       assert length(colors) == 10
     end
 
     test "handles zero count" do
-      colors = IndieWeb.PostLive.generate_pixel_colors("test-post", 0)
+      colors = IndieWeb.Pixels.generate_pixel_colors("test-post", 0)
 
       assert colors == []
     end
 
     test "generates colors from predefined palette" do
-      colors = IndieWeb.PostLive.generate_pixel_colors("test-post")
+      colors = IndieWeb.Pixels.generate_pixel_colors("test-post")
 
       # Define the same palette as in the implementation
       palette = [

@@ -26,7 +26,7 @@ defmodule IndieWeb.PostLive do
         comments = Comments.list_comments_for_post(post.id)
 
         # Add pixel colors to post
-        post = Map.put(post, :pixel_colors, generate_pixel_colors(post.id))
+        post = Map.put(post, :pixel_colors, IndieWeb.Pixels.generate_pixel_colors(post.id))
 
         socket =
           socket
@@ -110,48 +110,5 @@ defmodule IndieWeb.PostLive do
   def handle_info({:deleted_pixels, coords}, socket) do
     # Push deleted pixel coordinates to this client's JavaScript hook
     {:noreply, push_event(socket, "delete-pixels", %{coords: coords})}
-  end
-
-  @doc false
-  def generate_pixel_colors(post_id, count \\ 18)
-
-  def generate_pixel_colors(_post_id, 0), do: []
-
-  def generate_pixel_colors(post_id, count) do
-    seed = :erlang.phash2(post_id)
-
-    # :exsss algorithm expects a 3-tuple seed
-    rand_state = :rand.seed_s(:exsss, {seed, seed, seed})
-
-    # Color palette matching rootring widget aesthetic
-    colors = [
-      "#FF00FF",
-      "#00FFFF",
-      "#FFFF00",
-      "#FF6B6B",
-      "#4ECDC4",
-      "#95E1D3",
-      "#F38181",
-      "#AA96DA",
-      "#FCBAD3",
-      "#FFFFD2",
-      "#A8E6CF",
-      "#FFD3B6",
-      "#FFAAA5",
-      "#FF8B94",
-      "#6C5CE7",
-      "#FD79A8",
-      "#FDCB6E",
-      "#00B894"
-    ]
-
-    # Generate pixel colors using isolated state
-    {pixel_colors, _final_state} =
-      Enum.map_reduce(1..count, rand_state, fn _, state ->
-        {random_idx, new_state} = :rand.uniform_s(length(colors), state)
-        {Enum.at(colors, random_idx - 1), new_state}
-      end)
-
-    pixel_colors
   end
 end
