@@ -61,5 +61,5 @@ npm-debug.log
 *.tar.gz
 
 .*.swp
-.superpowers/
-docs/
+.superpowers/brainstorm/
+docs/superpowers/plans/
