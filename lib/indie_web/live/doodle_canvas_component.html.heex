@@ -25,15 +25,19 @@
       <div class="color-option" data-color="#df9390" style="background-color: #df9390;"></div>
       <div class="color-option" data-color="#A52A2A" style="background-color: #A52A2A;"></div>
 
+      <%!-- Current color indicator --%>
+      <div id="current-color-indicator" class="color-indicator" style="background-color: #000000;">
+      </div>
+
       <%!-- Color picker trigger --%>
       <button
         id="color-picker-trigger"
-        class="color-option picker-trigger"
+        class="picker-trigger"
         type="button"
         title="Custom color picker"
         aria-label="Open custom color picker"
       >
-        <.icon name="hero-eye-dropper" class="size-4" />
+        <img src="/images/color-dropper.svg" alt="Color dropper" class="size-4" />
       </button>
     </div>
   </div>
@@ -56,7 +60,7 @@
 
       <%!-- Pixel pipette toggle --%>
       <button type="button" id="pipette-mode-toggle" class="pipette-toggle">
-        <.icon name="hero-eye-dropper" class="size-4" />
+        <img src="/images/color-dropper.svg" alt="Color dropper" class="size-4" />
         <span>Pick color from canvas</span>
       </button>
     </div>

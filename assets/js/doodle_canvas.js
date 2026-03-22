@@ -393,6 +393,11 @@ const DoodleCanvas = {
       const colorToShow = customColor || currentColor;
       hexPicker.color = colorToShow;
       hexInput.color = colorToShow;
+      
+      // Automatically enable pipette mode when opening color picker
+      if (!isPipetteMode) {
+        togglePipetteMode();
+      }
     };
     
     // Close color picker popup
@@ -411,6 +416,12 @@ const DoodleCanvas = {
     const applyCustomColor = (hexColor) => {
       currentColor = hexColor;
       customColor = hexColor;
+      
+      // Update the color indicator
+      const colorIndicator = document.getElementById('current-color-indicator');
+      if (colorIndicator) {
+        colorIndicator.style.backgroundColor = hexColor;
+      }
       
       // Update picker trigger to show custom color
       const pickerTrigger = document.getElementById('color-picker-trigger');
@@ -554,6 +565,12 @@ const DoodleCanvas = {
         // Remove selected class from all
         colorOptions.forEach(opt => opt.classList.remove('selected'));
         option.classList.add('selected');
+        
+        // Update the color indicator
+        const colorIndicator = document.getElementById('current-color-indicator');
+        if (colorIndicator) {
+          colorIndicator.style.backgroundColor = currentColor;
+        }
         
         // Reset picker trigger appearance
         const pickerTrigger = document.getElementById('color-picker-trigger');
