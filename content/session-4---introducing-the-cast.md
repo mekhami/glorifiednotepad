@@ -1,8 +1,8 @@
 ---
-title: "Session 4 - Introducing the Cast"
+title: "Aetherdark Solo S4 - Introducing the Cast" 
 id: "session-4-introducing-the-cast"
 date: 2026-03-22T12:00:00Z
-width: 55%
+width: 50%
 draft: false
 ---
 
