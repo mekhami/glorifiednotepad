@@ -1,5 +1,5 @@
 defmodule IndieWeb.Admin.CommentModerationLiveTest do
-  use IndieWeb.ConnCase, async: true
+  use IndieWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
   alias Indie.Comments
@@ -24,6 +24,11 @@ defmodule IndieWeb.Admin.CommentModerationLiveTest do
   describe "mount" do
     test "admin comments route is live", %{conn: conn} do
       assert {:ok, _view, _html} = live(conn, "/admin/comments")
+    end
+
+    test "requires basic auth" do
+      conn = build_conn() |> get("/admin/comments")
+      assert conn.status == 401
     end
 
     test "admin UI renders filter and list", %{conn: conn} do
@@ -85,6 +90,56 @@ defmodule IndieWeb.Admin.CommentModerationLiveTest do
       assert has_element?(view, "#comment-#{comment1.id}")
       refute has_element?(view, "#comment-#{comment2.id}")
     end
+
+    test "shows empty state when filter has no matches", %{conn: conn} do
+      {:ok, comment} =
+        Comments.create_comment(%{
+          post_id: "post-a",
+          author_name: "Alice",
+          body: "Comment on post A"
+        })
+
+      {:ok, view, _html} = live(conn, "/admin/comments")
+
+      assert has_element?(view, "#comment-#{comment.id}")
+
+      view
+      |> element("#filter-form")
+      |> render_change(%{"filter" => %{"post_id" => "missing-post"}})
+
+      assert has_element?(view, "#comments-empty")
+    end
+
+    test "resets confirm state on filter change", %{conn: conn} do
+      {:ok, comment_a} =
+        Comments.create_comment(%{
+          post_id: "post-a",
+          author_name: "Alice",
+          body: "Comment on post A"
+        })
+
+      {:ok, comment_b} =
+        Comments.create_comment(%{
+          post_id: "post-b",
+          author_name: "Bob",
+          body: "Comment on post B"
+        })
+
+      {:ok, view, _html} = live(conn, "/admin/comments")
+
+      view
+      |> element("#comment-delete-#{comment_a.id}")
+      |> render_click()
+
+      assert has_element?(view, "#comment-confirm-#{comment_a.id}")
+
+      view
+      |> element("#filter-form")
+      |> render_change(%{"filter" => %{"post_id" => "post-b"}})
+
+      assert has_element?(view, "#comment-#{comment_b.id}")
+      refute has_element?(view, "#comment-confirm-#{comment_a.id}")
+    end
   end
 
   describe "delete_comment" do
@@ -112,6 +167,8 @@ defmodule IndieWeb.Admin.CommentModerationLiveTest do
 
       # Verify comment is gone from UI
       refute has_element?(view, "#comment-#{comment.id}")
+      refute has_element?(view, "#comment-confirm-#{comment.id}")
+      assert has_element?(view, "#flash-info")
 
       # Verify comment is deleted from database (use Repo.get instead of get_comment!)
       assert Repo.get(Comment, comment.id) == nil
@@ -131,6 +188,7 @@ defmodule IndieWeb.Admin.CommentModerationLiveTest do
       _ = Comments.delete_comment(comment)
       view |> element("#comment-confirm-#{comment.id}") |> render_click()
       assert has_element?(view, "#flash-error")
+      assert has_element?(view, "#comment-#{comment.id}")
     end
   end
 

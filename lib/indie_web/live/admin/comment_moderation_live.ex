@@ -46,9 +46,12 @@ defmodule IndieWeb.Admin.CommentModerationLive do
 
     case Repo.get(Comment, comment_id) do
       nil ->
+        comment = Enum.find(socket.assigns.all_comments, &(&1.id == comment_id))
+
         socket =
           socket
           |> assign(:confirming_comment_id, nil)
+          |> maybe_stream_insert(comment)
           |> put_flash(:error, "Comment not found")
 
         {:noreply, socket}

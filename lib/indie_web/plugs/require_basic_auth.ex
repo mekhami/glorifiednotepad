@@ -5,8 +5,6 @@ defmodule IndieWeb.Plugs.RequireBasicAuth do
   Requires ADMIN_USERNAME and ADMIN_PASSWORD environment variables to be set.
   """
 
-  import Plug.Conn
-
   def init(opts), do: opts
 
   def call(conn, _opts) do
