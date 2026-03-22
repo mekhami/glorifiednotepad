@@ -1244,9 +1244,9 @@ canvas.pipette-mode {
   display: grid;
   grid-template-columns: repeat(18, 1fr);
   gap: 1px;
-  padding: 3px;
+  padding: 3px 0; /* Only top/bottom padding - no left/right border */
   background: #000;
-  margin-top: 0.5rem;
+  margin: 0.5rem -1.5rem -0.5rem -1.5rem;
 }
 
 .post-header-pixels .pixel {
