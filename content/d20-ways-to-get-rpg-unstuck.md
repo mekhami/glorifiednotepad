@@ -1,7 +1,7 @@
 ---
 title: "d20 Ways to Get RPG Unstuck"
 id: "d20-ways-get-rpg-unstuck"
-date: 2025-11-19
+date: 2025-11-19T12:00:00Z
 width: 60%
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: "Players: Don't Wait for Me to Ask!"
 id: "players-dont-wait"
-date: 2025-11-12
+date: 2025-11-12T12:00:00Z
 width: 600px
 ---
 Hey, players, it’s me again, trying to tell you how to play better. Thanks for putting up with me.

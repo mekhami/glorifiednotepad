@@ -1,7 +1,7 @@
 ---
 title: "Solo Aetherdark Session 2 - Chaos on Deck"
 id: "solo-aetherdark-session-2"
-date: 2026-02-24
+date: 2026-02-24T12:00:00Z
 width: 60%
 ---
 # Setup

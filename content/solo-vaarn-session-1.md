@@ -1,7 +1,7 @@
 ---
 title: "Solo Vaarn Session 1"
 id: "solo-vaarn-session-1"
-date: 2026-01-29
+date: 2026-01-29T12:00:00Z
 width: 60%
 ---
 

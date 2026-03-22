@@ -1,7 +1,7 @@
 ---
 title: "The party is..."
 id: "the-party-is"
-date: 2025-03-05
+date: 2025-03-05T12:00:00Z
 width: 600px
 ---
 

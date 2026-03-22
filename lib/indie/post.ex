@@ -16,7 +16,7 @@ defmodule Indie.Post do
     |> File.ls!()
     |> Enum.filter(&String.ends_with?(&1, ".md"))
     |> Enum.map(&load_post/1)
-    |> Enum.sort_by(& &1.date, {:desc, Date})
+    |> Enum.sort_by(& &1.date, {:desc, DateTime})
   end
 
   @doc """
@@ -85,11 +85,31 @@ defmodule Indie.Post do
   end
 
   defp parse_date(date) when is_binary(date) do
-    Date.from_iso8601!(date)
+    # Try parsing as DateTime first (ISO 8601 with time)
+    case DateTime.from_iso8601(date) do
+      {:ok, datetime, _offset} ->
+        datetime
+
+      {:error, _} ->
+        # Fall back to Date parsing (ISO 8601 date only)
+        case Date.from_iso8601(date) do
+          {:ok, date_only} ->
+            # Convert Date to DateTime at midnight UTC
+            DateTime.new!(date_only, ~T[00:00:00], "Etc/UTC")
+
+          {:error, _} ->
+            DateTime.utc_now()
+        end
+    end
   end
 
-  defp parse_date(%Date{} = date), do: date
-  defp parse_date(_), do: Date.utc_today()
+  defp parse_date(%DateTime{} = datetime), do: datetime
+
+  defp parse_date(%Date{} = date) do
+    DateTime.new!(date, ~T[00:00:00], "Etc/UTC")
+  end
+
+  defp parse_date(_), do: DateTime.utc_now()
 
   defp parse_boolean("true"), do: true
   defp parse_boolean(true), do: true

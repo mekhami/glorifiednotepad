@@ -1,7 +1,7 @@
 ---
 title: "Hello, Rootring! and RSS Feed Apps"
 id: "hello-rootring-and-rss-feed-apps"
-date: 2026-03-19
+date: 2026-03-19T12:00:00Z
 width: 60%
 draft: false
 ---

@@ -1,7 +1,7 @@
 ---
 title: "Flash Fiction: Warlord of the Chrome Glove"
 id: "flash-fiction-warlord-chrome-glove"
-date: 2026-01-24
+date: 2026-01-24T12:00:00Z
 width: 60%
 ---
 

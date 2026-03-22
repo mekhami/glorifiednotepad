@@ -1,7 +1,7 @@
 ---
 title: "Solo Aetherdark Session 3 - Bloodshed"
 id: "solo-aetherdark-session-3"
-date: 2026-02-28
+date: 2026-02-28T12:00:00Z
 width: 60%
 ---
 # Setup

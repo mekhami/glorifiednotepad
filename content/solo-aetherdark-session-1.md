@@ -1,7 +1,7 @@
 ---
 title: "Solo Aetherdark Session 1 - Always a Bigger Fish"
 id: "solo-aetherdark-session-1"
-date: 2026-02-19
+date: 2026-02-19T12:00:00Z
 width: 60%
 ---
 

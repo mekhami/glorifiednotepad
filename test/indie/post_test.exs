@@ -66,4 +66,50 @@ defmodule Indie.PostTest do
       assert post.width == "25%"
     end
   end
+
+  describe "datetime parsing and sorting" do
+    test "posts with timestamps are parsed as DateTime" do
+      all_posts = Post.all()
+
+      # All posts should have DateTime values
+      Enum.each(all_posts, fn post ->
+        assert %DateTime{} = post.date,
+               "Post #{post.id} should have DateTime, got: #{inspect(post.date)}"
+      end)
+    end
+
+    test "posts are sorted by DateTime (newest first)" do
+      all_posts = Post.all()
+
+      # Verify posts are in descending chronological order
+      Enum.chunk_every(all_posts, 2, 1, :discard)
+      |> Enum.each(fn [first, second] ->
+        assert DateTime.compare(first.date, second.date) in [:gt, :eq],
+               "Posts should be sorted newest first. #{first.id} (#{first.date}) should be >= #{second.id} (#{second.date})"
+      end)
+    end
+
+    test "multiple posts on same day are ordered by timestamp" do
+      # This test will verify the functionality exists
+      # It will only assert if there are actually posts with same date but different times
+      all_posts = Post.all()
+
+      same_day_posts =
+        all_posts
+        |> Enum.group_by(fn post -> DateTime.to_date(post.date) end)
+        |> Enum.filter(fn {_date, posts} -> length(posts) > 1 end)
+        |> Enum.flat_map(fn {_date, posts} -> posts end)
+
+      if length(same_day_posts) > 0 do
+        # Verify they're sorted by time
+        Enum.chunk_every(same_day_posts, 2, 1, :discard)
+        |> Enum.each(fn [first, second] ->
+          if DateTime.to_date(first.date) == DateTime.to_date(second.date) do
+            assert DateTime.compare(first.date, second.date) in [:gt, :eq],
+                   "Posts on same day should be ordered by timestamp"
+          end
+        end)
+      end
+    end
+  end
 end

@@ -28,7 +28,6 @@ body {
   background-color: #444c72;
   color: #ac9d9e;
   padding: 0.5rem 1.5rem;
-  width: 25%;
   min-width: 300px;
   max-width: 800px;
   margin: 0 auto 6px auto;
@@ -88,7 +87,6 @@ body {
   background-color: #444c72;
   color: #ac9d9e;
   padding: 1.5rem 1.5rem 3rem 1.5rem;
-  width: 25%;
   min-width: 300px;
   max-width: 800px;
   margin: 0 auto 3rem auto;

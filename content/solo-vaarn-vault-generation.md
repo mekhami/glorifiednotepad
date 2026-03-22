@@ -1,7 +1,7 @@
 ---
 title: "Solo Vaarn - Vault Generation"
 id: "solo-vaarn-vault-generation"
-date: 2025-10-27
+date: 2025-10-27T12:00:00Z
 width: 60%
 ---
 [Vaults of Vaarn](https://vaultsofvaarn.com/) is one of the coolest, sleekest, most imaginative settings out there for tabletop RPGs. Set in a dying world of blue sands and indigo skies, the eponymous Vaults are the ruins of past civilizations, deep beneath the earth, and the object of lust of many factions of fortune seekers, the curious, and the cruel.

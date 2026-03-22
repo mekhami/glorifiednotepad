@@ -1,7 +1,7 @@
 ---
 title: "Scratch Off Dungeon Maps"
 id: "scratch-off-dungeon-maps"
-date: 2025-07-25
+date: 2025-07-25T12:00:00Z
 width: 60%
 ---
 

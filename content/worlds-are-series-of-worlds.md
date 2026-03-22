@@ -1,7 +1,7 @@
 ---
 title: "Worlds are Series of Worlds"
 id: "worlds-are-series-of-worlds"
-date: 2026-03-20
+date: 2026-03-20T12:00:00Z
 width: 50%
 draft: false
 ---
