@@ -1,5 +1,26 @@
 import Config
 
+env_file = System.get_env("ENV_FILE") || ".env"
+
+if File.exists?(env_file) do
+  env_file
+  |> File.read!()
+  |> String.split("\n", trim: true)
+  |> Enum.each(fn line ->
+    line = String.trim(line)
+
+    if line != "" and String.contains?(line, "=") do
+      [key, value] = String.split(line, "=", parts: 2)
+      key = String.trim(key)
+      value = String.trim(value)
+
+      if key != "" and System.get_env(key) == nil do
+        System.put_env(key, value)
+      end
+    end
+  end)
+end
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration
