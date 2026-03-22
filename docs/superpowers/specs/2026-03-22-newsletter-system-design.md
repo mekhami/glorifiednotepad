@@ -53,6 +53,7 @@ For the anticipated "double digits" subscriber count, Resend provides the best b
 | `confirmation_token` | string | unique | Token for double opt-in confirmation |
 | `confirmed_at` | datetime | nullable | Timestamp when subscription confirmed (null = pending) |
 | `unsubscribe_token` | string | unique | Token for one-click unsubscribe |
+| `unsubscribed_at` | datetime | nullable | Timestamp when unsubscribed (null = still subscribed) |
 | `inserted_at` | datetime | not null | Record creation timestamp |
 | `updated_at` | datetime | not null | Record update timestamp |
 
@@ -206,12 +207,12 @@ Manages subscriber lifecycle (CRUD operations).
 
 **Key functions:**
 - `create/1` - Create new subscriber with tokens
-- `confirm/1` - Mark subscriber as confirmed by token
-- `unsubscribe/1` - Soft delete or mark subscriber unsubscribed
-- `confirmed_subscribers/0` - Get all confirmed subscribers
+- `confirm/1` - Mark subscriber as confirmed by token (set `confirmed_at`)
+- `unsubscribe/1` - Mark subscriber as unsubscribed (set `unsubscribed_at`)
+- `confirmed_subscribers/0` - Get all confirmed, non-unsubscribed subscribers (where `confirmed_at IS NOT NULL AND unsubscribed_at IS NULL`)
 - `get_by_confirmation_token/1` - Find subscriber by confirmation token
 - `get_by_unsubscribe_token/1` - Find subscriber by unsubscribe token
-- `generate_token/0` - Generate cryptographically secure random token
+- `generate_token/0` - Generate cryptographically secure random token (`:crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)`)
 
 #### `Indie.Newsletter.Mailer`
 Resend API wrapper for email sending.
@@ -298,7 +299,7 @@ One-click unsubscribe page (legal requirement).
 **Flow:**
 1. Extract token from URL params
 2. Find subscriber by token (via `Indie.Subscribers.get_by_unsubscribe_token/1`)
-3. Unsubscribe (via `Indie.Subscribers.unsubscribe/1`)
+3. Mark as unsubscribed (via `Indie.Subscribers.unsubscribe/1` - sets `unsubscribed_at` timestamp)
 4. Show "You've been unsubscribed" message
 
 #### `IndieWeb.NewsletterArchiveLive` (`/newsletters`)
@@ -493,7 +494,7 @@ Glorified Notepad
 2. Email footer contains unsubscribe link: `/newsletter/unsubscribe/{unsubscribe_token}`
 3. User clicks unsubscribe link
 4. User lands on `/newsletter/unsubscribe/{token}`
-5. LiveView validates token and immediately unsubscribes (soft delete or mark as unsubscribed)
+5. LiveView validates token and marks subscriber as unsubscribed (sets `unsubscribed_at` timestamp)
 6. Show success message: "You've been unsubscribed. Sorry to see you go!"
 
 **Legal compliance:**
@@ -822,6 +823,7 @@ defmodule Indie.Repo.Migrations.CreateSubscribers do
       add :confirmation_token, :string, null: false
       add :confirmed_at, :utc_datetime
       add :unsubscribe_token, :string, null: false
+      add :unsubscribed_at, :utc_datetime
       
       timestamps()
     end
