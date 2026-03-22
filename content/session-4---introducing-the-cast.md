@@ -2,7 +2,7 @@
 title: "Session 4 - Introducing the Cast"
 id: "session-4-introducing-the-cast"
 date: 2026-03-22
-width: 55
+width: 55%
 draft: false
 ---
 
