@@ -22,10 +22,12 @@
     </h2>
     <.link navigate={"/p/#{post.id}"} class="post-header-link">[link]</.link>
 
-    <div class="post-header-pixels">
-      <span :for={color <- post.pixel_colors} class="pixel" style={"background: #{color};"}>
-      </span>
-    </div>
+    <%= if post.pixel_colors && post.pixel_colors != [] do %>
+      <div class="post-header-pixels" role="presentation" aria-hidden="true">
+        <span :for={color <- post.pixel_colors} class="pixel" style={"background: #{color};"}>
+        </span>
+      </div>
+    <% end %>
   </div>
 
   <div

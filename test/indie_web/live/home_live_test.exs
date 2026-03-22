@@ -168,8 +168,8 @@ defmodule IndieWeb.HomeLiveTest do
       {:ok, _view, html} = live(conn, "/")
 
       # Verify that post-header-pixels appears inside post-header
-      # by checking the structure in the HTML
-      assert html =~ ~r/<div class="post-header".*?>.*?<div class="post-header-pixels">/s
+      # by checking the structure in the HTML (allowing for additional attributes on pixel strip)
+      assert html =~ ~r/<div class="post-header"[^>]*>.*?<div class="post-header-pixels"[^>]*>/s
     end
   end
 end
