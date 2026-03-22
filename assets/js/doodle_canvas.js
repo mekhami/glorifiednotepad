@@ -13,6 +13,10 @@ const DoodleCanvas = {
     const CANVAS_HEIGHT = 1080;
     const BACKGROUND_COLOR = '#df9390';
     
+    // Canvas visibility state
+    const CANVAS_VISIBLE_KEY = 'canvas_visible';
+    let isCanvasVisible = localStorage.getItem(CANVAS_VISIBLE_KEY) !== 'false'; // default to true
+    
     // Zoom/Pan state
     let scale = 2.0;
     let offsetX = 0;
@@ -307,6 +311,44 @@ const DoodleCanvas = {
 
     // ===== Color Picker Functions =====
     
+    // ===== Canvas Visibility Toggle =====
+    
+    // Toggle canvas visibility
+    const toggleCanvasVisibility = () => {
+      isCanvasVisible = !isCanvasVisible;
+      localStorage.setItem(CANVAS_VISIBLE_KEY, isCanvasVisible.toString());
+      updateCanvasVisibility();
+    };
+    
+    // Update canvas visibility based on state
+    const updateCanvasVisibility = () => {
+      const toggleBtn = document.getElementById('canvas-toggle-btn');
+      const eyeOpen = toggleBtn?.querySelector('.eye-open');
+      const eyeClosed = toggleBtn?.querySelector('.eye-closed');
+      
+      if (isCanvasVisible) {
+        canvas.style.display = '';
+        eyeOpen?.classList.remove('hidden');
+        eyeClosed?.classList.add('hidden');
+      } else {
+        canvas.style.display = 'none';
+        eyeOpen?.classList.add('hidden');
+        eyeClosed?.classList.remove('hidden');
+      }
+    };
+    
+    // Setup canvas toggle button
+    const setupCanvasToggle = () => {
+      const toggleBtn = document.getElementById('canvas-toggle-btn');
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleCanvasVisibility);
+        // Set initial state
+        updateCanvasVisibility();
+      }
+    };
+    
+    // ===== Color Picker Functions =====
+    
     // Initialize vanilla-colorful hex color picker
     const initColorPicker = () => {
       const pickerContainer = document.getElementById('color-picker-container');
@@ -581,6 +623,9 @@ const DoodleCanvas = {
 
     // Set initial color
     colorOptions[0].classList.add('selected');
+    
+    // Setup canvas visibility toggle
+    setupCanvasToggle();
     
     // Initialize color picker with retry logic for production timing issues
     let retryCount = 0;

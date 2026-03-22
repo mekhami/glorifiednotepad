@@ -990,6 +990,30 @@ body:has(.admin-container) {
   mix-blend-mode: difference;
 }
 
+/* Canvas visibility toggle */
+.canvas-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid black;
+  background: white;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.canvas-toggle svg {
+  color: black;
+  width: 1rem;
+  height: 1rem;
+}
+
+.canvas-toggle:hover {
+  transform: scale(1.1);
+}
+
 /* Color picker popup */
 .color-picker-popup {
   position: absolute;
