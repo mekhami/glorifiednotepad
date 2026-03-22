@@ -1234,3 +1234,19 @@ canvas.pipette-mode {
 
 .rr-link:hover { background: #000; color: #FFFF00; }
 .rr-link:hover .sym { color: #FFFF00; }
+
+/* ── Post Header Pixel Strip ── */
+.post-header-pixels {
+  display: grid;
+  grid-template-columns: repeat(18, 1fr);
+  gap: 1px;
+  padding: 3px;
+  background: #000;
+  margin-top: 0.5rem;
+}
+
+.post-header-pixels .pixel {
+  display: block;
+  height: 4px;
+  image-rendering: pixelated;
+}
