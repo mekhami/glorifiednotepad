@@ -26,6 +26,13 @@ defmodule IndieWeb.Admin.CommentModerationLiveTest do
       assert {:ok, _view, _html} = live(conn, "/admin/comments")
     end
 
+    test "admin UI renders filter and list", %{conn: conn} do
+      {:ok, view, _html} = live(conn, "/admin/comments")
+      assert has_element?(view, "#post-filter")
+      assert has_element?(view, "#filter-count")
+      assert has_element?(view, "#comments")
+    end
+
     test "loads all comments on mount", %{conn: conn} do
       # Create test comments
       {:ok, comment1} =
@@ -44,23 +51,23 @@ defmodule IndieWeb.Admin.CommentModerationLiveTest do
 
       {:ok, view, _html} = live(conn, "/admin/comments")
 
-      # Verify assigns
-      assert view |> element("#post-filter") |> has_element?()
-      assert view |> has_element?("div", "Great post!")
-      assert view |> has_element?("div", "Interesting read.")
+      # Verify elements
+      assert has_element?(view, "#post-filter")
+      assert has_element?(view, "#comment-#{comment1.id}")
+      assert has_element?(view, "#comment-#{comment2.id}")
     end
   end
 
   describe "filter_by_post" do
     test "filters comments by selected post", %{conn: conn} do
-      {:ok, _comment1} =
+      {:ok, comment1} =
         Comments.create_comment(%{
           post_id: "post-a",
           author_name: "Alice",
           body: "Comment on post A"
         })
 
-      {:ok, _comment2} =
+      {:ok, comment2} =
         Comments.create_comment(%{
           post_id: "post-b",
           author_name: "Bob",
@@ -71,12 +78,12 @@ defmodule IndieWeb.Admin.CommentModerationLiveTest do
 
       # Select post-a from dropdown
       view
-      |> element("#post-filter")
-      |> render_change(%{"post_id" => "post-a"})
+      |> element("#filter-form")
+      |> render_change(%{"filter" => %{"post_id" => "post-a"}})
 
       # Should show only post-a comment
-      assert view |> has_element?("div", "Comment on post A")
-      refute view |> has_element?("div", "Comment on post B")
+      assert has_element?(view, "#comment-#{comment1.id}")
+      refute has_element?(view, "#comment-#{comment2.id}")
     end
   end
 
@@ -92,18 +99,38 @@ defmodule IndieWeb.Admin.CommentModerationLiveTest do
       {:ok, view, _html} = live(conn, "/admin/comments")
 
       # Verify comment exists
-      assert view |> has_element?("div", "To be deleted")
+      assert has_element?(view, "#comment-#{comment.id}")
 
       # Delete the comment
       view
-      |> element("button[phx-click='delete_comment'][phx-value-id='#{comment.id}']")
+      |> element("#comment-delete-#{comment.id}")
+      |> render_click()
+
+      view
+      |> element("#comment-confirm-#{comment.id}")
       |> render_click()
 
       # Verify comment is gone from UI
-      refute view |> has_element?("div", "To be deleted")
+      refute has_element?(view, "#comment-#{comment.id}")
 
       # Verify comment is deleted from database (use Repo.get instead of get_comment!)
       assert Repo.get(Comment, comment.id) == nil
+    end
+
+    test "delete handles missing comment", %{conn: conn} do
+      {:ok, comment} =
+        Comments.create_comment(%{
+          post_id: "post-x",
+          author_name: "Charlie",
+          body: "Temp"
+        })
+
+      {:ok, view, _html} = live(conn, "/admin/comments")
+
+      view |> element("#comment-delete-#{comment.id}") |> render_click()
+      _ = Comments.delete_comment(comment)
+      view |> element("#comment-confirm-#{comment.id}") |> render_click()
+      assert has_element?(view, "#flash-error")
     end
   end
 
