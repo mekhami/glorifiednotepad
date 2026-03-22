@@ -565,10 +565,55 @@ const DoodleCanvas = {
     // Set initial color
     colorOptions[0].classList.add('selected');
     
-    // Initialize color picker
-    const hexPicker = initColorPicker();
-    const hexInput = initHexInput();
-    setupColorPickerUI(hexPicker, hexInput);
+    // Initialize color picker with retry logic for production timing issues
+    let retryCount = 0;
+    const maxRetries = 10; // Max 10 retries (~150ms total with RAF timing)
+    
+    const initializeColorPicker = () => {
+      console.log('[ColorPicker] Attempting initialization, retry:', retryCount);
+      
+      // Query all required DOM elements
+      const pickerTrigger = document.getElementById('color-picker-trigger');
+      const pickerPopup = document.getElementById('color-picker-popup');
+      const pickerContainer = document.getElementById('color-picker-container');
+      const hexInputContainer = document.getElementById('hex-input-container');
+      const closePicker = document.querySelector('.close-picker');
+      const pipetteToggle = document.getElementById('pipette-mode-toggle');
+      
+      // Log what we found
+      console.log('[ColorPicker] DOM elements status:', {
+        pickerTrigger: !!pickerTrigger,
+        pickerPopup: !!pickerPopup,
+        pickerContainer: !!pickerContainer,
+        hexInputContainer: !!hexInputContainer,
+        closePicker: !!closePicker,
+        pipetteToggle: !!pipetteToggle
+      });
+      
+      // Check if all required elements exist
+      if (!pickerTrigger || !pickerPopup || !pickerContainer || 
+          !hexInputContainer || !closePicker || !pipetteToggle) {
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.warn('[ColorPicker] Some elements not ready, retrying on next frame...');
+          requestAnimationFrame(initializeColorPicker);
+        } else {
+          console.error('[ColorPicker] Failed to initialize after', maxRetries, 'retries. Elements still missing.');
+        }
+        return;
+      }
+      
+      // All elements ready, proceed with initialization
+      console.log('[ColorPicker] All elements ready, initializing...');
+      const hexPicker = initColorPicker();
+      const hexInput = initHexInput();
+      setupColorPickerUI(hexPicker, hexInput);
+      console.log('[ColorPicker] Initialization complete!');
+    };
+
+    // Start initialization on next animation frame
+    requestAnimationFrame(initializeColorPicker);
   },
   
   destroyed() {
