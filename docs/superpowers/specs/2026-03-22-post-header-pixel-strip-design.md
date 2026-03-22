@@ -15,8 +15,8 @@ Add a fun pixelated color strip at the bottom of each post header, inspired by t
 - **Integration:** Sits between the post title/link and the post content area
 
 ### Appearance
-- **Pixel Count:** 15-20 colored squares per header
-- **Pixel Size:** 4-5px height, width determined by CSS grid (`1fr` columns)
+- **Pixel Count:** 18 colored squares per header (fixed count for consistent grid layout)
+- **Pixel Size:** 4px height, width determined by CSS grid (`1fr` columns)
 - **Grid Structure:** 
   - Display: CSS Grid with `repeat(N, 1fr)` columns
   - Gap: 1px between pixels
@@ -91,12 +91,12 @@ Vibrant, indie web aesthetic colors matching the rootring widget style:
 ### Helper Function Design
 
 ```elixir
-defp generate_pixel_colors(post_id, count \\ 15) do
+defp generate_pixel_colors(post_id, count \\ 18) do
   # Hash the post ID to create a seed
   seed = :erlang.phash2(post_id)
   
-  # Seed the random number generator
-  :rand.seed(:exsss, {seed, seed, seed})
+  # Use seed_s for isolated random state (doesn't affect global :rand state)
+  rand_state = :rand.seed_s(:exsss, {seed, seed, seed})
   
   # Color palette
   colors = [
@@ -107,16 +107,20 @@ defp generate_pixel_colors(post_id, count \\ 15) do
     "#FDCB6E", "#00B894"
   ]
   
-  # Randomly select colors
-  Enum.map(1..count, fn _ ->
-    Enum.random(colors)
-  end)
+  # Generate pixel colors using isolated state
+  {pixel_colors, _final_state} = 
+    Enum.map_reduce(1..count, rand_state, fn _, state ->
+      {random_color, new_state} = :rand.uniform_s(length(colors), state)
+      {Enum.at(colors, random_color - 1), new_state}
+    end)
+  
+  pixel_colors
 end
 ```
 
 ### Template Structure
 
-**home_live.html.heex:**
+**home_live.html.heex** (multiple posts, loop context):
 ```heex
 <div class="post-header" id={post.id} style={"width: #{post.width};"}>
   <h2>
@@ -127,21 +131,32 @@ end
   </h2>
   <.link navigate={"/p/#{post.id}"} class="post-header-link">[link]</.link>
   
-  <!-- NEW: Pixel strip -->
+  <!-- NEW: Pixel strip (note: post.pixel_colors in loop context) -->
   <div class="post-header-pixels">
     <span :for={color <- post.pixel_colors} class="pixel" style={"background: #{color};"}></span>
   </div>
 </div>
 ```
 
-**post_live.html.heex:** (Similar structure, without expand button)
+**post_live.html.heex** (single post, assign context):
+```heex
+<div class="post-header" id={@post.id} style={"width: #{@post.width};"}>
+  <h2>{@post.title}</h2>
+  <.link navigate={"/p/#{@post.id}"} class="post-header-link">[link]</.link>
+  
+  <!-- NEW: Pixel strip (note: @post.pixel_colors in assign context) -->
+  <div class="post-header-pixels">
+    <span :for={color <- @post.pixel_colors} class="pixel" style={"background: #{color};"}></span>
+  </div>
+</div>
+```
 
 ### CSS Implementation
 
 ```css
 .post-header-pixels {
   display: grid;
-  grid-template-columns: repeat(15, 1fr); /* Adjust count as needed */
+  grid-template-columns: repeat(18, 1fr); /* Fixed to match pixel count */
   gap: 1px;
   padding: 3px;
   background: #000;
@@ -151,7 +166,7 @@ end
 .post-header-pixels .pixel {
   display: block;
   height: 4px;
-  image-rendering: pixelated; /* Crisp rendering */
+  image-rendering: pixelated; /* Crisp rendering (supported in modern browsers) */
 }
 ```
 
@@ -173,7 +188,7 @@ end
 
 4. **lib/indie_web/live/post_live.html.heex**
    - Add pixel strip div inside `.post-header` (same structure as home)
-   - Render pixels using `:for={color <- @post.pixel_colors}`
+   - Render pixels using `:for={color <- @post.pixel_colors}` (note the @ for assign context)
 
 5. **assets/css/app.css**
    - Add `.post-header-pixels` styles
