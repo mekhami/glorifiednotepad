@@ -33,6 +33,12 @@ defmodule Indie.Comments do
   def get_comment!(id), do: Repo.get!(Comment, id)
 
   @doc """
+  Gets a single comment by ID.
+  Returns nil if the Comment does not exist.
+  """
+  def get_comment(id), do: Repo.get(Comment, id)
+
+  @doc """
   Deletes a comment.
   """
   def delete_comment(%Comment{} = comment) do
