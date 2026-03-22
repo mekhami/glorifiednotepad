@@ -6,7 +6,7 @@ defmodule IndieWeb.Admin.CommentModerationLiveTest do
   alias Indie.Repo
   alias Indie.Comment
 
-  setup do
+  setup %{conn: conn} do
     old_username = System.get_env("ADMIN_USERNAME")
     old_password = System.get_env("ADMIN_PASSWORD")
 
@@ -18,14 +18,11 @@ defmodule IndieWeb.Admin.CommentModerationLiveTest do
       restore_env("ADMIN_PASSWORD", old_password)
     end)
 
-    :ok
+    {:ok, conn: admin_conn(conn)}
   end
 
   describe "mount" do
-    test "admin comments route is live" do
-      credentials = Base.encode64("testadmin:testpass")
-      conn = build_conn() |> put_req_header("authorization", "Basic #{credentials}")
-
+    test "admin comments route is live", %{conn: conn} do
       assert {:ok, _view, _html} = live(conn, "/admin/comments")
     end
 
@@ -44,10 +41,6 @@ defmodule IndieWeb.Admin.CommentModerationLiveTest do
           author_name: "Bob",
           body: "Interesting read."
         })
-
-      # Add auth header
-      credentials = Base.encode64("testadmin:testpass")
-      conn = put_req_header(conn, "authorization", "Basic #{credentials}")
 
       {:ok, view, _html} = live(conn, "/admin/comments")
 
@@ -74,9 +67,6 @@ defmodule IndieWeb.Admin.CommentModerationLiveTest do
           body: "Comment on post B"
         })
 
-      credentials = Base.encode64("testadmin:testpass")
-      conn = put_req_header(conn, "authorization", "Basic #{credentials}")
-
       {:ok, view, _html} = live(conn, "/admin/comments")
 
       # Select post-a from dropdown
@@ -99,9 +89,6 @@ defmodule IndieWeb.Admin.CommentModerationLiveTest do
           body: "To be deleted"
         })
 
-      credentials = Base.encode64("testadmin:testpass")
-      conn = put_req_header(conn, "authorization", "Basic #{credentials}")
-
       {:ok, view, _html} = live(conn, "/admin/comments")
 
       # Verify comment exists
@@ -122,4 +109,9 @@ defmodule IndieWeb.Admin.CommentModerationLiveTest do
 
   defp restore_env(_key, nil), do: :ok
   defp restore_env(key, value), do: System.put_env(key, value)
+
+  defp admin_conn(conn) do
+    credentials = Base.encode64("testadmin:testpass")
+    put_req_header(conn, "authorization", "Basic #{credentials}")
+  end
 end
