@@ -10,6 +10,16 @@ defmodule IndieWeb.Router do
     plug(:put_secure_browser_headers)
   end
 
+  pipeline :admin do
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_live_flash)
+    plug(:put_root_layout, html: {IndieWeb.Layouts, :root})
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+    plug(IndieWeb.Plugs.RequireBasicAuth)
+  end
+
   pipeline :api do
     plug(:accepts, ["json"])
   end
@@ -20,6 +30,14 @@ defmodule IndieWeb.Router do
     live("/", HomeLive)
     live("/p/:slug", PostLive)
     get("/feed.rss", FeedController, :rss)
+  end
+
+  scope "/admin", IndieWeb.Admin do
+    pipe_through(:admin)
+
+    live_session :admin, on_mount: {IndieWeb.Admin.AdminLive, :admin} do
+      live("/comments", CommentModerationLive, :index)
+    end
   end
 
   # Other scopes may use custom stacks.

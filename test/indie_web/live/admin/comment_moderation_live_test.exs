@@ -7,13 +7,28 @@ defmodule IndieWeb.Admin.CommentModerationLiveTest do
   alias Indie.Comment
 
   setup do
-    # Set test credentials
+    old_username = System.get_env("ADMIN_USERNAME")
+    old_password = System.get_env("ADMIN_PASSWORD")
+
     System.put_env("ADMIN_USERNAME", "testadmin")
     System.put_env("ADMIN_PASSWORD", "testpass")
+
+    on_exit(fn ->
+      restore_env("ADMIN_USERNAME", old_username)
+      restore_env("ADMIN_PASSWORD", old_password)
+    end)
+
     :ok
   end
 
   describe "mount" do
+    test "admin comments route is live" do
+      credentials = Base.encode64("testadmin:testpass")
+      conn = build_conn() |> put_req_header("authorization", "Basic #{credentials}")
+
+      assert {:ok, _view, _html} = live(conn, "/admin/comments")
+    end
+
     test "loads all comments on mount", %{conn: conn} do
       # Create test comments
       {:ok, comment1} =
@@ -104,4 +119,7 @@ defmodule IndieWeb.Admin.CommentModerationLiveTest do
       assert Repo.get(Comment, comment.id) == nil
     end
   end
+
+  defp restore_env(_key, nil), do: :ok
+  defp restore_env(key, value), do: System.put_env(key, value)
 end
