@@ -51,9 +51,8 @@ defmodule IndieWeb.FeedController do
     """
   end
 
-  defp format_rfc822_date(%Date{} = date) do
-    datetime = DateTime.new!(date, ~T[00:00:00], "Etc/UTC")
-    Calendar.strftime(datetime, "%a, %d %b %Y %H:%M:%S +0000")
+  defp format_rfc822_date(%DateTime{} = datetime) do
+    Calendar.strftime(datetime, "%a, %d %b %Y %H:%M:%S %z")
   end
 
   defp escape_xml(text) do
