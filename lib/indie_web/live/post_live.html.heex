@@ -47,7 +47,9 @@
         <p>comments:</p>
         <div :for={comment <- @comments} class="comment">
           <span class="comment-author">{comment.author_name}:</span>
-          <span class="comment-body">{comment.body}</span>
+          <span class="comment-body">
+            {Phoenix.HTML.raw(render_comment_markdown(comment.body))}
+          </span>
         </div>
       </div>
     <% end %>

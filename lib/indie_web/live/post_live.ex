@@ -1,6 +1,8 @@
 defmodule IndieWeb.PostLive do
   use IndieWeb, :live_view
 
+  import IndieWeb.MarkdownHelpers
+
   alias Indie.{Post, Comments, Comment}
 
   @impl true

@@ -436,13 +436,28 @@ body:has(.admin-container) {
   line-height: 1.5;
 }
 
-.comment-author {
+.comments-section .comment-author {
   font-weight: bold;
-  color: #c5b8b9;
+  color: #f0e5e6;
 }
 
-.comment-body {
-  color: #ac9d9e;
+.comments-section .comment-body {
+  color: #e8dfe0;
+}
+
+.comments-section .comment-body p {
+  color: #e8dfe0;
+  margin: 0;
+  display: inline;
+}
+
+.comments-section .comment-body a {
+  color: #c5b8b9;
+  text-decoration: none;
+}
+
+.comments-section .comment-body a:hover {
+  text-decoration: underline;
 }
 
 .comment-button-container {
