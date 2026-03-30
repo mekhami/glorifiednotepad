@@ -1,22 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Background -->
-  <rect width="32" height="32" fill="#1a1a1a"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30">
+  <!-- 3x3 colorful pixel grid inspired by rootring widget -->
+  <!-- Row 1 -->
+  <rect x="0" y="0" width="10" height="10" fill="#FF0000"/>
+  <rect x="10" y="0" width="10" height="10" fill="#00FF00"/>
+  <rect x="20" y="0" width="10" height="10" fill="#0000FF"/>
   
-  <!-- Pixel grid pattern - RSS-inspired design -->
-  <!-- Top left corner - RSS wave pattern -->
-  <rect x="4" y="20" width="4" height="4" fill="#ff6b35"/>
-  <rect x="8" y="16" width="4" height="4" fill="#ff6b35"/>
-  <rect x="12" y="12" width="4" height="4" fill="#ff6b35"/>
-  <rect x="16" y="8" width="4" height="4" fill="#ff6b35"/>
+  <!-- Row 2 -->
+  <rect x="0" y="10" width="10" height="10" fill="#FFFF00"/>
+  <rect x="10" y="10" width="10" height="10" fill="#FF00FF"/>
+  <rect x="20" y="10" width="10" height="10" fill="#00FFFF"/>
   
-  <!-- Accent pixels -->
-  <rect x="4" y="24" width="4" height="4" fill="#ff6b35"/>
-  <rect x="8" y="24" width="4" height="4" fill="#ff8c5a"/>
-  <rect x="12" y="24" width="4" height="4" fill="#ff8c5a"/>
-  
-  <!-- Grid highlight pixels -->
-  <rect x="20" y="4" width="4" height="4" fill="#4a9eff"/>
-  <rect x="24" y="8" width="4" height="4" fill="#4a9eff"/>
-  <rect x="24" y="20" width="4" height="4" fill="#4a9eff"/>
-  <rect x="20" y="24" width="4" height="4" fill="#4a9eff"/>
+  <!-- Row 3 -->
+  <rect x="0" y="20" width="10" height="10" fill="#FFA500"/>
+  <rect x="10" y="20" width="10" height="10" fill="#800080"/>
+  <rect x="20" y="20" width="10" height="10" fill="#A52A2A"/>
 </svg>
