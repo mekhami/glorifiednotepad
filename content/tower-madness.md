@@ -6,7 +6,7 @@ width: 50%
 draft: false
 ---
 
-The study of magic is fraught with perils - but wisdom, caution, and a reliable friend to steer you away from poor decisions are often enough to keep a practitioner from the more catastrophic outcomes. The aged wizard with a map of the world on their face, is a testament to those resources and their application. By mundanely growing old she says to the world, "I have danced with the devils above and below, weighed and measured them, and seized what amount I may." There are a great many young hedge mages and illusionists. These upstarts inspire none of the reverence that those archons do, because they have yet to be truly tempted.
+The study of magic is fraught with perils - but wisdom, caution, and a reliable friend to steer you away from poor decisions are often enough to keep a practitioner from the more catastrophic outcomes. The aged wizard with a map of the world on their face is a testament to those resources and their application. By mundanely growing old she says to the world, "I have danced with the devils above and below, weighed and measured them, and seized what amount I may." There are a great many young hedge mages and illusionists. These upstarts inspire none of the reverence that those archons do, because they have yet to be truly tempted.
 
 What occurs, then, when one of these would-be wielders of great power lack in these safeguards? To overfill the reservoir of a mortal body is to have it burst at the seams, and that bursting is the genesis of Tower Madness.
 
