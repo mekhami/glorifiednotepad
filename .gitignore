@@ -66,3 +66,6 @@ docs/superpowers/
 
 .DS_store
 .env
+
+# Exclude uploaded binaries (place manually on server)
+/priv/static/downloads/*.dmg
