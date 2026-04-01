@@ -10,7 +10,7 @@ defmodule IndieWeb.PodloaderLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div id="podloader-page" class="min-h-screen bg-zinc-950 text-green-400 font-mono px-4 py-16">
+      <div id="podloader-page" class="text-green-400 font-mono">
         <%!-- Terminal-style header --%>
         <div class="max-w-2xl mx-auto">
           <div class="border border-green-700 rounded-sm p-6 mb-8 bg-zinc-900">

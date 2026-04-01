@@ -11,8 +11,9 @@ defmodule IndieWeb.PodloaderLiveTest do
   end
 
   test "download button links to the dmg file", %{conn: conn} do
-    {:ok, _view, html} = live(conn, "/podloader")
+    {:ok, view, _html} = live(conn, "/podloader")
 
-    assert html =~ "/downloads/podloader.dmg"
+    assert has_element?(view, "#download-btn[href='/downloads/podloader.dmg']")
+    assert has_element?(view, "#download-btn[download]")
   end
 end
