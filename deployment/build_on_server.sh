@@ -112,10 +112,20 @@ if [ -d "$DEPLOY_DIR/releases" ]; then
     ls -t | tail -n +6 | xargs -r rm -rf
 fi
 
-# Step 9: Preserve .env.prod
+# Step 9: Preserve .env.prod and downloads
 if [ -f "$DEPLOY_DIR/.env.prod" ]; then
     log "Preserving .env.prod..."
     cp "$DEPLOY_DIR/.env.prod" /tmp/.env.prod.backup
+fi
+
+DOWNLOADS_DIR="$DEPLOY_DIR/lib/$APP_NAME-*/priv/static/downloads"
+DOWNLOADS_BACKUP="/tmp/indie-downloads-backup"
+rm -rf "$DOWNLOADS_BACKUP"
+# Use eval to expand the glob
+DOWNLOADS_PATH=$(eval echo $DOWNLOADS_DIR 2>/dev/null | head -1)
+if [ -d "$DOWNLOADS_PATH" ]; then
+    log "Preserving downloads directory..."
+    cp -r "$DOWNLOADS_PATH" "$DOWNLOADS_BACKUP"
 fi
 
 # Step 10: Deploy new release
@@ -129,6 +139,17 @@ if [ -f /tmp/.env.prod.backup ]; then
     cp /tmp/.env.prod.backup "$DEPLOY_DIR/.env.prod"
     chmod 600 "$DEPLOY_DIR/.env.prod"
     rm /tmp/.env.prod.backup
+fi
+
+# Restore downloads
+if [ -d "$DOWNLOADS_BACKUP" ]; then
+    log "Restoring downloads directory..."
+    NEW_DOWNLOADS_PATH=$(eval echo $DOWNLOADS_DIR 2>/dev/null | head -1)
+    if [ -n "$NEW_DOWNLOADS_PATH" ]; then
+        mkdir -p "$NEW_DOWNLOADS_PATH"
+        cp -r "$DOWNLOADS_BACKUP"/. "$NEW_DOWNLOADS_PATH/"
+    fi
+    rm -rf "$DOWNLOADS_BACKUP"
 fi
 
 # Copy content files
