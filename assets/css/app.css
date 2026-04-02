@@ -1521,32 +1521,51 @@ canvas.pipette-mode {
 
 mark[class^="hl-"] {
   position: relative;
-  background: none;
   color: inherit;
-  padding: 0 2px;
+  padding: 2px 4px;
+  border-radius: 2px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
-mark[class^="hl-"]::before {
-  content: "";
-  position: absolute;
-  inset: 0px -3px;
-  z-index: -1;
-  filter: url(#hl-handdrawn);
-  border-radius: 1px;
+mark.hl-yellow {
+  color: black;
 }
 
-.hl-yellow::before {
+.hl-yellow {
   background: linear-gradient(102deg, rgba(255,255,0,0) 0%, rgba(255,255,0,0.5) 3%, rgba(255,255,0,0.42) 50%, rgba(255,255,0,0.52) 75%, rgba(255,255,0,0) 100%);
 }
 
-.hl-green::before {
+.hl-green {
   background: linear-gradient(102deg, rgba(0,200,100,0) 0%, rgba(0,200,100,0.5) 3%, rgba(0,200,100,0.42) 50%, rgba(0,200,100,0.52) 75%, rgba(0,200,100,0) 100%);
 }
 
-.hl-blue::before {
+.hl-blue {
   background: linear-gradient(102deg, rgba(0,150,255,0) 0%, rgba(0,150,255,0.5) 3%, rgba(0,150,255,0.42) 50%, rgba(0,150,255,0.52) 75%, rgba(0,150,255,0) 100%);
 }
 
-.hl-red::before {
+.hl-red {
   background: linear-gradient(102deg, rgba(255,60,60,0) 0%, rgba(255,60,60,0.5) 3%, rgba(255,60,60,0.42) 50%, rgba(255,60,60,0.52) 75%, rgba(255,60,60,0) 100%);
+}
+
+/* :::columns two-column layout */
+.post-content .columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.post-content .col > *:first-child {
+  margin-top: 0;
+}
+
+.post-content .col > *:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 600px) {
+  .post-content .columns {
+    grid-template-columns: 1fr;
+  }
 }
