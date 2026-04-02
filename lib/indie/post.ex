@@ -47,9 +47,22 @@ defmodule Indie.Post do
 
     html =
       markdown
+      |> Indie.Markdown.ColumnsTransformer.transform()
       |> Earmark.as_ast!(breaks: true)
       |> Indie.Markdown.HighlightTransformer.transform()
       |> Earmark.Transform.transform()
+      |> String.replace(~r/( {2,})(<mark)/u, fn full ->
+        [spaces, tag] = Regex.run(~r/^( +)(<mark)$/, full, capture: :all_but_first)
+        # Earmark adds 2 spaces per indent level. The original source text has at most
+        # 1 trailing space. Strip pairs of spaces to recover the original spacing.
+        String.duplicate(" ", rem(String.length(spaces), 2)) <> tag
+      end)
+      |> String.replace(~r/(<mark[^>]*>)\n/u, "\\1")
+      |> String.replace(~r/( {2,})(<\/mark>)/u, fn full ->
+        [_spaces, tag] = Regex.run(~r/^( +)(<\/mark>)$/, full, capture: :all_but_first)
+        tag
+      end)
+      |> String.replace(~r/(<\/mark>)\n/u, "\\1")
 
     %__MODULE__{
       title: front_matter["title"],
