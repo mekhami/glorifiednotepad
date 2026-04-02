@@ -19,28 +19,23 @@ defmodule Indie.Markdown.HighlightTransformer do
   """
   @spec transform(list()) :: list()
   def transform(ast) do
-    Earmark.Transform.map_ast(ast, &transform_node/1)
+    Enum.map(ast, &transform_node/1)
   end
 
-  # For code/pre nodes, replace with an identical node — map_ast will NOT descend
-  # into its original children because we return {:replace, node}.
   defp transform_node({tag, attrs, children, meta}) when tag in @skip_tags do
-    {:replace, {tag, attrs, children, meta}}
+    {tag, attrs, children, meta}
   end
 
-  # For all other tag nodes: replace with a version that has transformed children,
-  # and use :replace so map_ast doesn't also try to descend into original children.
   defp transform_node({tag, attrs, children, meta}) do
     new_children =
       Enum.flat_map(children, fn
         text when is_binary(text) -> transform_text(text)
-        other -> [other]
+        child -> [transform_node(child)]
       end)
 
-    {:replace, {tag, attrs, new_children, meta}}
+    {tag, attrs, new_children, meta}
   end
 
-  # String nodes at top level of the AST (rare but possible) — return as-is.
   defp transform_node(other), do: other
 
   defp transform_text(text) do

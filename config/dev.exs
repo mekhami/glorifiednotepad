@@ -60,7 +60,9 @@ config :indie, IndieWeb.Endpoint,
       ~r"priv/gettext/.*\.po$"E,
       # Router, Controllers, LiveViews and LiveComponents
       ~r"lib/indie_web/router\.ex$"E,
-      ~r"lib/indie_web/(controllers|live|components)/.*\.(ex|heex)$"E
+      ~r"lib/indie_web/(controllers|live|components)/.*\.(ex|heex)$"E,
+      # Content posts
+      ~r"content/.*\.md$"E
     ]
   ]
 

@@ -77,5 +77,16 @@ defmodule Indie.Markdown.HighlightTransformerTest do
       result = HighlightTransformer.transform(ast)
       assert [{"p", [], ["nothing to see here"], %{}}] = result
     end
+
+    test "highlight content does not include leading or trailing spaces" do
+      ast = [{"p", [], ["this is ==red:highlighted in red== as you can see"], %{}}]
+      [{"p", [], children, %{}}] = HighlightTransformer.transform(ast)
+
+      assert ["this is ", mark, " as you can see"] = children
+      assert {"mark", [{"class", "hl-red"}], [content], %{}} = mark
+      assert content == "highlighted in red"
+      refute String.starts_with?(content, " ")
+      refute String.ends_with?(content, " ")
+    end
   end
 end
