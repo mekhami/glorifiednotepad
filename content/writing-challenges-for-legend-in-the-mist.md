@@ -52,7 +52,7 @@ This is Challenge Shorthand. Just write the fiction as you think of it, then hig
 
 But there's also the long form, fleshed out version the book shows, which I also quite like.
 
-![an example a challenge, the Changeling, from the Legend in the Mist core book](images/changeling-challenge.png)
+![an example a challenge, the Changeling, from the Legend in the Mist core book](/images/changeling-challenge.png)
 
 The layout here is great. Name, type, and description, with tags highlighted in the description. On the left, limits, tags and statuses, and ... I actually don't know what the "Faerie Impersonator" thing is here. I'll have to look into that. [Editor's note! (that's me, I'm the editor.) It's might! I haven't gotten into Might in my games, so I'm ignoring it for now in the challenge.] Doesn't matter. And special features. All driven by tags.
 
