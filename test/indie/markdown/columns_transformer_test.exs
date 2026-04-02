@@ -132,6 +132,35 @@ defmodule Indie.Markdown.ColumnsTransformerTest do
       assert result =~ "Outro text."
     end
 
+    test "highlight inside punctuation has no extra spaces" do
+      markdown = """
+      :::columns
+      Left
+      ===
+      (==green:wounded-3==)
+      :::
+      """
+
+      result = ColumnsTransformer.transform(markdown)
+
+      # Should be (<mark...>wounded-3</mark>) with no spaces inside the parens
+      assert result =~ ~r/\(<mark[^>]*>wounded-3<\/mark>\)/
+    end
+
+    test "highlight in prose context has no extra spaces around it" do
+      markdown = """
+      :::columns
+      Text before ==yellow:word== text after.
+      ===
+      Right
+      :::
+      """
+
+      result = ColumnsTransformer.transform(markdown)
+
+      assert result =~ ~r/before <mark[^>]*>word<\/mark> text/
+    end
+
     test "markdown with no columns blocks is returned unchanged" do
       markdown = "Just a normal paragraph with **bold**."
       assert ColumnsTransformer.transform(markdown) == markdown

@@ -63,11 +63,31 @@ defmodule Indie.Markdown.ColumnsTransformer do
   # unclosed tag on one line, triggering "Failed to find closing <h4>" warnings.
   # Collapsing internal newlines to spaces makes every tag self-contained on its
   # own line so the outer parser can match open/close pairs correctly.
+  #
+  # After joining, whitespace around tag boundaries is collapsed to nothing —
+  # Earmark pads inline elements with spaces (e.g. "  <mark...> word  </mark> ")
+  # which renders as unwanted visible spaces around highlighted text. Stripping
+  # whitespace at `>` and `<` boundaries removes this without affecting
+  # word-to-word spacing in prose, since inline elements in HTML don't need
+  # explicit spaces around them (the browser handles word boundaries naturally
+  # from the surrounding text nodes).
   defp compact_html(html) do
     html
     |> String.split("\n")
     |> Enum.map(&String.trim/1)
     |> Enum.reject(&(&1 == ""))
     |> Enum.join(" ")
+    # Collapse all multi-space runs to a single space
+    |> String.replace(~r/  +/, " ")
+    # Strip spaces between adjacent tags (closing > followed by opening <)
+    |> String.replace(~r/> </, "><")
+    # Strip spaces immediately after any opening tag (e.g. <mark> word -> <mark>word)
+    |> String.replace(~r/<([a-zA-Z][^>]*)> /, "<\\1>")
+    # Strip spaces immediately before any closing tag (e.g. word </mark> -> word</mark>)
+    |> String.replace(~r/ <\/([a-zA-Z]+)>/, "</\\1>")
+    # Strip spaces between non-word punctuation and an opening tag (e.g. ( <mark -> (<mark)
+    |> String.replace(~r/([(\[{]) </, "\\1<")
+    # Strip spaces between a closing tag and non-word punctuation (e.g. </mark> ) -> </mark>))
+    |> String.replace(~r/> ([)\]}.,;:!?])/, ">\\1")
   end
 end
