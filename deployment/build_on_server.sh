@@ -57,6 +57,14 @@ mix deps.get --only prod || error "Failed to get dependencies"
 # Step 4.5: Ensure build tools are available
 log "Verifying build tools..."
 
+# Image optimization tools (required for mix images.optimize)
+for tool in optipng cwebp jpegoptim; do
+    if ! command -v "$tool" &>/dev/null; then
+        warn "$tool not found, installing..."
+        sudo apt-get install -y "$tool" || error "Failed to install $tool"
+    fi
+done
+
 # esbuild should already be in the repo (committed)
 if [ ! -f "_build/esbuild-linux-x64" ]; then
     warn "esbuild binary not found in repo, attempting to download..."
