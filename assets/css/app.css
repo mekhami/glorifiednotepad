@@ -1528,7 +1528,10 @@ mark[class^="hl-"] {
   box-decoration-break: clone;
 }
 
-mark.hl-yellow {
+mark.hl-yellow,
+mark.hl-green,
+mark.hl-blue,
+mark.hl-red {
   color: black;
 }
 
