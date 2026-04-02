@@ -237,7 +237,7 @@ defmodule Mix.Tasks.Images.Optimize do
 
   defp already_optimized?(file) do
     marker_file = file <> @optimized_marker
-    File.exists?(marker_file) && File.stat!(marker_file).mtime >= File.stat!(file).mtime
+    File.exists?(marker_file)
   end
 
   defp mark_optimized(file) do
