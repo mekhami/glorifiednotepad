@@ -1512,3 +1512,41 @@ canvas.pipette-mode {
   color: #991b1b;
   text-decoration: underline;
 }
+
+/* =========================================================
+   Markdown highlight syntax: ==color:text==
+   The ::before pseudo-element carries the background color
+   and SVG filter (wobbly edges), keeping the text crisp.
+   ========================================================= */
+
+mark[class^="hl-"] {
+  position: relative;
+  background: none;
+  color: inherit;
+  padding: 0 2px;
+}
+
+mark[class^="hl-"]::before {
+  content: "";
+  position: absolute;
+  inset: 0px -3px;
+  z-index: -1;
+  filter: url(#hl-handdrawn);
+  border-radius: 1px;
+}
+
+.hl-yellow::before {
+  background: linear-gradient(102deg, rgba(255,255,0,0) 0%, rgba(255,255,0,0.5) 3%, rgba(255,255,0,0.42) 50%, rgba(255,255,0,0.52) 75%, rgba(255,255,0,0) 100%);
+}
+
+.hl-green::before {
+  background: linear-gradient(102deg, rgba(0,200,100,0) 0%, rgba(0,200,100,0.5) 3%, rgba(0,200,100,0.42) 50%, rgba(0,200,100,0.52) 75%, rgba(0,200,100,0) 100%);
+}
+
+.hl-blue::before {
+  background: linear-gradient(102deg, rgba(0,150,255,0) 0%, rgba(0,150,255,0.5) 3%, rgba(0,150,255,0.42) 50%, rgba(0,150,255,0.52) 75%, rgba(0,150,255,0) 100%);
+}
+
+.hl-red::before {
+  background: linear-gradient(102deg, rgba(255,60,60,0) 0%, rgba(255,60,60,0.5) 3%, rgba(255,60,60,0.42) 50%, rgba(255,60,60,0.52) 75%, rgba(255,60,60,0) 100%);
+}

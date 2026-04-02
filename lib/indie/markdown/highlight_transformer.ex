@@ -1,15 +1,12 @@
 defmodule Indie.Markdown.HighlightTransformer do
   @moduledoc """
   Earmark AST transformer that converts ==color:text== syntax into
-  <mark> tags with inline gradient styles and an SVG filter reference.
+  <mark class="hl-color"> tags. The visual styling (gradient background,
+  SVG filter for wobbly edges) is handled entirely by CSS pseudo-elements,
+  keeping the text itself unaffected by the filter.
   """
 
-  @colors %{
-    "yellow" => {255, 255, 0},
-    "green" => {0, 200, 100},
-    "blue" => {0, 150, 255},
-    "red" => {255, 60, 60}
-  }
+  @colors ~w[yellow green blue red]
 
   @highlight_pattern ~r/==(\w+):(.+?)==/
 
@@ -83,17 +80,10 @@ defmodule Indie.Markdown.HighlightTransformer do
   end
 
   defp build_mark(color, content) do
-    case Map.get(@colors, color) do
-      nil ->
-        "==#{color}:#{content}=="
-
-      {r, g, b} ->
-        style = gradient_style(r, g, b)
-        {"mark", [{"style", style}], [content], %{}}
+    if color in @colors do
+      {"mark", [{"class", "hl-#{color}"}], [content], %{}}
+    else
+      "==#{color}:#{content}=="
     end
-  end
-
-  defp gradient_style(r, g, b) do
-    "background: linear-gradient(102deg, rgba(#{r},#{g},#{b},0) 0%, rgba(#{r},#{g},#{b},0.5) 3%, rgba(#{r},#{g},#{b},0.42) 50%, rgba(#{r},#{g},#{b},0.52) 75%, rgba(#{r},#{g},#{b},0) 100%); filter: url(#hl-handdrawn);"
   end
 end
