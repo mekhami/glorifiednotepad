@@ -32,6 +32,8 @@ You catch the first sight of the ruin, a once-impressive architecture now razed 
 - The prospect of finding treasure here is palpable. You all either share in the excitement (==green:hopeful-2==) or leave the matter unspoken (==green:distrustful-2==).
 - A figure suddenly skulks away from you and into the ruins. Someone has been watching you (Exposure).
 
+---
+
 Okay so what do we see here? It's mostly just fiction. The first line is a description, the bullet points are potential threats and consequences.
 
 What's the highlighted stuff? That's ==yellow:tags== and ==green:statuses==. (there are also ==red:limits== which we will get into later.)
