@@ -12,11 +12,11 @@ Have they left? Okay good, now I can _talk shit about them_ behind their backs..
 
 Kidding. My players are the best. And this game suits them really well. They are very creative, engaged, inventive, and flexible people and Legend in the Mist seems like such a good fit for those attributes. We've only played one session, but it got rave reviews, and I, as the Narrator (GM) enjoyed it thoroughly.
 
-One thing I really love about the game is _open_ the design space is. Because the entire system runs on tags, with no stats or stat blocks or initiatives or anything of that nature, a challenge to the group can be anything, take any form, have any objective, and be accomplished in any way. It's that true promise of the TTRPG hobby distilled to its simplest essence. And I do mean distilled - the entire core of the system basically boils down to picking out some words, lending them a little more weight, and call it a day.
+One thing I really love about the game is how _open_ the design space is. Because the entire system runs on tags, with no stats or stat blocks or initiatives or anything of that nature, a challenge to the group can be anything, take any form, have any objective, and be accomplished in any way. It's that true promise of the TTRPG hobby distilled to its simplest essence. And I do mean distilled - the entire core of the system basically boils down to picking out some words, lending them a little more weight, and call it a day.
 
 My goal with this post is two-fold. One, to demonstrate it and show you how cool it is, why I love it. And second, to hone my own skills at writing these challenges. I'd love to be able to improvise these challenges and still feel like I'm getting my money's worth. But improvisation is hard, and I believe in practice and pedagogy, so this post will be an exercise in these. For my own benefit. And yours if you want, but that's not the point.
 
-Also I wanted to work on the ==yellow:cool highlighty thing i added to my website==.
+Also I wanted to work on the ==yellow:cool highlighty thing I added to my website==.
 
 # What do Challenges look like?
 
@@ -30,7 +30,7 @@ You catch the first sight of the ruin, a once-impressive architecture now razed 
 - Your preparation takes too long (==green:time-passes-1==) and conditions worsen (==yellow:rain==, ==yellow:fog==, ==yellow:darkness==, ==yellow:daylight==).
 - Your gear is not quite suitable for such an expedition (add a negative story tag).
 - The prospect of finding treasure here is palpable. You all either share in the excitement (==green:hopeful-2==) or leave the matter unspoken (==green:distrustful-2==).
-- A figure suddenly skulks away from you and into the ruins.i Someone has been watching you (Exposure).
+- A figure suddenly skulks away from you and into the ruins. Someone has been watching you (Exposure).
 
 Okay so what do we see here? It's mostly just fiction. The first line is a description, the bullet points are potential threats and consequences.
 
