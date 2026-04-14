@@ -30,11 +30,8 @@ defmodule Indie.Markdown.VideoTransformerTest do
     assert result =~ ~s(src="/videos/second.mp4")
   end
 
-  test "does not transform [video:...] inside a code block" do
-    # The transformer is a pre-processor on raw markdown strings.
-    # Fenced code blocks are represented as literal backtick strings at this stage,
-    # so the transformer should NOT skip them — this tests that the regex only
-    # matches the exact [video:path.mp4] pattern and not similar-but-wrong patterns.
+  test "does not match [video:...] without .mp4 extension" do
+    # The regex requires a .mp4 extension — patterns without it are left unchanged.
     input = "Not a video: [video:no-extension]"
     result = VideoTransformer.transform(input)
     # no .mp4 extension means no match
