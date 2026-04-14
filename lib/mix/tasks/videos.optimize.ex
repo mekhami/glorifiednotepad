@@ -39,6 +39,7 @@ defmodule Mix.Tasks.Videos.Optimize do
 
     unless File.dir?(@videos_dir) do
       Mix.shell().info("No videos directory found at #{@videos_dir}, skipping optimization")
+      :ok
     else
       case System.find_executable("ffmpeg") do
         nil ->
@@ -77,16 +78,13 @@ defmodule Mix.Tasks.Videos.Optimize do
     webm_file = String.replace_suffix(mp4_file, ".mp4", ".webm")
     tmp_mp4 = mp4_file <> ".tmp.mp4"
 
-    _mp4_size_before = File.stat!(mp4_file).size
-
-    with {:ok, webm_size} <- generate_webm(ffmpeg, mp4_file, webm_file),
+    with {:ok, _} <- generate_webm(ffmpeg, mp4_file, webm_file),
          {:ok, mp4_saved} <- reencode_mp4(ffmpeg, mp4_file, tmp_mp4) do
-      total_saved = mp4_saved + webm_size
-      {:ok, total_saved}
+      {:ok, mp4_saved}
     else
       {:error, reason} ->
-        # Clean up any partial temp file
         if File.exists?(tmp_mp4), do: File.rm!(tmp_mp4)
+        if File.exists?(webm_file), do: File.rm!(webm_file)
         {:error, reason}
     end
   end
@@ -108,11 +106,13 @@ defmodule Mix.Tasks.Videos.Optimize do
              "-an",
              "-y",
              output
-           ], stderr_to_stdout: true) do
+           ],
+           stderr_to_stdout: true
+         ) do
       {_, 0} ->
         size = File.stat!(output).size
         Mix.shell().info("  #{Path.basename(output)}: #{format_bytes(size)}")
-        {:ok, size}
+        {:ok, 0}
 
       {output_log, code} ->
         Mix.shell().error("  Failed to generate WebM (exit #{code}): #{output_log}")
@@ -139,7 +139,9 @@ defmodule Mix.Tasks.Videos.Optimize do
              "+faststart",
              "-y",
              tmp_output
-           ], stderr_to_stdout: true) do
+           ],
+           stderr_to_stdout: true
+         ) do
       {_, 0} ->
         size_after = File.stat!(tmp_output).size
         saved = max(size_before - size_after, 0)
