@@ -48,6 +48,7 @@ defmodule Indie.Post do
     html =
       markdown
       |> Indie.Markdown.ColumnsTransformer.transform()
+      |> Indie.Markdown.VideoTransformer.transform()
       |> Earmark.as_ast!(breaks: true)
       |> Indie.Markdown.HighlightTransformer.transform()
       |> Earmark.Transform.transform()
