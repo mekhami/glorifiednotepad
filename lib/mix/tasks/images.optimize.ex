@@ -73,6 +73,7 @@ defmodule Mix.Tasks.Images.Optimize do
 
         jpegoptim ->
           jpeg_files
+          |> Enum.reject(&fingerprinted?/1)
           |> Enum.reject(&already_optimized?/1)
           |> Enum.reduce({0, 0}, fn file, {count, savings} ->
             case optimize_jpeg(jpegoptim, file) do
@@ -105,6 +106,7 @@ defmodule Mix.Tasks.Images.Optimize do
 
         tool ->
           png_files
+          |> Enum.reject(&fingerprinted?/1)
           |> Enum.reject(&already_optimized?/1)
           |> Enum.reduce({0, 0}, fn file, {count, savings} ->
             case optimize_png(tool, file) do
@@ -133,6 +135,7 @@ defmodule Mix.Tasks.Images.Optimize do
 
         cwebp ->
           webp_files
+          |> Enum.reject(&fingerprinted?/1)
           |> Enum.reject(&already_optimized?/1)
           |> Enum.reduce({0, 0}, fn file, {count, savings} ->
             case optimize_webp(cwebp, file) do
@@ -238,6 +241,13 @@ defmodule Mix.Tasks.Images.Optimize do
   defp already_optimized?(file) do
     marker_file = file <> @optimized_marker
     File.exists?(marker_file)
+  end
+
+  # Skip files with Phoenix digest fingerprints (-[a-f0-9]{32} before extension)
+  # to avoid re-optimizing already-optimized digest copies across deploys.
+  defp fingerprinted?(file) do
+    basename = Path.basename(file, Path.extname(file))
+    String.match?(basename, ~r/-[a-f0-9]{32}$/)
   end
 
   defp mark_optimized(file) do
