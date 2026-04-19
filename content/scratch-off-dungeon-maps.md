@@ -13,7 +13,7 @@ And the latter just isn’t as useful - yeah, everyone’s on the same page, but
 
 So, I set out to find a best of both worlds, and landed on… *Scratch Off Dungeon Maps!*
 
-![a dungeon map covered in scratch-off glue/acrylic paint mix](images/scratch-off-1.webp)
+![a dungeon map covered in scratch-off glue/acrylic paint mix](/images/scratch-off-1.webp)
 
 Believe it or not, it’s dead simple, takes no time, and is incredibly fun for the players and the GM alike. Here’s how it goes.
 
