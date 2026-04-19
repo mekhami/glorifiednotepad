@@ -120,7 +120,7 @@ if [ -d "$DEPLOY_DIR/releases" ]; then
     ls -t | tail -n +6 | xargs -r rm -rf
 fi
 
-# Step 9: Preserve .env.prod, downloads, and videos
+# Step 9: Preserve .env.prod, downloads, images, and videos
 if [ -f "$DEPLOY_DIR/.env.prod" ]; then
     log "Preserving .env.prod..."
     cp "$DEPLOY_DIR/.env.prod" /tmp/.env.prod.backup
@@ -134,6 +134,13 @@ DOWNLOADS_PATH=$(eval echo $DOWNLOADS_DIR 2>/dev/null | head -1)
 if [ -d "$DOWNLOADS_PATH" ]; then
     log "Preserving downloads directory..."
     cp -r "$DOWNLOADS_PATH" "$DOWNLOADS_BACKUP"
+fi
+
+IMAGES_BACKUP="/tmp/indie-images-backup"
+rm -rf "$IMAGES_BACKUP"
+if [ -d "/var/lib/indie/images" ]; then
+    log "Preserving images from /var/lib/indie/images..."
+    cp -r "/var/lib/indie/images" "$IMAGES_BACKUP"
 fi
 
 VIDEOS_BACKUP="/tmp/indie-videos-backup"
@@ -165,6 +172,18 @@ if [ -d "$DOWNLOADS_BACKUP" ]; then
         cp -r "$DOWNLOADS_BACKUP"/. "$NEW_DOWNLOADS_PATH/"
     fi
     rm -rf "$DOWNLOADS_BACKUP"
+fi
+
+# Restore images
+IMAGES_DIR="$DEPLOY_DIR/lib/$APP_NAME-*/priv/static/images"
+if [ -d "$IMAGES_BACKUP" ]; then
+    log "Restoring images..."
+    NEW_IMAGES_PATH=$(eval echo $IMAGES_DIR 2>/dev/null | head -1)
+    if [ -n "$NEW_IMAGES_PATH" ]; then
+        mkdir -p "$NEW_IMAGES_PATH"
+        cp -r "$IMAGES_BACKUP"/. "$NEW_IMAGES_PATH/"
+    fi
+    rm -rf "$IMAGES_BACKUP"
 fi
 
 # Restore videos
