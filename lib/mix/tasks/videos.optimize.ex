@@ -7,6 +7,7 @@ defmodule Mix.Tasks.Videos.Optimize do
       mix videos.optimize
 
   This task will:
+  - Convert any .mov files (QuickTime screen recordings) to .webm + .mp4, then delete the .mov
   - Find all .mp4 files in priv/static/videos/
   - Generate a .webm (VP9) sibling for each — this is the primary browser format
   - Re-encode the .mp4 in place (H.264, CRF 28, no audio, faststart)
@@ -48,6 +49,8 @@ defmodule Mix.Tasks.Videos.Optimize do
           )
 
         ffmpeg ->
+          convert_mov_files(ffmpeg)
+
           mp4_files =
             Path.wildcard("#{@videos_dir}/**/*.mp4", match_dot: false)
             |> Enum.reject(&already_optimized?/1)
@@ -71,6 +74,65 @@ defmodule Mix.Tasks.Videos.Optimize do
             Mix.shell().info("Saved #{format_bytes(savings)} total")
           end
       end
+    end
+  end
+
+  defp convert_mov_files(ffmpeg) do
+    mov_files = Path.wildcard("#{@videos_dir}/**/*.mov", match_dot: false)
+
+    unless Enum.empty?(mov_files) do
+      Mix.shell().info("\nConverting #{length(mov_files)} QuickTime file(s)...")
+
+      Enum.each(mov_files, fn mov_file ->
+        base = String.replace_suffix(mov_file, ".mov", "")
+        mp4_file = base <> ".mp4"
+        webm_file = base <> ".webm"
+
+        Mix.shell().info("  Converting #{Path.basename(mov_file)}...")
+
+        with {:ok, _} <- generate_webm(ffmpeg, mov_file, webm_file),
+             {:ok, _} <- generate_mp4(ffmpeg, mov_file, mp4_file) do
+          File.rm!(mov_file)
+          mark_optimized(mp4_file)
+          Mix.shell().info("  Done — use [video:#{String.replace_prefix(mp4_file, "priv/static", "")}]")
+        else
+          {:error, _} ->
+            if File.exists?(webm_file), do: File.rm!(webm_file)
+            if File.exists?(mp4_file), do: File.rm!(mp4_file)
+            Mix.shell().error("  Failed to convert #{Path.basename(mov_file)}, skipping")
+        end
+      end)
+    end
+  end
+
+  defp generate_mp4(ffmpeg, input, output) do
+    Mix.shell().info("  Generating #{Path.basename(output)}...")
+
+    case System.cmd(
+           ffmpeg,
+           [
+             "-i",
+             input,
+             "-c:v",
+             "libx264",
+             "-crf",
+             "28",
+             "-an",
+             "-movflags",
+             "+faststart",
+             "-y",
+             output
+           ],
+           stderr_to_stdout: true
+         ) do
+      {_, 0} ->
+        size = File.stat!(output).size
+        Mix.shell().info("  #{Path.basename(output)}: #{format_bytes(size)}")
+        {:ok, 0}
+
+      {output_log, code} ->
+        Mix.shell().error("  Failed to generate MP4 (exit #{code}): #{output_log}")
+        {:error, output_log}
     end
   end
 
