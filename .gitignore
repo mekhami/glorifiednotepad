@@ -70,6 +70,11 @@ docs/superpowers/
 # Exclude uploaded binaries (place manually on server)
 /priv/static/downloads/*.dmg
 
-# Exclude video files — deploy separately via scp, not committed to git
+# Exclude media files — deploy separately via scp/rsync, not committed to git
+/priv/static/images/*.png
+/priv/static/images/*.jpg
+/priv/static/images/*.jpeg
+/priv/static/images/*.webp
+/priv/static/images/*.gif
 /priv/static/videos/*.mp4
 /priv/static/videos/*.webm
