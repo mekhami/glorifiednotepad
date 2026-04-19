@@ -120,7 +120,7 @@ if [ -d "$DEPLOY_DIR/releases" ]; then
     ls -t | tail -n +6 | xargs -r rm -rf
 fi
 
-# Step 9: Preserve .env.prod, downloads, and videos
+# Step 9: Preserve .env.prod and downloads
 if [ -f "$DEPLOY_DIR/.env.prod" ]; then
     log "Preserving .env.prod..."
     cp "$DEPLOY_DIR/.env.prod" /tmp/.env.prod.backup
@@ -134,13 +134,6 @@ DOWNLOADS_PATH=$(eval echo $DOWNLOADS_DIR 2>/dev/null | head -1)
 if [ -d "$DOWNLOADS_PATH" ]; then
     log "Preserving downloads directory..."
     cp -r "$DOWNLOADS_PATH" "$DOWNLOADS_BACKUP"
-fi
-
-VIDEOS_BACKUP="/tmp/indie-videos-backup"
-rm -rf "$VIDEOS_BACKUP"
-if [ -d "/var/lib/indie/videos" ]; then
-    log "Preserving videos from /var/lib/indie/videos..."
-    cp -r "/var/lib/indie/videos" "$VIDEOS_BACKUP"
 fi
 
 # Step 10: Deploy new release
@@ -167,16 +160,15 @@ if [ -d "$DOWNLOADS_BACKUP" ]; then
     rm -rf "$DOWNLOADS_BACKUP"
 fi
 
-# Restore videos
-VIDEOS_DIR="$DEPLOY_DIR/lib/$APP_NAME-*/priv/static/videos"
-if [ -d "$VIDEOS_BACKUP" ]; then
-    log "Restoring videos..."
+# Copy videos from persistent store into release
+if [ -d "/var/lib/indie/videos" ]; then
+    VIDEOS_DIR="$DEPLOY_DIR/lib/$APP_NAME-*/priv/static/videos"
     NEW_VIDEOS_PATH=$(eval echo $VIDEOS_DIR 2>/dev/null | head -1)
     if [ -n "$NEW_VIDEOS_PATH" ]; then
+        log "Copying videos from /var/lib/indie/videos..."
         mkdir -p "$NEW_VIDEOS_PATH"
-        cp -r "$VIDEOS_BACKUP"/. "$NEW_VIDEOS_PATH/"
+        cp /var/lib/indie/videos/* "$NEW_VIDEOS_PATH/" 2>/dev/null || true
     fi
-    rm -rf "$VIDEOS_BACKUP"
 fi
 
 # Copy content files
