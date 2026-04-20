@@ -94,7 +94,10 @@ defmodule Mix.Tasks.Videos.Optimize do
              {:ok, _} <- generate_mp4(ffmpeg, mov_file, mp4_file) do
           File.rm!(mov_file)
           mark_optimized(mp4_file)
-          Mix.shell().info("  Done — use [video:#{String.replace_prefix(mp4_file, "priv/static", "")}]")
+
+          Mix.shell().info(
+            "  Done — use [video:#{String.replace_prefix(mp4_file, "priv/static", "")}]"
+          )
         else
           {:error, _} ->
             if File.exists?(webm_file), do: File.rm!(webm_file)
