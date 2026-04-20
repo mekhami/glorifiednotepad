@@ -26,6 +26,7 @@ When you add a new scene, a helpful wizard walks you through the steps and rolls
 
 [video:/videos/new-scene-flow.mp4] 
 
+
 # Miscellaneous Tools
 
 On top of the basics of scenes and lists, you need Fate checks and Meaning tables. Whaddya know, those are here too!
@@ -34,13 +35,13 @@ On top of the basics of scenes and lists, you need Fate checks and Meaning table
 
 [video:/videos/meaning-table-roller.mp4]
 
-![the list of meaning tables](/images/meaning-table-list.png)
 
 And if you need to roll some random dice arbitrarily for your system, here's a fun way to do that:
 
 [video:/videos/dice-roller-8d10.mp4]
 
-My preferred notetaking method is Lonelog, and I think more people should know about it. So I added a helpful little popup that will remind you of Lonelog syntax, which you can see I used in the scene above.
+
+My preferred notetaking method is [Lonelog](https://zeruhur.itch.io/lonelog), and I think more people should know about it. So I added a helpful little popup that will remind you of Lonelog syntax, which you can see I used in the scene above.
 
 ![lonelog modal showing the lonelog syntax reference](/images/lonelog-legend.png)
 
