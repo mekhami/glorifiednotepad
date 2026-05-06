@@ -2,7 +2,7 @@
 title: "Sidenotes Test Post"
 id: sidenotes-test
 date: 2026-05-05
-draft: false
+draft: true
 sidenotes: true
 width: 60%
 ---
