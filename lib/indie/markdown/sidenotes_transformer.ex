@@ -67,9 +67,13 @@ defmodule Indie.Markdown.SidenotesTransformer do
     end
   end
 
+  # Output is Earmark block-level HTML (e.g. wrapped in <p>...</p>).
+  # CSS handles the wrapper: `.sidenote-entry p { margin: 0; }`.
+  # Trailing newlines are trimmed so callers get a clean string.
   defp render_sidenote_html(text) do
     text
     |> Earmark.as_ast!(breaks: true)
     |> Earmark.Transform.transform()
+    |> String.trim()
   end
 end

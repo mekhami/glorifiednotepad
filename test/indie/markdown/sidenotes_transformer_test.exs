@@ -72,8 +72,9 @@ defmodule Indie.Markdown.SidenotesTransformerTest do
       {body, sidenotes} = SidenotesTransformer.transform(markdown, "the-post")
 
       assert length(sidenotes) == 2
-      assert Enum.at(sidenotes, 0).number == 1
-      assert Enum.at(sidenotes, 1).number == 2
+      [first, second] = sidenotes
+      assert first.number == 1
+      assert second.number == 2
       assert body =~ ~r/sn-the-post-1/
       assert body =~ ~r/sn-the-post-2/
     end
@@ -89,8 +90,9 @@ defmodule Indie.Markdown.SidenotesTransformerTest do
 
       {_body, sidenotes} = SidenotesTransformer.transform(markdown, "p")
 
-      assert Enum.at(sidenotes, 0).number == 1
-      assert Enum.at(sidenotes, 1).number == 2
+      [first, second] = sidenotes
+      assert first.number == 1
+      assert second.number == 2
     end
 
     test "anchor IDs are scoped to the post_id" do
