@@ -39,55 +39,122 @@
     <p><.link navigate="/">[home]</.link></p>
   </div>
 <% else %>
-  <div class="post-header" id={@post.id} style={"width: #{@post.width};"}>
-    <div class="post-header-top">
-      <h2>{@post.title}</h2>
-      <.link navigate={"/p/#{@post.id}"} class="post-header-link">[link]</.link>
-    </div>
-    <%= if @post.pixel_colors && @post.pixel_colors != [] do %>
-      <div class="post-header-pixels" role="presentation" aria-hidden="true">
-        <span :for={color <- @post.pixel_colors} class="pixel" style={"background: #{color};"}>
-        </span>
-      </div>
-    <% end %>
-  </div>
+  <%= if @post.sidenotes != [] do %>
+    <%!-- Two-column layout: post card + sidenotes panel --%>
+    <div class="post-sidenotes-wrapper" style={"--post-col-width: #{@post.width};"}>
+      <div class="post-column">
+        <div class="post-header" id={@post.id}>
+          <div class="post-header-top">
+            <h2>{@post.title}</h2>
+            <.link navigate={"/p/#{@post.id}"} class="post-header-link">[link]</.link>
+          </div>
+          <%= if @post.pixel_colors && @post.pixel_colors != [] do %>
+            <div class="post-header-pixels" role="presentation" aria-hidden="true">
+              <span :for={color <- @post.pixel_colors} class="pixel" style={"background: #{color};"}>
+              </span>
+            </div>
+          <% end %>
+        </div>
 
-  <div
-    id="post-content"
-    class="post-content post-page"
-    style={"width: #{@post.width};"}
-    phx-hook="ImageMagnifier"
-  >
-    <div style="text-align: right; margin-bottom: 1rem; opacity: 0.7;">
-      {Calendar.strftime(@post.date, "%B %-d, %Y")}
-    </div>
-    {Phoenix.HTML.raw(@post.html)}
+        <div
+          id="post-content"
+          class="post-content post-page"
+          phx-hook="ImageMagnifier"
+        >
+          <div style="text-align: right; margin-bottom: 1rem; opacity: 0.7;">
+            {Calendar.strftime(@post.date, "%B %-d, %Y")}
+          </div>
+          {Phoenix.HTML.raw(@post.html)}
 
-    <%!-- Comments section --%>
-    <%= if @comments != [] do %>
-      <div class="comments-section">
-        <p>comments:</p>
-        <div :for={comment <- @comments} class="comment">
-          <span class="comment-author">{comment.author_name}:</span>
-          <span class="comment-body">
-            {Phoenix.HTML.raw(render_comment_markdown(comment.body))}
-          </span>
+          <%= if @comments != [] do %>
+            <div class="comments-section">
+              <p>comments:</p>
+              <div :for={comment <- @comments} class="comment">
+                <span class="comment-author">{comment.author_name}:</span>
+                <span class="comment-body">
+                  {Phoenix.HTML.raw(render_comment_markdown(comment.body))}
+                </span>
+              </div>
+            </div>
+          <% end %>
+
+          <div class="comment-button-container">
+            <button class="leave-comment-btn" phx-click="open_comment_modal">
+              leave a comment
+            </button>
+          </div>
+
+          <div style="margin-top: 1rem;">
+            <.link navigate="/">[home]</.link>
+          </div>
         </div>
       </div>
-    <% end %>
 
-    <%!-- Leave a comment button --%>
-    <div class="comment-button-container">
-      <button class="leave-comment-btn" phx-click="open_comment_modal">
-        leave a comment
-      </button>
+      <%!-- Sidenotes panel --%>
+      <div
+        class="sidenotes-panel"
+        id={"sidenotes-panel-#{@post.id}"}
+        phx-hook="SidenotesAlign"
+      >
+        <div class="sidenotes-panel-header">notes</div>
+        <div class="sidenotes-body">
+          <%= for sn <- @post.sidenotes do %>
+            <div class="sidenote-entry" data-sn={"#{@post.id}-#{sn.number}"}>
+              {Phoenix.HTML.raw(sn.html)}
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <%!-- Standard layout (no sidenotes) — unchanged from before --%>
+    <div class="post-header" id={@post.id} style={"width: #{@post.width};"}>
+      <div class="post-header-top">
+        <h2>{@post.title}</h2>
+        <.link navigate={"/p/#{@post.id}"} class="post-header-link">[link]</.link>
+      </div>
+      <%= if @post.pixel_colors && @post.pixel_colors != [] do %>
+        <div class="post-header-pixels" role="presentation" aria-hidden="true">
+          <span :for={color <- @post.pixel_colors} class="pixel" style={"background: #{color};"}>
+          </span>
+        </div>
+      <% end %>
     </div>
 
-    <%!-- Home link --%>
-    <div style="margin-top: 1rem;">
-      <.link navigate="/">[home]</.link>
+    <div
+      id="post-content"
+      class="post-content post-page"
+      style={"width: #{@post.width};"}
+      phx-hook="ImageMagnifier"
+    >
+      <div style="text-align: right; margin-bottom: 1rem; opacity: 0.7;">
+        {Calendar.strftime(@post.date, "%B %-d, %Y")}
+      </div>
+      {Phoenix.HTML.raw(@post.html)}
+
+      <%= if @comments != [] do %>
+        <div class="comments-section">
+          <p>comments:</p>
+          <div :for={comment <- @comments} class="comment">
+            <span class="comment-author">{comment.author_name}:</span>
+            <span class="comment-body">
+              {Phoenix.HTML.raw(render_comment_markdown(comment.body))}
+            </span>
+          </div>
+        </div>
+      <% end %>
+
+      <div class="comment-button-container">
+        <button class="leave-comment-btn" phx-click="open_comment_modal">
+          leave a comment
+        </button>
+      </div>
+
+      <div style="margin-top: 1rem;">
+        <.link navigate="/">[home]</.link>
+      </div>
     </div>
-  </div>
+  <% end %>
 <% end %>
 
 <%!-- Image magnify modal --%>

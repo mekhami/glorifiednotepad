@@ -27,67 +27,147 @@
 <div id="canvas-zone-right" class="canvas-margin-zone"></div>
 
 <%= for {post, index} <- Enum.with_index(@posts) do %>
-  <div class="post-header" id={post.id} style={"width: #{post.width};"}>
-    <div class="post-header-top">
-      <h2>
-        <button
-          id={"expand-btn-#{index}"}
-          class="expand-collapse-btn"
-          phx-click={
-            JS.toggle_class("collapsed", to: "#post-content-#{index}")
-            |> JS.toggle_class("expanded", to: "#expand-btn-#{index}")
-          }
-          aria-label="Expand or collapse post"
+  <%= if post.sidenotes != [] do %>
+    <%!-- Two-column layout: post card + sidenotes panel --%>
+    <div class="post-sidenotes-wrapper" style={"--post-col-width: #{post.width};"}>
+      <div class="post-column">
+        <div class="post-header" id={post.id}>
+          <div class="post-header-top">
+            <h2>
+              <button
+                id={"expand-btn-#{index}"}
+                class="expand-collapse-btn"
+                phx-click={
+                  JS.toggle_class("collapsed", to: "#post-content-#{index}")
+                  |> JS.toggle_class("expanded", to: "#expand-btn-#{index}")
+                }
+                aria-label="Expand or collapse post"
+              >
+                [+]
+              </button>
+              {post.title}
+            </h2>
+            <.link navigate={"/p/#{post.id}"} class="post-header-link">[link]</.link>
+          </div>
+          <%= if post.pixel_colors && post.pixel_colors != [] do %>
+            <div class="post-header-pixels" role="presentation" aria-hidden="true">
+              <span :for={color <- post.pixel_colors} class="pixel" style={"background: #{color};"}>
+              </span>
+            </div>
+          <% end %>
+        </div>
+
+        <div
+          id={"post-content-#{index}"}
+          class="post-content collapsed"
+          phx-hook="ExpandOnClick"
+          data-btn-id={"expand-btn-#{index}"}
         >
-          [+]
-        </button>
-        {post.title}
-      </h2>
-      <.link navigate={"/p/#{post.id}"} class="post-header-link">[link]</.link>
-    </div>
+          <div style="text-align: right; margin-bottom: 1rem; opacity: 0.7;">
+            {Calendar.strftime(post.date, "%B %-d, %Y")}
+          </div>
+          <div id={"post-images-#{index}"} phx-hook="ImageMagnifier">
+            {Phoenix.HTML.raw(post.html)}
+          </div>
 
-    <%= if post.pixel_colors && post.pixel_colors != [] do %>
-      <div class="post-header-pixels" role="presentation" aria-hidden="true">
-        <span :for={color <- post.pixel_colors} class="pixel" style={"background: #{color};"}>
-        </span>
-      </div>
-    <% end %>
-  </div>
+          <%= if @comments_by_post[post.id] != [] do %>
+            <div class="comments-section">
+              <p>comments:</p>
+              <div :for={comment <- @comments_by_post[post.id]} class="comment">
+                <span class="comment-author">{comment.author_name}:</span>
+                <span class="comment-body">
+                  {Phoenix.HTML.raw(render_comment_markdown(comment.body))}
+                </span>
+              </div>
+            </div>
+          <% end %>
 
-  <div
-    id={"post-content-#{index}"}
-    class="post-content collapsed"
-    style={"width: #{post.width};"}
-    phx-hook="ExpandOnClick"
-    data-btn-id={"expand-btn-#{index}"}
-  >
-    <div style="text-align: right; margin-bottom: 1rem; opacity: 0.7;">
-      {Calendar.strftime(post.date, "%B %-d, %Y")}
-    </div>
-    <div id={"post-images-#{index}"} phx-hook="ImageMagnifier">
-      {Phoenix.HTML.raw(post.html)}
-    </div>
-
-    <%!-- Comments section --%>
-    <%= if @comments_by_post[post.id] != [] do %>
-      <div class="comments-section">
-        <p>comments:</p>
-        <div :for={comment <- @comments_by_post[post.id]} class="comment">
-          <span class="comment-author">{comment.author_name}:</span>
-          <span class="comment-body">
-            {Phoenix.HTML.raw(render_comment_markdown(comment.body))}
-          </span>
+          <div class="comment-button-container">
+            <button class="leave-comment-btn" phx-click="open_comment_modal" phx-value-post-id={post.id}>
+              leave a comment
+            </button>
+          </div>
         </div>
       </div>
-    <% end %>
 
-    <%!-- Leave a comment button --%>
-    <div class="comment-button-container">
-      <button class="leave-comment-btn" phx-click="open_comment_modal" phx-value-post-id={post.id}>
-        leave a comment
-      </button>
+      <%!-- Sidenotes panel --%>
+      <div
+        class="sidenotes-panel"
+        id={"sidenotes-panel-#{post.id}"}
+        phx-hook="SidenotesAlign"
+      >
+        <div class="sidenotes-panel-header">notes</div>
+        <div class="sidenotes-body">
+          <%= for sn <- post.sidenotes do %>
+            <div class="sidenote-entry" data-sn={"#{post.id}-#{sn.number}"}>
+              {Phoenix.HTML.raw(sn.html)}
+            </div>
+          <% end %>
+        </div>
+      </div>
     </div>
-  </div>
+  <% else %>
+    <%!-- Standard layout (no sidenotes) — unchanged from before --%>
+    <div class="post-header" id={post.id} style={"width: #{post.width};"}>
+      <div class="post-header-top">
+        <h2>
+          <button
+            id={"expand-btn-#{index}"}
+            class="expand-collapse-btn"
+            phx-click={
+              JS.toggle_class("collapsed", to: "#post-content-#{index}")
+              |> JS.toggle_class("expanded", to: "#expand-btn-#{index}")
+            }
+            aria-label="Expand or collapse post"
+          >
+            [+]
+          </button>
+          {post.title}
+        </h2>
+        <.link navigate={"/p/#{post.id}"} class="post-header-link">[link]</.link>
+      </div>
+
+      <%= if post.pixel_colors && post.pixel_colors != [] do %>
+        <div class="post-header-pixels" role="presentation" aria-hidden="true">
+          <span :for={color <- post.pixel_colors} class="pixel" style={"background: #{color};"}>
+          </span>
+        </div>
+      <% end %>
+    </div>
+
+    <div
+      id={"post-content-#{index}"}
+      class="post-content collapsed"
+      style={"width: #{post.width};"}
+      phx-hook="ExpandOnClick"
+      data-btn-id={"expand-btn-#{index}"}
+    >
+      <div style="text-align: right; margin-bottom: 1rem; opacity: 0.7;">
+        {Calendar.strftime(post.date, "%B %-d, %Y")}
+      </div>
+      <div id={"post-images-#{index}"} phx-hook="ImageMagnifier">
+        {Phoenix.HTML.raw(post.html)}
+      </div>
+
+      <%= if @comments_by_post[post.id] != [] do %>
+        <div class="comments-section">
+          <p>comments:</p>
+          <div :for={comment <- @comments_by_post[post.id]} class="comment">
+            <span class="comment-author">{comment.author_name}:</span>
+            <span class="comment-body">
+              {Phoenix.HTML.raw(render_comment_markdown(comment.body))}
+            </span>
+          </div>
+        </div>
+      <% end %>
+
+      <div class="comment-button-container">
+        <button class="leave-comment-btn" phx-click="open_comment_modal" phx-value-post-id={post.id}>
+          leave a comment
+        </button>
+      </div>
+    </div>
+  <% end %>
 <% end %>
 
 <%!-- More button --%>
