@@ -73,11 +73,6 @@ defmodule Indie.PostTest do
   end
 
   describe "sidenotes pipeline" do
-    test "post without sidenotes front matter has empty sidenotes list" do
-      post = %Post{sidenotes: []}
-      assert post.sidenotes == []
-    end
-
     test "SidenotesTransformer integration: anchors survive Earmark pipeline" do
       markdown = """
       A paragraph with a note.[^1]

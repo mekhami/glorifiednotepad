@@ -34,7 +34,7 @@ defmodule Indie.Markdown.SidenotesTransformer do
   Returns `{transformed_markdown, sidenotes}`.
 
   Anchors are injected as placeholder tokens that survive Earmark processing.
-  The caller must run `replace_placeholders/1` on the final HTML string to swap
+  The caller must run `replace_placeholders/2` on the final HTML string to swap
   the tokens for real `<span>` elements. `load_post/1` does this automatically
   via the post pipeline.
   """

@@ -49,7 +49,7 @@ defmodule Indie.Post do
     use_sidenotes = parse_boolean(front_matter["sidenotes"])
 
     {markdown, sidenotes} =
-      if use_sidenotes do
+      if use_sidenotes && is_binary(post_id) do
         Indie.Markdown.SidenotesTransformer.transform(markdown, post_id)
       else
         {markdown, []}
