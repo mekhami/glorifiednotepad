@@ -3,7 +3,7 @@ defmodule Indie.Post do
   Module for parsing and loading markdown posts with YAML front matter.
   """
 
-  defstruct [:title, :id, :date, :html, :path, draft: false, width: "25%"]
+  defstruct [:title, :id, :date, :html, :path, draft: false, width: "25%", sidenotes: []]
 
   @content_dir "content"
 
@@ -45,6 +45,16 @@ defmodule Indie.Post do
 
     {front_matter, markdown} = parse_front_matter(content)
 
+    post_id = front_matter["id"]
+    use_sidenotes = parse_boolean(front_matter["sidenotes"])
+
+    {markdown, sidenotes} =
+      if use_sidenotes do
+        Indie.Markdown.SidenotesTransformer.transform(markdown, post_id)
+      else
+        {markdown, []}
+      end
+
     html =
       markdown
       |> Indie.Markdown.ColumnsTransformer.transform()
@@ -52,10 +62,9 @@ defmodule Indie.Post do
       |> Earmark.as_ast!(breaks: true)
       |> Indie.Markdown.HighlightTransformer.transform()
       |> Earmark.Transform.transform()
+      |> Indie.Markdown.SidenotesTransformer.replace_placeholders(post_id)
       |> String.replace(~r/( {2,})(<mark)/u, fn full ->
         [spaces, tag] = Regex.run(~r/^( +)(<mark)$/, full, capture: :all_but_first)
-        # Earmark adds 2 spaces per indent level. The original source text has at most
-        # 1 trailing space. Strip pairs of spaces to recover the original spacing.
         String.duplicate(" ", rem(String.length(spaces), 2)) <> tag
       end)
       |> String.replace(~r/(<mark[^>]*>)\n/u, "\\1")
@@ -67,12 +76,13 @@ defmodule Indie.Post do
 
     %__MODULE__{
       title: front_matter["title"],
-      id: front_matter["id"],
+      id: post_id,
       date: parse_date(front_matter["date"]),
       html: html,
       path: path,
       draft: parse_boolean(front_matter["draft"]),
-      width: front_matter["width"] || "25%"
+      width: front_matter["width"] || "25%",
+      sidenotes: sidenotes
     }
   end
 

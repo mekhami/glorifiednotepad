@@ -32,6 +32,11 @@ defmodule Indie.Markdown.SidenotesTransformer do
   `post_id` is used to scope anchor IDs (prevents collisions in multi-post views).
 
   Returns `{transformed_markdown, sidenotes}`.
+
+  Anchors are injected as placeholder tokens that survive Earmark processing.
+  The caller must run `replace_placeholders/1` on the final HTML string to swap
+  the tokens for real `<span>` elements. `load_post/1` does this automatically
+  via the post pipeline.
   """
   @spec transform(String.t(), String.t()) :: {String.t(), list(map())}
   def transform(markdown, post_id) do
@@ -52,10 +57,13 @@ defmodule Indie.Markdown.SidenotesTransformer do
         |> String.replace(~r/\n{3,}/, "\n\n")
         |> String.trim_trailing()
 
+      # Use placeholder tokens so Earmark does not escape the HTML.
+      # Placeholders are HTML comments which Earmark passes through verbatim.
+      # They are swapped to real <span> elements in replace_placeholders/2 after Earmark runs.
       with_anchors =
         Regex.replace(@anchor_pattern, stripped, fn _full, num_str ->
           num = String.to_integer(num_str)
-          ~s(<span class="sn-anchor" id="sn-#{post_id}-#{num}"><sup>#{num}</sup></span>)
+          "<!--SN_ANCHOR_#{post_id}_#{num}-->"
         end)
 
       sidenotes =
@@ -65,6 +73,18 @@ defmodule Indie.Markdown.SidenotesTransformer do
 
       {with_anchors, sidenotes}
     end
+  end
+
+  @doc """
+  Replaces placeholder tokens in HTML with real anchor `<span>` elements.
+  Call this after the full Earmark pipeline has run.
+  """
+  @spec replace_placeholders(String.t(), String.t()) :: String.t()
+  def replace_placeholders(html, post_id) do
+    Regex.replace(~r/<!--SN_ANCHOR_#{Regex.escape(post_id)}_(\d+)-->/, html, fn _full, num_str ->
+      num = String.to_integer(num_str)
+      ~s(<span class="sn-anchor" id="sn-#{post_id}-#{num}"><sup>#{num}</sup></span>)
+    end)
   end
 
   # Output is Earmark block-level HTML (e.g. wrapped in <p>...</p>).

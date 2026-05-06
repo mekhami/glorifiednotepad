@@ -31,7 +31,7 @@ defmodule Indie.Markdown.SidenotesTransformerTest do
       refute body =~ "This is the sidenote."
     end
 
-    test "replaces anchor marker with scoped span in returned markdown" do
+    test "replaces anchor marker with scoped span after replace_placeholders" do
       markdown = """
       A paragraph.[^1]
 
@@ -39,9 +39,10 @@ defmodule Indie.Markdown.SidenotesTransformerTest do
       """
 
       {body, _sidenotes} = SidenotesTransformer.transform(markdown, "my-post")
+      html = SidenotesTransformer.replace_placeholders(body, "my-post")
 
-      assert body =~ ~r/<span class="sn-anchor" id="sn-my-post-1"><sup>1<\/sup><\/span>/
-      refute body =~ "[^1]"
+      assert html =~ ~r/<span class="sn-anchor" id="sn-my-post-1"><sup>1<\/sup><\/span>/
+      refute html =~ "[^1]"
     end
 
     test "definition can appear before its anchor" do
@@ -52,9 +53,10 @@ defmodule Indie.Markdown.SidenotesTransformerTest do
       """
 
       {body, sidenotes} = SidenotesTransformer.transform(markdown, "slug")
+      html = SidenotesTransformer.replace_placeholders(body, "slug")
 
       assert length(sidenotes) == 1
-      assert body =~ ~r/sn-slug-1/
+      assert html =~ ~r/sn-slug-1/
       refute body =~ "[^1]:"
     end
 
@@ -70,13 +72,14 @@ defmodule Indie.Markdown.SidenotesTransformerTest do
       """
 
       {body, sidenotes} = SidenotesTransformer.transform(markdown, "the-post")
+      html = SidenotesTransformer.replace_placeholders(body, "the-post")
 
       assert length(sidenotes) == 2
       [first, second] = sidenotes
       assert first.number == 1
       assert second.number == 2
-      assert body =~ ~r/sn-the-post-1/
-      assert body =~ ~r/sn-the-post-2/
+      assert html =~ ~r/sn-the-post-1/
+      assert html =~ ~r/sn-the-post-2/
     end
 
     test "sidenotes are sorted by number" do
@@ -99,8 +102,9 @@ defmodule Indie.Markdown.SidenotesTransformerTest do
       markdown = "Text.[^1]\n\n[^1]: Note.\n"
 
       {body, _} = SidenotesTransformer.transform(markdown, "post-with-long-slug")
+      html = SidenotesTransformer.replace_placeholders(body, "post-with-long-slug")
 
-      assert body =~ ~s(id="sn-post-with-long-slug-1")
+      assert html =~ ~s(id="sn-post-with-long-slug-1")
     end
 
     test "returns empty sidenotes list when no definitions present" do

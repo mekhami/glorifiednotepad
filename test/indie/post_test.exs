@@ -65,6 +65,45 @@ defmodule Indie.PostTest do
       post = %Post{}
       assert post.width == "25%"
     end
+
+    test "sidenotes defaults to [] in struct" do
+      post = %Post{}
+      assert post.sidenotes == []
+    end
+  end
+
+  describe "sidenotes pipeline" do
+    test "post without sidenotes front matter has empty sidenotes list" do
+      post = %Post{sidenotes: []}
+      assert post.sidenotes == []
+    end
+
+    test "SidenotesTransformer integration: anchors survive Earmark pipeline" do
+      markdown = """
+      A paragraph with a note.[^1]
+
+      [^1]: The note text.
+      """
+
+      {transformed, sidenotes} =
+        Indie.Markdown.SidenotesTransformer.transform(markdown, "test-post")
+
+      # The anchor span should survive the full pipeline
+      html =
+        transformed
+        |> Indie.Markdown.ColumnsTransformer.transform()
+        |> Indie.Markdown.VideoTransformer.transform()
+        |> Earmark.as_ast!(breaks: true)
+        |> Indie.Markdown.HighlightTransformer.transform()
+        |> Earmark.Transform.transform()
+        |> Indie.Markdown.SidenotesTransformer.replace_placeholders("test-post")
+
+      assert html =~ ~r/id="sn-test-post-1"/
+      assert html =~ ~r/class="sn-anchor"/
+      assert length(sidenotes) == 1
+      assert hd(sidenotes).number == 1
+      assert hd(sidenotes).html =~ "The note text."
+    end
   end
 
   describe "datetime parsing and sorting" do
