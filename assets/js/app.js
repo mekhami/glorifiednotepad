@@ -26,12 +26,13 @@ import topbar from "../vendor/topbar"
 import DoodleCanvas from "./doodle_canvas"
 import ExpandOnClick from "./expand_on_click"
 import ImageMagnifier from "./image_magnifier"
+import SidenotesAlign from "./sidenotes_align"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {DoodleCanvas, ExpandOnClick, ImageMagnifier},
+  hooks: {DoodleCanvas, ExpandOnClick, ImageMagnifier, SidenotesAlign},
 })
 
 // Show progress bar on live navigation and form submits
