@@ -1587,23 +1587,29 @@ mark.hl-red {
   Width of the post column comes from --post-col-width CSS variable
   set inline on the wrapper. The panel adds 240px to the right.
 */
+/* Wrapper occupies the same width and centering as a normal post of the same
+   width. The panel is an absolute sidecar — it hangs off the right edge without
+   displacing the post column. */
 .post-sidenotes-wrapper {
-  display: grid;
-  grid-template-columns: var(--post-col-width, 60%) 240px;
-  margin: 0 auto 3rem auto;
   position: relative;
+  width: var(--post-col-width, 60%);
+  max-width: 800px;
+  min-width: 300px;
+  margin: 0 auto 3rem auto;
   z-index: 1;
 }
 
-/* Post column: stacks header and content, removes their individual centering */
+/* Post column: stacks header and content, filling the wrapper */
 .post-column {
   display: flex;
   flex-direction: column;
 }
 
+/* Header and content fill the wrapper without re-centering themselves */
 .post-sidenotes-wrapper .post-header,
 .post-sidenotes-wrapper .post-content {
   max-width: none;
+  min-width: 0;
   width: auto;
   margin-left: 0;
   margin-right: 0;
@@ -1614,15 +1620,22 @@ mark.hl-red {
   margin-bottom: 6px;
 }
 
-/* Sidenotes panel: same visual language as post cards */
+/* Sidenotes panel: absolute sidecar attached to the right edge of the wrapper.
+   top: 0 / bottom: 0 makes it stretch to match the wrapper height, so it
+   naturally collapses and expands in sync with the post content. */
 .sidenotes-panel {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  bottom: 0;
+  width: 220px;
   background-color: #3a4263;
   border: 2px solid #000;
   border-left: none;
   box-shadow: 4px 4px 0 #000;
   display: flex;
   flex-direction: column;
-  align-self: stretch;
+  overflow: hidden;
 }
 
 .sidenotes-panel-header {
@@ -1677,26 +1690,21 @@ mark.hl-red {
   cursor: default;
 }
 
-/* Hide sidenotes panel when post is collapsed (home feed) */
-.post-sidenotes-wrapper:has(.post-content.collapsed) .sidenotes-panel {
-  visibility: hidden;
-}
-
-/* Mobile: stack vertically, panel below post */
+/* Mobile: stack panel below post */
 @media (max-width: 600px) {
   .post-sidenotes-wrapper {
-    grid-template-columns: 1fr;
-  }
-
-  .post-sidenotes-wrapper .post-header,
-  .post-sidenotes-wrapper .post-content {
+    width: auto;
     max-width: none;
+    min-width: 0;
   }
 
   .sidenotes-panel {
+    position: static;
+    width: auto;
     border-left: 2px solid #000;
     border-top: none;
     box-shadow: 4px 4px 0 #000;
+    overflow: visible;
   }
 
   .sidenotes-body {

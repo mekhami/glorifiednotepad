@@ -36,15 +36,25 @@ const SidenotesAlign = {
     if (!panelBody) return
 
     const panelBodyTop = panelBody.getBoundingClientRect().top
+    const GAP = 4 // minimum px gap between stacked notes
 
-    this.el.querySelectorAll(".sidenote-entry").forEach(snEl => {
-      const snKey = snEl.dataset.sn  // e.g. "my-post-1"
+    // Compute desired top for each entry
+    const entries = Array.from(this.el.querySelectorAll(".sidenote-entry"))
+    const positions = entries.map(snEl => {
+      const snKey = snEl.dataset.sn
       const anchor = postCol.querySelector(`[id="sn-${snKey}"]`)
-      if (!anchor) return
+      const desired = anchor
+        ? Math.max(0, anchor.getBoundingClientRect().top - panelBodyTop)
+        : 0
+      return { el: snEl, desired }
+    })
 
-      const anchorTop = anchor.getBoundingClientRect().top
-      const offset = anchorTop - panelBodyTop
-      snEl.style.top = Math.max(0, offset) + "px"
+    // Anti-overlap pass: nudge each entry down if it would overlap the previous
+    let prevBottom = -Infinity
+    positions.forEach(({ el, desired }) => {
+      const top = Math.max(desired, prevBottom + GAP)
+      el.style.top = top + "px"
+      prevBottom = top + el.getBoundingClientRect().height
     })
   }
 }
