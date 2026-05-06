@@ -51,7 +51,11 @@
           </div>
           <%= if post.pixel_colors && post.pixel_colors != [] do %>
             <div class="post-header-pixels" role="presentation" aria-hidden="true">
-              <span :for={color <- post.pixel_colors} class="pixel" style={"background: #{color};"}>
+              <span
+                :for={color <- post.pixel_colors}
+                class="pixel"
+                style={"background: #{color};"}
+              >
               </span>
             </div>
           <% end %>
@@ -83,7 +87,11 @@
           <% end %>
 
           <div class="comment-button-container">
-            <button class="leave-comment-btn" phx-click="open_comment_modal" phx-value-post-id={post.id}>
+            <button
+              class="leave-comment-btn"
+              phx-click="open_comment_modal"
+              phx-value-post-id={post.id}
+            >
               leave a comment
             </button>
           </div>
@@ -162,7 +170,11 @@
       <% end %>
 
       <div class="comment-button-container">
-        <button class="leave-comment-btn" phx-click="open_comment_modal" phx-value-post-id={post.id}>
+        <button
+          class="leave-comment-btn"
+          phx-click="open_comment_modal"
+          phx-value-post-id={post.id}
+        >
           leave a comment
         </button>
       </div>
