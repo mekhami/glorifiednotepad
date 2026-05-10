@@ -108,6 +108,7 @@
         <div class="sidenotes-body">
           <%= for sn <- post.sidenotes do %>
             <div class="sidenote-entry" data-sn={"#{post.id}-#{sn.number}"}>
+              <sup class="sn-label">{sn.number}</sup>
               {Phoenix.HTML.raw(sn.html)}
             </div>
           <% end %>

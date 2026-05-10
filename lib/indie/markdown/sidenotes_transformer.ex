@@ -21,8 +21,9 @@ defmodule Indie.Markdown.SidenotesTransformer do
       <span class="sn-anchor" id="sn-{post_id}-{n}"><sup>n</sup></span>
   """
 
-  # Matches: [^n]: text on a single line (anywhere in document)
-  @definition_pattern ~r/^\[\^(\d+)\]:\s*(.+)$/m
+  # Matches: [^n]: text spanning one or more lines, terminated by a blank line or end of string.
+  # Requires a blank line after each definition (multiline definitions included).
+  @definition_pattern ~r/^\[\^(\d+)\]:\s*(.*?)(?=\n\n|\z)/ms
 
   # Matches: [^n] inline anchor (not followed by :, to avoid matching definitions)
   @anchor_pattern ~r/\[\^(\d+)\](?!:)/
@@ -44,7 +45,7 @@ defmodule Indie.Markdown.SidenotesTransformer do
       Regex.scan(@definition_pattern, markdown, capture: :all_but_first)
       |> Enum.map(fn [num_str, text] ->
         num = String.to_integer(num_str)
-        html = render_sidenote_html(text)
+        html = render_sidenote_html(String.trim(text))
         {num, html}
       end)
       |> Map.new()

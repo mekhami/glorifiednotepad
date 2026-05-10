@@ -300,6 +300,64 @@ body:has(.admin-container) {
   margin-bottom: 0;
 }
 
+/* Collapsible Sections */
+.post-content details {
+  margin: 1.5rem 0;
+  border: 1px solid #5a6285;
+  border-radius: 6px;
+  background: #262c45;
+  overflow: hidden;
+}
+
+.post-content summary {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  color: #c5b8b9;
+  font-weight: 600;
+  list-style: none;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.post-content summary::-webkit-details-marker {
+  display: none;
+}
+
+.post-content summary::before {
+  content: '';
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 8px solid #8fa9b5;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.post-content summary:hover {
+  background: #2e3552;
+}
+
+.post-content details[open] summary {
+  border-bottom: 1px solid #5a6285;
+}
+
+.post-content details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.post-content .details-body {
+  padding: 0.75rem 1rem;
+}
+
+.post-content .details-body p:last-child {
+  margin-bottom: 0;
+}
+
 /* Horizontal Rules */
 .post-content hr {
   border: none;
