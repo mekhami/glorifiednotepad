@@ -71,7 +71,7 @@ On the poop deck, the highest deck of the ship, is the rusted but functioning ma
 
 Nahar fiddles with the levers and buttons for a moment.[^8] The whole clawed hook mechanism shakes side to side as he discerns what each movement does. Eventually, he finds  the combination of inputs that opens the claw, and opens it, and the huge banner falls away, flapping in the whipping wind, descending onto the city below. A cheer is raised on the ground, the sound barely making it all the way up to the ship. Nahar scowls at the celebration.
 
-[&8]:@ Nahar tries to figure out the levers and mechanisms. INT save to figure out, DEX save to manipulate
+[^8]:@ Nahar tries to figure out the levers and mechanisms. INT save to figure out, DEX save to manipulate
 d: d20<14=5 -> Success
 d: d20<6=4 -> Success
 
