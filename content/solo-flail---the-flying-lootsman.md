@@ -88,6 +88,13 @@ Gund rolls his eyes, puts his palm on Ember's forehead and shoves him back behin
 
 [^10]: ? Does the captain have any intent of surrendering? Morale save.
 d: d20<16=9 -> Success
+? What tactic does the group take?
+Obvious: Charge the captain within this small room
+Option: Retreat and draw the captain into the open air
+Odd: Try to negotiate with the captain further
+d: 2d6, Doubling Down=6, 1 -> Charge the captain within this room
+
+_GM Note: Doubling down in Triple-O means rolling 2 d6s instead of one and choosing your favorite option. If you roll doubles, you take that action _with emphasis_, and reinforce whatever tag, trait, ability, or story element guided that decision. It's a way of introducing character development based on action - How wonderful!_
 
 The captain's overly friendly guise drops instantly, replaced by a sneer. "This here is my boat, and I'll see you off of it!" He whips out a liquid filled device from behind his back and points it at the crew, and a gout of liquid flame flies out and fills the room.[^11] Glazbad dives behind a piece of furniture in the room which is set ablaze, and his jacket catches fire in the process. He flails his arm around trying to put it out, and his skin, already covered in burn scars, aches with remembered pain.[^12]
 
