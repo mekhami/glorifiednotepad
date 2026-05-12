@@ -46,6 +46,7 @@ defmodule Mix.Tasks.Post.New do
     date: #{date}
     width: #{width}
     draft: true
+    sidenotes: false
     ---
 
     Post coming soon...
