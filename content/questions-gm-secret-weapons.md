@@ -40,4 +40,6 @@ My question, to myself and to you, is **what makes great questions** in this mod
 4. The question should be part of setting the scene. (This also draws me to a different thought - when do questions stop? In my understanding, you ask questions to set the scene, and generally that's where the questions end - once action in the scene starts, you switch to a more call and response mode of play.)
 5. The question should be tailored to the character. If a character has a backstory that's related to the Fae, that's the character that should get most of the questions about the Fae.
 
+Lastly, asking good questions is a hard skill. It can be improved on. It can be practiced. It *needs* to be practiced. I'm excited to learn more about asking good questions. They need to be tight, and they also need to be tailored towards your players and their styles. If you have more trad/OSR-y players, they probably need questions that lead them a lot farther and a lot more concretely than players who are experienced story game players who are more familiar with and experienced with asking bigger, more open ended questions. So tighten them up according to your table's needs.
+
 Anyways, go cheat your players. They'll love it.
