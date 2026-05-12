@@ -39,6 +39,7 @@ defmodule IndieWeb.FeedController do
 
   defp build_item(post, base_url) do
     pubdate = format_rfc822_date(post.date)
+    body = build_rss_body(post)
 
     """
         <item>
@@ -46,9 +47,32 @@ defmodule IndieWeb.FeedController do
           <link>#{base_url}/p/#{post.id}</link>
           <guid>#{base_url}/p/#{post.id}</guid>
           <pubDate>#{pubdate}</pubDate>
-          <description><![CDATA[#{post.html}]]></description>
+          <description><![CDATA[#{body}]]></description>
         </item>
     """
+  end
+
+  defp build_rss_body(%{sidenotes: []} = post), do: post.html
+
+  defp build_rss_body(post) do
+    # Replace sn-anchor spans with linked superscripts pointing to footnotes
+    html_with_links =
+      Regex.replace(
+        ~r/<span class="sn-anchor" id="[^"]*"><sup>(\d+)<\/sup><\/span>/,
+        post.html,
+        fn _full, num -> ~s(<a href="#fn-#{num}"><sup>#{num}</sup></a>) end
+      )
+
+    footnotes =
+      post.sidenotes
+      |> Enum.map(fn %{number: n, html: h} ->
+        # Strip wrapping <p> tags Earmark adds so the <li> stays clean
+        inner = Regex.replace(~r/\A<p>(.*)<\/p>\z/s, h, "\\1")
+        ~s(<li id="fn-#{n}">#{inner}</li>)
+      end)
+      |> Enum.join("\n")
+
+    html_with_links <> "\n<hr>\n<ol>\n#{footnotes}\n</ol>"
   end
 
   defp format_rfc822_date(%DateTime{} = datetime) do
