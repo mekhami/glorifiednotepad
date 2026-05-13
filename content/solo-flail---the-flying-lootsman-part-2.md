@@ -7,6 +7,7 @@ draft: false
 sidenotes: true
 ---
 
+==yellow:Just like the last post, if you are party of my normal gaming group, don't read any further! Not until after our gaming getaway weekend, anyway!==
 # Recap
 
 In our last session, our guild of practically criminal, ethically challenged miscreants flew a rickety glider up to a flying pirate ship, crashed landed on the deck, murdered the invading pirates, attacked their captain, and were attacked by a giant Roc who is intent upon eating their bodies and regurgitating them to its fledglings.
