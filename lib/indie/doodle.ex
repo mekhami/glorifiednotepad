@@ -126,7 +126,7 @@ defmodule Indie.Doodle do
   def save_animation_frames(animation_id, frames) do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-    Repo.delete_all(from p in Pixel, where: p.animation_id == ^animation_id)
+    Repo.delete_all(from(p in Pixel, where: p.animation_id == ^animation_id))
 
     pixels_to_insert =
       Enum.flat_map(frames, fn frame_data ->
@@ -162,7 +162,7 @@ defmodule Indie.Doodle do
   end
 
   def delete_animation(id) do
-    Repo.delete_all(from a in Animation, where: a.id == ^id)
+    Repo.delete_all(from(a in Animation, where: a.id == ^id))
   end
 
   def start_all_animation_servers do
@@ -184,8 +184,9 @@ defmodule Indie.Doodle do
 
   defp delete_pixel_from_all_frames(x, y, animation_id) do
     Repo.delete_all(
-      from p in Pixel,
+      from(p in Pixel,
         where: p.x == ^x and p.y == ^y and p.animation_id == ^animation_id
+      )
     )
   end
 
@@ -209,7 +210,13 @@ defmodule Indie.Doodle do
     end)
 
     if pixel_rows != [] do
-      Repo.insert_all(Pixel, pixel_rows)
+      Repo.insert_all(
+        Pixel,
+        pixel_rows,
+        on_conflict: {:replace, [:color, :updated_at]},
+        conflict_target:
+          {:unsafe_fragment, "(x, y, animation_id, frame) WHERE animation_id IS NOT NULL"}
+      )
     end
   end
 

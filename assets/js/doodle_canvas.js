@@ -4,7 +4,6 @@ import 'vanilla-colorful/hex-input.js';
 const DoodleCanvas = {
   mounted() {
     const hookThis = this;
-    console.log('DoodleCanvas hook mounted');
     const canvas = this.el;
     const ctx = canvas.getContext('2d');
     
@@ -52,8 +51,6 @@ const DoodleCanvas = {
     // Store interval ID on the hook instance so destroyed() can access it
     this.syncInterval = null;
 
-    console.log('Canvas element:', canvas);
-    console.log('Canvas context:', ctx);
 
     // Draw a line between two grid points using Bresenham's algorithm
     const drawLine = (x0, y0, x1, y1, color) => {
@@ -112,7 +109,6 @@ const DoodleCanvas = {
 
     // Load pixels from server (initial load)
     const loadPixelsFromServer = (pixels) => {
-      console.log('Loading pixels from server:', pixels.length);
       pixels.forEach(pixel => {
         // Add to cache without drawing (redraw will handle rendering)
         const key = `${pixel.x},${pixel.y}`;
@@ -124,7 +120,6 @@ const DoodleCanvas = {
 
     // Paint pixels received from other users
     const paintPixelsFromServer = (pixels) => {
-      console.log('Received pixels from other users:', pixels.length);
       pixels.forEach(pixel => {
         // Add to cache without drawing (redraw will handle rendering)
         const key = `${pixel.x},${pixel.y}`;
@@ -136,7 +131,6 @@ const DoodleCanvas = {
 
     // Delete pixels received from other users (eraser sync)
     const deletePixelsFromServer = (coords) => {
-      console.log('Received deleted pixels from other users:', coords.length);
       coords.forEach(coord => {
         // Remove from cache
         const key = `${coord.x},${coord.y}`;
@@ -150,7 +144,6 @@ const DoodleCanvas = {
     const syncPixels = () => {
       if (pendingPixels.length === 0) return;
       
-      console.log('Syncing pixels to server:', pendingPixels.length);
       this.pushEventTo(this.el, "save_pixels", { pixels: pendingPixels });
       
       // Clear the batch
@@ -233,7 +226,6 @@ const DoodleCanvas = {
       ctx.fillRect(0, 0, CANVAS_WIDTH * PIXEL_SIZE, CANVAS_HEIGHT * PIXEL_SIZE);
       
       // Draw all cached pixels
-      console.log('Redrawing canvas with', allPixels.size, 'pixels');
       allPixels.forEach((color, key) => {
         const [x, y] = key.split(',').map(Number);
         if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) return;
@@ -254,7 +246,6 @@ const DoodleCanvas = {
       const displayHeight = window.innerHeight;
       canvas.width = displayWidth;
       canvas.height = displayHeight;
-      console.log('Canvas resized to:', canvas.width, 'x', canvas.height);
       
       // Center the canvas view
       offsetX = displayWidth / 2 - (CANVAS_WIDTH * PIXEL_SIZE * scale) / 2;
@@ -305,7 +296,6 @@ const DoodleCanvas = {
       offsetY -= (mouseY - offsetY) * (scaleDiff / scale);
       
       scale = newScale;
-      console.log('Zoom:', { scale, offsetX, offsetY });
       
       redraw();
     };
@@ -968,7 +958,6 @@ const DoodleCanvas = {
     const maxRetries = 10; // Max 10 retries (~150ms total with RAF timing)
     
     const initializeColorPicker = () => {
-      console.log('[ColorPicker] Attempting initialization, retry:', retryCount);
       
       // Query all required DOM elements
       const pickerTrigger = document.getElementById('color-picker-trigger');
@@ -979,7 +968,6 @@ const DoodleCanvas = {
       const pipetteToggle = document.getElementById('pipette-mode-toggle');
       
       // Log what we found
-      console.log('[ColorPicker] DOM elements status:', {
         pickerTrigger: !!pickerTrigger,
         pickerPopup: !!pickerPopup,
         pickerContainer: !!pickerContainer,
@@ -1003,11 +991,9 @@ const DoodleCanvas = {
       }
       
       // All elements ready, proceed with initialization
-      console.log('[ColorPicker] All elements ready, initializing...');
       const hexPicker = initColorPicker();
       const hexInput = initHexInput();
       setupColorPickerUI(hexPicker, hexInput);
-      console.log('[ColorPicker] Initialization complete!');
     };
 
     // Start initialization on next animation frame
