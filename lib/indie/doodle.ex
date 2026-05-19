@@ -122,16 +122,35 @@ defmodule Indie.Doodle do
     |> Repo.update()
   end
 
-  def save_animation_frames(animation_id, frames) do
+  @doc """
+  Saves animation frames for the given animation struct.
+  - Validates pixel coords are within animation bounding box (rejects out-of-bounds silently).
+  - Deletes pixels from other animations where (x, y, frame) matches B's saved tuples.
+  - Deletes animation records that end up with zero pixels.
+  Returns {:ok, %{deleted_animation_ids: [integer]}}.
+  """
+  def save_animation_frames(%Animation{} = animation, frames) do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
+    animation_id = animation.id
+    min_x = min(animation.x1, animation.x2)
+    max_x = max(animation.x1, animation.x2)
+    min_y = min(animation.y1, animation.y2)
+    max_y = max(animation.y1, animation.y2)
 
+    # 1. Delete all existing pixels for this animation
     Repo.delete_all(from(p in Pixel, where: p.animation_id == ^animation_id))
 
+    # 2. Build validated pixel rows
     pixels_to_insert =
       Enum.flat_map(frames, fn frame_data ->
         frame_index = frame_data["frame"]
 
-        Enum.map(frame_data["pixels"], fn p ->
+        frame_data["pixels"]
+        |> Enum.filter(fn p ->
+          p["x"] >= min_x and p["x"] <= max_x and
+            p["y"] >= min_y and p["y"] <= max_y
+        end)
+        |> Enum.map(fn p ->
           %{
             x: p["x"],
             y: p["y"],
@@ -148,7 +167,63 @@ defmodule Indie.Doodle do
       Repo.insert_all(Pixel, pixels_to_insert)
     end
 
-    :ok
+    # 3. Find other animations with pixels at the same (x, y, frame) positions
+    b_pixel_query =
+      from p in Pixel,
+        where: p.animation_id == ^animation_id,
+        select: %{x: p.x, y: p.y, frame: p.frame}
+
+    affected_animation_ids =
+      if pixels_to_insert != [] do
+        Repo.all(
+          from p in Pixel,
+            join: b in subquery(b_pixel_query),
+            on: p.x == b.x and p.y == b.y and p.frame == b.frame,
+            where: p.animation_id != ^animation_id and not is_nil(p.animation_id),
+            select: p.animation_id,
+            distinct: true
+        )
+      else
+        []
+      end
+
+    # 4. Delete those overlapping pixels from the affected animations
+    if affected_animation_ids != [] do
+      overlapping_pixel_ids =
+        Repo.all(
+          from p in Pixel,
+            join: b in subquery(b_pixel_query),
+            on: p.x == b.x and p.y == b.y and p.frame == b.frame,
+            where: p.animation_id in ^affected_animation_ids,
+            select: p.id
+        )
+
+      if overlapping_pixel_ids != [] do
+        Repo.delete_all(from p in Pixel, where: p.id in ^overlapping_pixel_ids)
+      end
+    end
+
+    # 5. Find which affected animations are now empty
+    surviving_ids =
+      if affected_animation_ids != [] do
+        Repo.all(
+          from p in Pixel,
+            where: p.animation_id in ^affected_animation_ids,
+            select: p.animation_id,
+            distinct: true
+        )
+      else
+        []
+      end
+
+    deleted_animation_ids = affected_animation_ids -- surviving_ids
+
+    # 6. Delete the empty animation records
+    if deleted_animation_ids != [] do
+      Repo.delete_all(from a in Animation, where: a.id in ^deleted_animation_ids)
+    end
+
+    {:ok, %{deleted_animation_ids: deleted_animation_ids}}
   end
 
   def get_animation_pixels(animation_id) do

@@ -92,7 +92,7 @@ defmodule IndieWeb.DoodleCanvasComponent do
     frame_count = length(frames)
     {:ok, _updated_animation} = Doodle.update_animation(animation, %{frame_count: frame_count})
 
-    Doodle.save_animation_frames(animation_id, frames)
+    Doodle.save_animation_frames(animation, frames)
 
     {:noreply, socket}
   end
