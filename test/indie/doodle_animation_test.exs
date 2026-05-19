@@ -88,13 +88,15 @@ defmodule Indie.DoodleAnimationTest do
     test "save_animation_frames replaces existing frame data" do
       {:ok, anim} = Doodle.create_animation(%{x1: 0, y1: 0, x2: 50, y2: 50})
 
-      {:ok, _} = Doodle.save_animation_frames(anim, [
-        %{"frame" => 0, "pixels" => [%{"x" => 1, "y" => 1, "color" => "#FF0000"}]}
-      ])
+      {:ok, _} =
+        Doodle.save_animation_frames(anim, [
+          %{"frame" => 0, "pixels" => [%{"x" => 1, "y" => 1, "color" => "#FF0000"}]}
+        ])
 
-      {:ok, _} = Doodle.save_animation_frames(anim, [
-        %{"frame" => 0, "pixels" => [%{"x" => 2, "y" => 2, "color" => "#00FF00"}]}
-      ])
+      {:ok, _} =
+        Doodle.save_animation_frames(anim, [
+          %{"frame" => 0, "pixels" => [%{"x" => 2, "y" => 2, "color" => "#00FF00"}]}
+        ])
 
       by_frame = Doodle.get_animation_pixels(anim.id)
       frame0 = Map.get(by_frame, 0, [])
@@ -126,29 +128,31 @@ defmodule Indie.DoodleAnimationTest do
       assert Enum.any?(static, &(&1.x == 10 and &1.y == 10))
     end
 
-    test "pixel inside animation region writes to all frames" do
+    test "static pixel inside animation region saves as static and removes from all frames" do
       {:ok, anim} = Doodle.create_animation(%{x1: 0, y1: 0, x2: 100, y2: 100})
 
-      Doodle.save_animation_frames(anim, [
-        %{"frame" => 0, "pixels" => []},
-        %{"frame" => 1, "pixels" => []}
-      ])
+      {:ok, _} =
+        Doodle.save_animation_frames(anim, [
+          %{"frame" => 0, "pixels" => [%{"x" => 50, "y" => 50, "color" => "#0000FF"}]},
+          %{"frame" => 1, "pixels" => [%{"x" => 50, "y" => 50, "color" => "#0000FF"}]}
+        ])
 
-      {:ok, _} = Doodle.update_animation(anim, %{frame_count: 2})
+      result = Doodle.save_pixels([%{"x" => 50, "y" => 50, "color" => "#FF0000"}])
 
-      Doodle.save_pixels([%{"x" => 50, "y" => 50, "color" => "#FF0000"}])
+      # Returns as a saved static pixel
+      assert Enum.any?(result.saved, &(&1.x == 50 and &1.y == 50))
+      assert anim.id in result.modified_animation_ids
 
+      # Stored as static pixel
+      static =
+        Indie.Repo.all(from(p in Indie.Doodle.Pixel, where: is_nil(p.animation_id)))
+
+      assert Enum.any?(static, &(&1.x == 50 and &1.y == 50 and &1.color == "#FF0000"))
+
+      # Removed from all animation frames
       by_frame = Doodle.get_animation_pixels(anim.id)
-
-      assert Enum.any?(
-               Map.get(by_frame, 0, []),
-               &(&1.x == 50 and &1.y == 50 and &1.color == "#FF0000")
-             )
-
-      assert Enum.any?(
-               Map.get(by_frame, 1, []),
-               &(&1.x == 50 and &1.y == 50 and &1.color == "#FF0000")
-             )
+      refute Enum.any?(Map.get(by_frame, 0, []), &(&1.x == 50 and &1.y == 50))
+      refute Enum.any?(Map.get(by_frame, 1, []), &(&1.x == 50 and &1.y == 50))
     end
 
     test "eraser pixel inside animation region removes from all frames" do
@@ -177,18 +181,25 @@ defmodule Indie.DoodleAnimationTest do
 
       # A has TWO pixels — (5,5) will be claimed by B, (8,8) will remain
       {:ok, _} = Doodle.update_animation(anim_a, %{frame_count: 1})
-      {:ok, _} = Doodle.save_animation_frames(anim_a, [
-        %{"frame" => 0, "pixels" => [
-          %{"x" => 5, "y" => 5, "color" => "#FF0000"},
-          %{"x" => 8, "y" => 8, "color" => "#FF0000"}
-        ]}
-      ])
+
+      {:ok, _} =
+        Doodle.save_animation_frames(anim_a, [
+          %{
+            "frame" => 0,
+            "pixels" => [
+              %{"x" => 5, "y" => 5, "color" => "#FF0000"},
+              %{"x" => 8, "y" => 8, "color" => "#FF0000"}
+            ]
+          }
+        ])
 
       # B saves pixel at (5,5) frame 0 — should delete A's pixel there only
       {:ok, _} = Doodle.update_animation(anim_b, %{frame_count: 1})
-      {:ok, result} = Doodle.save_animation_frames(anim_b, [
-        %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#0000FF"}]}
-      ])
+
+      {:ok, result} =
+        Doodle.save_animation_frames(anim_b, [
+          %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#0000FF"}]}
+        ])
 
       # A's pixel at (5,5) gone
       a_pixels = Doodle.get_animation_pixels(anim_a.id)
@@ -196,7 +207,11 @@ defmodule Indie.DoodleAnimationTest do
 
       # B's pixel present
       b_pixels = Doodle.get_animation_pixels(anim_b.id)
-      assert Enum.any?(Map.get(b_pixels, 0, []), &(&1.x == 5 and &1.y == 5 and &1.color == "#0000FF"))
+
+      assert Enum.any?(
+               Map.get(b_pixels, 0, []),
+               &(&1.x == 5 and &1.y == 5 and &1.color == "#0000FF")
+             )
 
       # A still has pixel at (8,8) so A's record survives
       assert Doodle.get_animation!(anim_a.id)
@@ -207,13 +222,15 @@ defmodule Indie.DoodleAnimationTest do
       {:ok, anim_a} = Doodle.create_animation(%{x1: 0, y1: 0, x2: 50, y2: 50})
       {:ok, anim_b} = Doodle.create_animation(%{x1: 0, y1: 0, x2: 50, y2: 50})
 
-      {:ok, _} = Doodle.save_animation_frames(anim_a, [
-        %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#FF0000"}]}
-      ])
+      {:ok, _} =
+        Doodle.save_animation_frames(anim_a, [
+          %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#FF0000"}]}
+        ])
 
-      {:ok, result} = Doodle.save_animation_frames(anim_b, [
-        %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#0000FF"}]}
-      ])
+      {:ok, result} =
+        Doodle.save_animation_frames(anim_b, [
+          %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#0000FF"}]}
+        ])
 
       # A's record deleted (no pixels remain)
       assert_raise Ecto.NoResultsError, fn -> Doodle.get_animation!(anim_a.id) end
@@ -225,14 +242,16 @@ defmodule Indie.DoodleAnimationTest do
       {:ok, anim_b} = Doodle.create_animation(%{x1: 0, y1: 0, x2: 50, y2: 50})
 
       # A has pixel at (5,5) frame 0
-      {:ok, _} = Doodle.save_animation_frames(anim_a, [
-        %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#FF0000"}]}
-      ])
+      {:ok, _} =
+        Doodle.save_animation_frames(anim_a, [
+          %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#FF0000"}]}
+        ])
 
       # B only specifies frame 1 at (5,5) — different frame
-      {:ok, result} = Doodle.save_animation_frames(anim_b, [
-        %{"frame" => 1, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#0000FF"}]}
-      ])
+      {:ok, result} =
+        Doodle.save_animation_frames(anim_b, [
+          %{"frame" => 1, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#0000FF"}]}
+        ])
 
       # A's frame 0 pixel untouched
       a_pixels = Doodle.get_animation_pixels(anim_a.id)
@@ -248,17 +267,22 @@ defmodule Indie.DoodleAnimationTest do
       {:ok, anim_b} = Doodle.create_animation(%{x1: 0, y1: 0, x2: 50, y2: 50})
 
       # A has two pixels in frame 0
-      {:ok, _} = Doodle.save_animation_frames(anim_a, [
-        %{"frame" => 0, "pixels" => [
-          %{"x" => 5, "y" => 5, "color" => "#FF0000"},
-          %{"x" => 10, "y" => 10, "color" => "#FF0000"}
-        ]}
-      ])
+      {:ok, _} =
+        Doodle.save_animation_frames(anim_a, [
+          %{
+            "frame" => 0,
+            "pixels" => [
+              %{"x" => 5, "y" => 5, "color" => "#FF0000"},
+              %{"x" => 10, "y" => 10, "color" => "#FF0000"}
+            ]
+          }
+        ])
 
       # B only claims (5,5) frame 0
-      {:ok, result} = Doodle.save_animation_frames(anim_b, [
-        %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#0000FF"}]}
-      ])
+      {:ok, result} =
+        Doodle.save_animation_frames(anim_b, [
+          %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#0000FF"}]}
+        ])
 
       # A keeps (10,10) frame 0
       a_pixels = Doodle.get_animation_pixels(anim_a.id)
@@ -273,12 +297,18 @@ defmodule Indie.DoodleAnimationTest do
     test "out-of-bounds pixels are silently rejected" do
       {:ok, anim} = Doodle.create_animation(%{x1: 0, y1: 0, x2: 10, y2: 10})
 
-      {:ok, _result} = Doodle.save_animation_frames(anim, [
-        %{"frame" => 0, "pixels" => [
-          %{"x" => 5, "y" => 5, "color" => "#FF0000"},    # valid
-          %{"x" => 50, "y" => 50, "color" => "#00FF00"}   # out of bounds
-        ]}
-      ])
+      {:ok, _result} =
+        Doodle.save_animation_frames(anim, [
+          %{
+            "frame" => 0,
+            "pixels" => [
+              # valid
+              %{"x" => 5, "y" => 5, "color" => "#FF0000"},
+              # out of bounds
+              %{"x" => 50, "y" => 50, "color" => "#00FF00"}
+            ]
+          }
+        ])
 
       by_frame = Doodle.get_animation_pixels(anim.id)
       frame0 = Map.get(by_frame, 0, [])
@@ -308,14 +338,16 @@ defmodule Indie.DoodleAnimationTest do
       {:ok, anim_a} = Doodle.create_animation(%{x1: 0, y1: 0, x2: 50, y2: 50})
       {:ok, anim_b} = Doodle.create_animation(%{x1: 100, y1: 100, x2: 150, y2: 150})
 
-      {:ok, _} = Doodle.save_animation_frames(anim_a, [
-        %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#FF0000"}]},
-        %{"frame" => 1, "pixels" => [%{"x" => 6, "y" => 6, "color" => "#00FF00"}]}
-      ])
+      {:ok, _} =
+        Doodle.save_animation_frames(anim_a, [
+          %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#FF0000"}]},
+          %{"frame" => 1, "pixels" => [%{"x" => 6, "y" => 6, "color" => "#00FF00"}]}
+        ])
 
-      {:ok, _} = Doodle.save_animation_frames(anim_b, [
-        %{"frame" => 0, "pixels" => [%{"x" => 105, "y" => 105, "color" => "#0000FF"}]}
-      ])
+      {:ok, _} =
+        Doodle.save_animation_frames(anim_b, [
+          %{"frame" => 0, "pixels" => [%{"x" => 105, "y" => 105, "color" => "#0000FF"}]}
+        ])
 
       all = Doodle.get_all_animation_pixels()
 

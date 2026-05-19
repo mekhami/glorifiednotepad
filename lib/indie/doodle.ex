@@ -14,7 +14,7 @@ defmodule Indie.Doodle do
   Returns the list of all pixels from the database.
   """
   def list_pixels do
-    Repo.all(from p in Pixel, where: is_nil(p.animation_id))
+    Repo.all(from(p in Pixel, where: is_nil(p.animation_id)))
   end
 
   @doc """
@@ -63,11 +63,9 @@ defmodule Indie.Doodle do
         {p, find_animation_for_pixel(p["x"], p["y"], animations)}
       end)
 
-    # Save static pixels
+    # Save ALL pixels as static — pixels drawn outside the editor always win.
     static_pixel_data =
-      tagged_pixels
-      |> Enum.filter(fn {_p, anim} -> is_nil(anim) end)
-      |> Enum.map(fn {p, _} ->
+      Enum.map(tagged_pixels, fn {p, _anim} ->
         %{x: p["x"], y: p["y"], color: p["color"], inserted_at: now, updated_at: now}
       end)
 
@@ -80,17 +78,25 @@ defmodule Indie.Doodle do
       )
     end
 
-    # Save animated pixels (write to all frames) — group using already-resolved animation
-    tagged_pixels
-    |> Enum.filter(fn {_p, anim} -> not is_nil(anim) end)
-    |> Enum.group_by(fn {_p, anim} -> anim.id end)
-    |> Enum.each(fn {animation_id, tagged} ->
-      pixels = Enum.map(tagged, fn {p, _} -> p end)
-      animation = Enum.find(animations, &(&1.id == animation_id))
-      save_pixel_to_all_frames(pixels, animation, now)
-    end)
+    # For pixels that hit animation regions, delete those coords from all frames
+    # so the static pixel is not hidden under the animation layer.
+    modified_animation_ids =
+      tagged_pixels
+      |> Enum.filter(fn {_p, anim} -> not is_nil(anim) end)
+      |> Enum.group_by(fn {_p, anim} -> anim.id end)
+      |> Enum.map(fn {animation_id, tagged} ->
+        Enum.each(tagged, fn {p, _} ->
+          delete_pixel_from_all_frames(p["x"], p["y"], animation_id)
+        end)
 
-    %{saved: static_pixel_data, deleted: deleted_coords}
+        animation_id
+      end)
+
+    %{
+      saved: static_pixel_data,
+      deleted: deleted_coords,
+      modified_animation_ids: modified_animation_ids
+    }
   end
 
   @doc """
@@ -283,35 +289,5 @@ defmodule Indie.Doodle do
         where: p.x == ^x and p.y == ^y and p.animation_id == ^animation_id
       )
     )
-  end
-
-  defp save_pixel_to_all_frames(pixels, animation, now) do
-    pixel_rows =
-      for p <- pixels,
-          frame <- 0..(animation.frame_count - 1) do
-        %{
-          x: p["x"],
-          y: p["y"],
-          color: p["color"],
-          animation_id: animation.id,
-          frame: frame,
-          inserted_at: now,
-          updated_at: now
-        }
-      end
-
-    Enum.each(pixels, fn p ->
-      delete_pixel_from_all_frames(p["x"], p["y"], animation.id)
-    end)
-
-    if pixel_rows != [] do
-      Repo.insert_all(
-        Pixel,
-        pixel_rows,
-        on_conflict: {:replace, [:color, :updated_at]},
-        conflict_target:
-          {:unsafe_fragment, "(x, y, animation_id, frame) WHERE animation_id IS NOT NULL"}
-      )
-    end
   end
 end

@@ -66,6 +66,27 @@ defmodule IndieWeb.DoodleCanvasComponent do
       )
     end
 
+    # For each animation that lost pixels to a static overwrite,
+    # broadcast updated frames to other clients and push to this client
+    # so their animationData doesn't keep rendering the deleted coords.
+    socket =
+      Enum.reduce(result.modified_animation_ids, socket, fn animation_id, acc ->
+        pixels_by_frame = Doodle.get_animation_pixels(animation_id)
+        formatted_frames = format_frames(pixels_by_frame)
+
+        Phoenix.PubSub.broadcast_from(
+          Indie.PubSub,
+          self(),
+          "doodle:pixels",
+          {:animation_updated, animation_id, formatted_frames}
+        )
+
+        push_event(acc, "reload-animation", %{
+          animation_id: animation_id,
+          frames: formatted_frames
+        })
+      end)
+
     {:noreply, socket}
   end
 
