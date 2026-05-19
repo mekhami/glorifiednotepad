@@ -6,6 +6,7 @@ defmodule Indie.Doodle do
   import Ecto.Query
   alias Indie.Repo
   alias Indie.Doodle.Pixel
+  alias Indie.Doodle.Animation
 
   @background_color "#df9390"
 
@@ -78,5 +79,25 @@ defmodule Indie.Doodle do
   def delete_pixel(x, y) do
     query = from(p in Pixel, where: p.x == ^x and p.y == ^y)
     Repo.delete_all(query)
+  end
+
+  def create_animation(attrs) do
+    %Animation{}
+    |> Animation.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def list_animations do
+    Repo.all(Animation)
+  end
+
+  def get_animation!(id) do
+    Repo.get!(Animation, id)
+  end
+
+  def update_animation(animation, attrs) do
+    animation
+    |> Animation.changeset(attrs)
+    |> Repo.update()
   end
 end
