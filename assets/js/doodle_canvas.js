@@ -967,15 +967,6 @@ const DoodleCanvas = {
       const closePicker = document.querySelector('.close-picker');
       const pipetteToggle = document.getElementById('pipette-mode-toggle');
       
-      // Log what we found
-        pickerTrigger: !!pickerTrigger,
-        pickerPopup: !!pickerPopup,
-        pickerContainer: !!pickerContainer,
-        hexInputContainer: !!hexInputContainer,
-        closePicker: !!closePicker,
-        pipetteToggle: !!pipetteToggle
-      });
-      
       // Check if all required elements exist
       if (!pickerTrigger || !pickerPopup || !pickerContainer || 
           !hexInputContainer || !closePicker || !pipetteToggle) {
