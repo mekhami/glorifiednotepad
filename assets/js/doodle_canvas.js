@@ -749,8 +749,21 @@ const DoodleCanvas = {
       const region = animationRegions.find(a => a.id === animation_id);
       if (!region) return;
 
-      // Don't overwrite the canvas while the user is editing this animation
-      if (activeEditor && activeEditor.animation_id === animation_id) return;
+      // Don't overwrite the canvas while the user is editing — check both
+      // same animation and any overlapping animation (e.g. new editor dragged
+      // over an existing animated region)
+      if (activeEditor) {
+        const eMinX = Math.min(activeEditor.x1, activeEditor.x2);
+        const eMaxX = Math.max(activeEditor.x1, activeEditor.x2);
+        const eMinY = Math.min(activeEditor.y1, activeEditor.y2);
+        const eMaxY = Math.max(activeEditor.y1, activeEditor.y2);
+        const rMinX = Math.min(region.x1, region.x2);
+        const rMaxX = Math.max(region.x1, region.x2);
+        const rMinY = Math.min(region.y1, region.y2);
+        const rMaxY = Math.max(region.y1, region.y2);
+        const overlaps = !(rMaxX < eMinX || rMinX > eMaxX || rMaxY < eMinY || rMinY > eMaxY);
+        if (overlaps) return;
+      }
 
       // Clear old animation pixels in this region
       const minX = Math.min(region.x1, region.x2);
