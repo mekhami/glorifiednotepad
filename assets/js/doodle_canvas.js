@@ -40,9 +40,10 @@ const DoodleCanvas = {
     
     // Server sync state
     let pendingPixels = [];  // Batch of pixels to send to server
-    let allPixels = new Map(); // Cache of all pixels (key: "x,y", value: color)
+    let allPixels = new Map(); // Cache of static pixels only (key: "x,y", value: color)
     
     // Animation state
+    let animFrames = new Map(); // animation_id → Map("x,y" → color) for current broadcast frame
     let animationRegions = []; // [{id, x1, y1, x2, y2, frame_count}]
     let activeEditor = null;   // null | {animation_id, x1, y1, x2, y2, current_frame, total_frames, frameBuffers, el}
     let isDragMode = false;
@@ -231,6 +232,16 @@ const DoodleCanvas = {
         if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) return;
         ctx.fillStyle = color;
         ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+      });
+
+      // Paint each animation's current frame on top of static pixels
+      animFrames.forEach((frameMap) => {
+        frameMap.forEach((color, key) => {
+          const [x, y] = key.split(',').map(Number);
+          if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) return;
+          ctx.fillStyle = color;
+          ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+        });
       });
       
       // Draw boundary if zoomed out
@@ -736,11 +747,14 @@ const DoodleCanvas = {
         id: a.id, x1: a.x1, y1: a.y1, x2: a.x2, y2: a.y2, frame_count: a.frame_count
       }));
 
-      // Render frame 0 pixels for each animation
+      // Seed animFrames with frame 0 pixels for each animation so they
+      // display immediately before the first AnimationServer tick arrives
       animations.forEach(a => {
+        const frameMap = new Map();
         (a.frame0_pixels || []).forEach(p => {
-          allPixels.set(`${p.x},${p.y}`, p.color);
+          frameMap.set(`${p.x},${p.y}`, p.color);
         });
+        animFrames.set(a.id, frameMap);
       });
       redraw();
     });
@@ -765,30 +779,11 @@ const DoodleCanvas = {
         if (overlaps) return;
       }
 
-      // Clear old animation pixels in this region
-      const minX = Math.min(region.x1, region.x2);
-      const maxX = Math.max(region.x1, region.x2);
-      const minY = Math.min(region.y1, region.y2);
-      const maxY = Math.max(region.y1, region.y2);
-
-      for (let x = minX; x <= maxX; x++) {
-        for (let y = minY; y <= maxY; y++) {
-          allPixels.delete(`${x},${y}`);
-        }
-      }
-
-      // Paint new frame pixels from server
-      pixels.forEach(p => {
-        allPixels.set(`${p.x},${p.y}`, p.color);
-      });
-
-      // Re-apply any locally pending pixels in this region so they survive
-      // animation ticks while waiting for the server to confirm them
-      pendingPixels.forEach(p => {
-        if (p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY) {
-          allPixels.set(`${p.x},${p.y}`, p.color);
-        }
-      });
+      // Store this animation's current frame separately — never touches allPixels
+      // so overlapping animations can't fight each other over shared keys
+      const frameMap = new Map();
+      pixels.forEach(p => frameMap.set(`${p.x},${p.y}`, p.color));
+      animFrames.set(animation_id, frameMap);
 
       redraw();
     });
