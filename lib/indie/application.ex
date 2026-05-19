@@ -14,6 +14,8 @@ defmodule Indie.Application do
       {Phoenix.PubSub, name: Indie.PubSub},
       # Start a worker by calling: Indie.Worker.start_link(arg)
       # {Indie.Worker, arg},
+      {Registry, keys: :unique, name: Indie.Doodle.AnimationRegistry},
+      Indie.Doodle.AnimationSupervisor,
       # Start to serve requests, typically the last entry
       IndieWeb.Endpoint
     ]
@@ -21,7 +23,12 @@ defmodule Indie.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Indie.Supervisor]
-    Supervisor.start_link(children, opts)
+    {:ok, pid} = Supervisor.start_link(children, opts)
+
+    # Start GenServers for all saved animations after supervisor tree is up
+    Task.start(fn -> Indie.Doodle.start_all_animation_servers() end)
+
+    {:ok, pid}
   end
 
   # Tell Phoenix to update the endpoint configuration
