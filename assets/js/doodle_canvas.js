@@ -3,6 +3,7 @@ import 'vanilla-colorful/hex-input.js';
 
 const DoodleCanvas = {
   mounted() {
+    const hookThis = this;
     console.log('DoodleCanvas hook mounted');
     const canvas = this.el;
     const ctx = canvas.getContext('2d');
@@ -41,6 +42,12 @@ const DoodleCanvas = {
     // Server sync state
     let pendingPixels = [];  // Batch of pixels to send to server
     let allPixels = new Map(); // Cache of all pixels (key: "x,y", value: color)
+    
+    // Animation state
+    let animationRegions = []; // [{id, x1, y1, x2, y2, frame_count}]
+    let activeEditor = null;   // null | {animation_id, x1, y1, x2, y2, current_frame, total_frames, frameBuffers, el}
+    let isDragMode = false;
+    let dragStart = null;      // {gridX, gridY}
     
     // Store interval ID on the hook instance so destroyed() can access it
     this.syncInterval = null;
@@ -150,10 +157,52 @@ const DoodleCanvas = {
       pendingPixels = [];
     };
 
-    // Add pixel to pending batch
+    // Add pixel to pending batch (skips pixels inside active animation editor)
     const batchPixel = (x, y, color) => {
-      // Include background color pixels for deletion on server
+      if (activeEditor) {
+        const minX = Math.min(activeEditor.x1, activeEditor.x2);
+        const maxX = Math.max(activeEditor.x1, activeEditor.x2);
+        const minY = Math.min(activeEditor.y1, activeEditor.y2);
+        const maxY = Math.max(activeEditor.y1, activeEditor.y2);
+        if (x >= minX && x <= maxX && y >= minY && y <= maxY) return;
+      }
       pendingPixels.push({ x, y, color });
+    };
+
+    // Returns the animation region containing (gridX, gridY), or null
+    const findAnimationRegion = (gridX, gridY) => {
+      return animationRegions.find(a => {
+        const minX = Math.min(a.x1, a.x2);
+        const maxX = Math.max(a.x1, a.x2);
+        const minY = Math.min(a.y1, a.y2);
+        const maxY = Math.max(a.y1, a.y2);
+        return gridX >= minX && gridX <= maxX && gridY >= minY && gridY <= maxY;
+      }) || null;
+    };
+
+    // Draw a pixel into the current animation frame buffer (editor mode)
+    const drawEditorFramePixel = (x, y, color) => {
+      if (!activeEditor) return;
+      const buf = activeEditor.frameBuffers.get(activeEditor.current_frame) || new Map();
+      buf.set(`${x},${y}`, color);
+      activeEditor.frameBuffers.set(activeEditor.current_frame, buf);
+      drawPixel(x, y, color);
+    };
+
+    // Redraw canvas showing the current editor frame's pixels
+    const redrawWithEditorFrame = () => {
+      redraw();
+      if (!activeEditor) return;
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+      ctx.scale(scale, scale);
+      const buf = activeEditor.frameBuffers.get(activeEditor.current_frame) || new Map();
+      buf.forEach((color, key) => {
+        const [x, y] = key.split(',').map(Number);
+        ctx.fillStyle = color;
+        ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+      });
+      ctx.restore();
     };
 
     // Draw the canvas boundary box
@@ -283,7 +332,11 @@ const DoodleCanvas = {
         
         while (true) {
           if (x >= 0 && x < CANVAS_WIDTH && y >= 0 && y < CANVAS_HEIGHT) {
-            batchPixel(x, y, currentColor);
+            if (activeEditor) {
+              drawEditorFramePixel(x, y, currentColor);
+            } else {
+              batchPixel(x, y, currentColor);
+            }
           }
           if (x === gridX && y === gridY) break;
           const e2 = 2 * err;
@@ -298,8 +351,12 @@ const DoodleCanvas = {
         }
       } else {
         // First pixel
-        drawPixel(gridX, gridY, currentColor);
-        batchPixel(gridX, gridY, currentColor);
+        if (activeEditor) {
+          drawEditorFramePixel(gridX, gridY, currentColor);
+        } else {
+          drawPixel(gridX, gridY, currentColor);
+          batchPixel(gridX, gridY, currentColor);
+        }
       }
       
       ctx.restore();
@@ -345,6 +402,162 @@ const DoodleCanvas = {
         // Set initial state
         updateCanvasVisibility();
       }
+    };
+    
+    // Create the animation editor DOM overlay
+    const createEditorBox = (animation_id, x1, y1, x2, y2) => {
+      const minX = Math.min(x1, x2);
+      const minY = Math.min(y1, y2);
+      const maxX = Math.max(x1, x2);
+      const maxY = Math.max(y1, y2);
+      const totalFrames = 1;
+
+      const frameBuffers = new Map();
+      frameBuffers.set(0, new Map());
+
+      const editorState = {
+        animation_id,
+        x1: minX, y1: minY, x2: maxX, y2: maxY,
+        current_frame: 0,
+        total_frames: totalFrames,
+        frameBuffers,
+        el: null
+      };
+
+      // Position editor box in screen coordinates
+      const rect = canvas.getBoundingClientRect();
+      const screenX1 = minX * PIXEL_SIZE * scale + offsetX + rect.left;
+      const screenY1 = minY * PIXEL_SIZE * scale + offsetY + rect.top;
+      const screenX2 = (maxX + 1) * PIXEL_SIZE * scale + offsetX + rect.left;
+      const screenY2 = (maxY + 1) * PIXEL_SIZE * scale + offsetY + rect.top;
+      const screenW = Math.max(screenX2 - screenX1, 180);
+      const screenH = screenY2 - screenY1;
+
+      const box = document.createElement('div');
+      box.id = `animation-editor-${animation_id}`;
+      box.style.cssText = `
+        position: fixed;
+        left: ${screenX1}px;
+        top: ${screenY1}px;
+        width: ${screenW}px;
+        z-index: 100;
+        font-family: monospace;
+        pointer-events: auto;
+      `;
+
+      const titlebar = document.createElement('div');
+      titlebar.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(255,255,255,0.9);
+        border: 1px solid #555;
+        border-bottom: none;
+        padding: 3px 6px;
+        font-size: 11px;
+        color: #222;
+        user-select: none;
+      `;
+
+      const btnClose = document.createElement('button');
+      btnClose.textContent = '\u2715';
+      btnClose.title = 'Discard';
+      btnClose.style.cssText = 'background:none;border:none;cursor:pointer;font-family:monospace;font-size:11px;color:#333;padding:0 3px;';
+
+      const btnPrev = document.createElement('button');
+      btnPrev.textContent = '\u2190';
+      btnPrev.style.cssText = btnClose.style.cssText;
+
+      const frameLabel = document.createElement('span');
+      frameLabel.textContent = `frame 1/${totalFrames}`;
+
+      const btnNext = document.createElement('button');
+      btnNext.textContent = '\u2192';
+      btnNext.style.cssText = btnClose.style.cssText;
+
+      const spacer = document.createElement('span');
+      spacer.style.flex = '1';
+
+      const btnSave = document.createElement('button');
+      btnSave.textContent = 'save';
+      btnSave.style.cssText = `
+        background: #222;
+        color: #fff;
+        border: none;
+        border-radius: 2px;
+        padding: 1px 7px;
+        cursor: pointer;
+        font-family: monospace;
+        font-size: 11px;
+      `;
+
+      titlebar.append(btnClose, btnPrev, frameLabel, btnNext, spacer, btnSave);
+
+      const drawArea = document.createElement('div');
+      drawArea.style.cssText = `
+        width: 100%;
+        height: ${screenH}px;
+        border: 1px dashed #555;
+        box-sizing: border-box;
+        pointer-events: none;
+      `;
+
+      box.append(titlebar, drawArea);
+      document.body.appendChild(box);
+      editorState.el = box;
+
+      // Button handlers
+      btnClose.addEventListener('click', () => {
+        box.remove();
+        activeEditor = null;
+      });
+
+      btnPrev.addEventListener('click', () => {
+        if (editorState.current_frame > 0) {
+          editorState.current_frame -= 1;
+          if (!editorState.frameBuffers.has(editorState.current_frame)) {
+            editorState.frameBuffers.set(editorState.current_frame, new Map());
+          }
+          frameLabel.textContent = `frame ${editorState.current_frame + 1}/${editorState.total_frames}`;
+          redrawWithEditorFrame();
+        }
+      });
+
+      btnNext.addEventListener('click', () => {
+        const maxFrame = 7; // 0-indexed, max 8 frames
+        if (editorState.current_frame < maxFrame) {
+          editorState.current_frame += 1;
+          editorState.total_frames = Math.max(editorState.total_frames, editorState.current_frame + 1);
+          if (!editorState.frameBuffers.has(editorState.current_frame)) {
+            editorState.frameBuffers.set(editorState.current_frame, new Map());
+          }
+          frameLabel.textContent = `frame ${editorState.current_frame + 1}/${editorState.total_frames}`;
+          redrawWithEditorFrame();
+        }
+      });
+
+      btnSave.addEventListener('click', () => {
+        const frames = [];
+        editorState.frameBuffers.forEach((pixelMap, frameIndex) => {
+          const pixels = [];
+          pixelMap.forEach((color, key) => {
+            const [x, y] = key.split(',').map(Number);
+            pixels.push({ x, y, color });
+          });
+          frames.push({ frame: frameIndex, pixels });
+        });
+
+        hookThis.pushEventTo(canvas, "save_animation", {
+          animation_id: editorState.animation_id,
+          frames
+        });
+
+        box.remove();
+        activeEditor = null;
+      });
+
+      activeEditor = editorState;
+      return editorState;
     };
     
     // ===== Color Picker Functions =====
@@ -523,6 +736,44 @@ const DoodleCanvas = {
       deletePixelsFromServer(coords);
     });
     
+    hookThis.handleEvent("load-animations", ({ animations }) => {
+      animationRegions = animations.map(a => ({
+        id: a.id, x1: a.x1, y1: a.y1, x2: a.x2, y2: a.y2, frame_count: a.frame_count
+      }));
+
+      // Render frame 0 pixels for each animation
+      animations.forEach(a => {
+        (a.frame0_pixels || []).forEach(p => {
+          allPixels.set(`${p.x},${p.y}`, p.color);
+        });
+      });
+      redraw();
+    });
+
+    hookThis.handleEvent("animation-frame", ({ animation_id, pixels }) => {
+      const region = animationRegions.find(a => a.id === animation_id);
+      if (!region) return;
+
+      // Clear old animation pixels in this region
+      const minX = Math.min(region.x1, region.x2);
+      const maxX = Math.max(region.x1, region.x2);
+      const minY = Math.min(region.y1, region.y2);
+      const maxY = Math.max(region.y1, region.y2);
+
+      for (let x = minX; x <= maxX; x++) {
+        for (let y = minY; y <= maxY; y++) {
+          allPixels.delete(`${x},${y}`);
+        }
+      }
+
+      // Paint new frame pixels
+      pixels.forEach(p => {
+        allPixels.set(`${p.x},${p.y}`, p.color);
+      });
+
+      redraw();
+    });
+    
     // Clear old localStorage data (cleanup)
     localStorage.removeItem('doodles');
 
@@ -539,6 +790,12 @@ const DoodleCanvas = {
         canvas.style.cursor = 'grabbing';
       } else if (e.button === 0) {
         // Left click
+        if (isDragMode) {
+          e.preventDefault();
+          const { gridX, gridY } = getGridCoords(e.clientX, e.clientY);
+          dragStart = { gridX, gridY };
+          return;
+        }
         if (isPipetteMode) {
           // Pipette mode - pick color from canvas
           const { gridX, gridY } = getGridCoords(e.clientX, e.clientY);
@@ -567,6 +824,24 @@ const DoodleCanvas = {
         lastPanX = e.clientX;
         lastPanY = e.clientY;
         redraw();
+      } else if (isDragMode && dragStart) {
+        const { gridX, gridY } = getGridCoords(e.clientX, e.clientY);
+        redraw();
+        // Draw drag preview rectangle
+        ctx.save();
+        ctx.translate(offsetX, offsetY);
+        ctx.scale(scale, scale);
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1 / scale;
+        ctx.setLineDash([4 / scale, 4 / scale]);
+        const rx = Math.min(dragStart.gridX, gridX) * PIXEL_SIZE;
+        const ry = Math.min(dragStart.gridY, gridY) * PIXEL_SIZE;
+        const rw = (Math.abs(gridX - dragStart.gridX) + 1) * PIXEL_SIZE;
+        const rh = (Math.abs(gridY - dragStart.gridY) + 1) * PIXEL_SIZE;
+        ctx.strokeRect(rx, ry, rw, rh);
+        ctx.setLineDash([]);
+        ctx.restore();
+        return;
       } else if (isDrawing) {
         draw(e);
       }
@@ -574,6 +849,35 @@ const DoodleCanvas = {
 
     // Listen on document for mouseup so it works anywhere
     document.addEventListener('mouseup', (e) => {
+      if (isDragMode && dragStart) {
+        const { gridX, gridY } = getGridCoords(e.clientX, e.clientY);
+        isDragMode = false;
+        const animBtn = document.getElementById('animation-add-btn');
+        if (animBtn) animBtn.style.outline = '';
+        canvas.style.cursor = '';
+
+        const payload = {
+          x1: Math.min(dragStart.gridX, gridX),
+          y1: Math.min(dragStart.gridY, gridY),
+          x2: Math.max(dragStart.gridX, gridX),
+          y2: Math.max(dragStart.gridY, gridY)
+        };
+        dragStart = null;
+
+        hookThis.pushEventTo(
+          canvas,
+          "create_animation",
+          payload,
+          (reply) => {
+            if (reply && reply.animation_id) {
+              createEditorBox(reply.animation_id, payload.x1, payload.y1, payload.x2, payload.y2);
+            } else {
+              console.warn('Could not create animation region:', reply && reply.error);
+            }
+          }
+        );
+        return;
+      }
       if (isPanning) {
         isPanning = false;
         canvas.style.cursor = 'crosshair';
@@ -626,6 +930,16 @@ const DoodleCanvas = {
     
     // Setup canvas visibility toggle
     setupCanvasToggle();
+    
+    // Setup animation add button (drag mode)
+    const animAddBtn = document.getElementById('animation-add-btn');
+    if (animAddBtn) {
+      animAddBtn.addEventListener('click', () => {
+        isDragMode = !isDragMode;
+        animAddBtn.style.outline = isDragMode ? '2px solid #333' : '';
+        canvas.style.cursor = isDragMode ? 'crosshair' : '';
+      });
+    }
     
     // Initialize color picker with retry logic for production timing issues
     let retryCount = 0;
