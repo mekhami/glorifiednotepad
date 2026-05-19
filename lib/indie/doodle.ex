@@ -38,18 +38,20 @@ defmodule Indie.Doodle do
         x = p["x"]
         y = p["y"]
 
-        case find_animation_for_pixel(x, y, animations) do
-          nil ->
+        case find_animations_for_pixel(x, y, animations) do
+          [] ->
             delete_pixel(x, y)
 
-          animation ->
-            delete_pixel_from_all_frames(x, y, animation.id)
+          matching ->
+            Enum.each(matching, fn anim ->
+              delete_pixel_from_all_frames(x, y, anim.id)
+            end)
         end
 
         %{x: x, y: y}
       end)
 
-    # Handle saves — tag each pixel with its animation (or nil) in one pass
+    # Handle saves — tag each pixel with ALL animations it falls inside (may be >1)
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     tagged_pixels =
@@ -60,12 +62,12 @@ defmodule Indie.Doodle do
         x < 0 or x >= @canvas_width or y < 0 or y >= @canvas_height
       end)
       |> Enum.map(fn p ->
-        {p, find_animation_for_pixel(p["x"], p["y"], animations)}
+        {p, find_animations_for_pixel(p["x"], p["y"], animations)}
       end)
 
     # Save ALL pixels as static — pixels drawn outside the editor always win.
     static_pixel_data =
-      Enum.map(tagged_pixels, fn {p, _anim} ->
+      Enum.map(tagged_pixels, fn {p, _anims} ->
         %{x: p["x"], y: p["y"], color: p["color"], inserted_at: now, updated_at: now}
       end)
 
@@ -78,11 +80,11 @@ defmodule Indie.Doodle do
       )
     end
 
-    # For pixels that hit animation regions, delete those coords from all frames
-    # so the static pixel is not hidden under the animation layer.
+    # For pixels that hit animation regions, delete those coords from ALL matching
+    # animations so the static pixel is not hidden under any animation layer.
     modified_animation_ids =
       tagged_pixels
-      |> Enum.filter(fn {_p, anim} -> not is_nil(anim) end)
+      |> Enum.flat_map(fn {p, anims} -> Enum.map(anims, fn anim -> {p, anim} end) end)
       |> Enum.group_by(fn {_p, anim} -> anim.id end)
       |> Enum.map(fn {animation_id, tagged} ->
         Enum.each(tagged, fn {p, _} ->
@@ -273,8 +275,8 @@ defmodule Indie.Doodle do
     Repo.delete_all(from(a in Animation, where: a.id == ^id))
   end
 
-  defp find_animation_for_pixel(x, y, animations) do
-    Enum.find(animations, fn a ->
+  defp find_animations_for_pixel(x, y, animations) do
+    Enum.filter(animations, fn a ->
       min_x = min(a.x1, a.x2)
       max_x = max(a.x1, a.x2)
       min_y = min(a.y1, a.y2)

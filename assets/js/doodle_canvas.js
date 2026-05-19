@@ -171,6 +171,23 @@ const DoodleCanvas = {
         const pixel = { minX: x, maxX: x, minY: y, maxY: y };
         if (rectsOverlap(editor, pixel)) return;
       }
+
+      // Optimistically remove this coord from every frame of every animation that
+      // covers it — the static pixel should show through immediately without waiting
+      // for the server's reload-animation reply.
+      const key = `${x},${y}`;
+      const pixelRect = { minX: x, maxX: x, minY: y, maxY: y };
+      animationRegions.forEach(region => {
+        const regionRect = {
+          minX: Math.min(region.x1, region.x2), maxX: Math.max(region.x1, region.x2),
+          minY: Math.min(region.y1, region.y2), maxY: Math.max(region.y1, region.y2)
+        };
+        if (rectsOverlap(regionRect, pixelRect)) {
+          const anim = animationData.get(region.id);
+          if (anim) anim.frames.forEach(frameMap => frameMap.delete(key));
+        }
+      });
+
       pendingPixels.push({ x, y, color });
     };
 
