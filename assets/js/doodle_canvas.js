@@ -749,6 +749,9 @@ const DoodleCanvas = {
       const region = animationRegions.find(a => a.id === animation_id);
       if (!region) return;
 
+      // Don't overwrite the canvas while the user is editing this animation
+      if (activeEditor && activeEditor.animation_id === animation_id) return;
+
       // Clear old animation pixels in this region
       const minX = Math.min(region.x1, region.x2);
       const maxX = Math.max(region.x1, region.x2);
