@@ -9,7 +9,7 @@
 #   ~1080px viewport → top of screen ≈ y=405, first post ≈ y=437
 # Body has 11rem (176px) of top padding — logo should land in that gap.
 
-Application.ensure_all_started(:indie)
+{:ok, _} = Application.ensure_all_started(:indie)
 
 import Ecto.Query
 
