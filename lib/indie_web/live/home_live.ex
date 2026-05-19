@@ -132,9 +132,14 @@ defmodule IndieWeb.HomeLive do
   end
 
   @impl true
-  def handle_info({:animation_frame, animation_id, _frame_index, pixels}, socket) do
+  def handle_info({:animation_updated, animation_id, frames}, socket) do
     {:noreply,
-     push_event(socket, "animation-frame", %{animation_id: animation_id, pixels: pixels})}
+     push_event(socket, "reload-animation", %{animation_id: animation_id, frames: frames})}
+  end
+
+  @impl true
+  def handle_info({:animation_deleted, animation_id}, socket) do
+    {:noreply, push_event(socket, "remove-animation", %{animation_id: animation_id})}
   end
 
   defp add_pixel_colors_to_posts(posts) do

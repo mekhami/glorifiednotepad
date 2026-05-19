@@ -115,7 +115,13 @@ defmodule IndieWeb.PostLive do
   end
 
   @impl true
-  def handle_info({:animation_frame, _animation_id, _frame_index, _pixels}, socket) do
-    {:noreply, socket}
+  def handle_info({:animation_updated, animation_id, frames}, socket) do
+    {:noreply,
+     push_event(socket, "reload-animation", %{animation_id: animation_id, frames: frames})}
+  end
+
+  @impl true
+  def handle_info({:animation_deleted, animation_id}, socket) do
+    {:noreply, push_event(socket, "remove-animation", %{animation_id: animation_id})}
   end
 end
