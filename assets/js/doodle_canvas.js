@@ -536,7 +536,9 @@ const DoodleCanvas = {
           editorState.current_frame += 1;
           editorState.total_frames = Math.max(editorState.total_frames, editorState.current_frame + 1);
           if (!editorState.frameBuffers.has(editorState.current_frame)) {
-            editorState.frameBuffers.set(editorState.current_frame, new Map());
+            // Seed new frame from previous so the user can erase rather than redraw
+            const prev = editorState.frameBuffers.get(editorState.current_frame - 1) || new Map();
+            editorState.frameBuffers.set(editorState.current_frame, new Map(prev));
           }
           frameLabel.textContent = `frame ${editorState.current_frame + 1}/${editorState.total_frames}`;
           redraw();
