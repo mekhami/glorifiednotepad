@@ -49,24 +49,25 @@ defmodule Indie.Doodle do
         %{x: x, y: y}
       end)
 
-    # Handle saves — split animated vs static
-    valid_pixels =
-      Enum.reject(pixels_to_save, fn p ->
+    # Handle saves — tag each pixel with its animation (or nil) in one pass
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    tagged_pixels =
+      pixels_to_save
+      |> Enum.reject(fn p ->
         x = p["x"]
         y = p["y"]
         x < 0 or x >= @canvas_width or y < 0 or y >= @canvas_height
       end)
-
-    {animated_pixels, static_pixels} =
-      Enum.split_with(valid_pixels, fn p ->
-        find_animation_for_pixel(p["x"], p["y"], animations) != nil
+      |> Enum.map(fn p ->
+        {p, find_animation_for_pixel(p["x"], p["y"], animations)}
       end)
 
     # Save static pixels
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
-
     static_pixel_data =
-      Enum.map(static_pixels, fn p ->
+      tagged_pixels
+      |> Enum.filter(fn {_p, anim} -> is_nil(anim) end)
+      |> Enum.map(fn {p, _} ->
         %{x: p["x"], y: p["y"], color: p["color"], inserted_at: now, updated_at: now}
       end)
 
@@ -79,12 +80,12 @@ defmodule Indie.Doodle do
       )
     end
 
-    # Save animated pixels (write to all frames)
-    animated_pixels
-    |> Enum.group_by(fn p ->
-      find_animation_for_pixel(p["x"], p["y"], animations).id
-    end)
-    |> Enum.each(fn {animation_id, pixels} ->
+    # Save animated pixels (write to all frames) — group using already-resolved animation
+    tagged_pixels
+    |> Enum.filter(fn {_p, anim} -> not is_nil(anim) end)
+    |> Enum.group_by(fn {_p, anim} -> anim.id end)
+    |> Enum.each(fn {animation_id, tagged} ->
+      pixels = Enum.map(tagged, fn {p, _} -> p end)
       animation = Enum.find(animations, &(&1.id == animation_id))
       save_pixel_to_all_frames(pixels, animation, now)
     end)
