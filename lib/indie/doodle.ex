@@ -100,4 +100,46 @@ defmodule Indie.Doodle do
     |> Animation.changeset(attrs)
     |> Repo.update()
   end
+
+  def save_animation_frames(animation_id, frames) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    Repo.delete_all(from p in Pixel, where: p.animation_id == ^animation_id)
+
+    pixels_to_insert =
+      Enum.flat_map(frames, fn frame_data ->
+        frame_index = frame_data["frame"]
+
+        Enum.map(frame_data["pixels"], fn p ->
+          %{
+            x: p["x"],
+            y: p["y"],
+            color: p["color"],
+            animation_id: animation_id,
+            frame: frame_index,
+            inserted_at: now,
+            updated_at: now
+          }
+        end)
+      end)
+
+    if pixels_to_insert != [] do
+      Repo.insert_all(Pixel, pixels_to_insert)
+    end
+
+    :ok
+  end
+
+  def get_animation_pixels(animation_id) do
+    from(p in Pixel,
+      where: p.animation_id == ^animation_id,
+      select: %{x: p.x, y: p.y, color: p.color, frame: p.frame}
+    )
+    |> Repo.all()
+    |> Enum.group_by(& &1.frame)
+  end
+
+  def delete_animation(id) do
+    Repo.delete_all(from a in Animation, where: a.id == ^id)
+  end
 end

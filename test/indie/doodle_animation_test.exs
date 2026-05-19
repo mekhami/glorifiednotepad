@@ -67,4 +67,56 @@ defmodule Indie.DoodleAnimationTest do
       assert %{frame_count: [_]} = errors_on(changeset)
     end
   end
+
+  describe "save_animation_frames/2 and get_animation_pixels/1" do
+    test "saves frames and retrieves pixels grouped by frame" do
+      {:ok, anim} = Doodle.create_animation(%{x1: 0, y1: 0, x2: 50, y2: 50})
+
+      frames = [
+        %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#FF0000"}]},
+        %{"frame" => 1, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#0000FF"}]}
+      ]
+
+      :ok = Doodle.save_animation_frames(anim.id, frames)
+
+      by_frame = Doodle.get_animation_pixels(anim.id)
+
+      assert [%{x: 5, y: 5, color: "#FF0000", frame: 0}] = Map.get(by_frame, 0)
+      assert [%{x: 5, y: 5, color: "#0000FF", frame: 1}] = Map.get(by_frame, 1)
+    end
+
+    test "save_animation_frames replaces existing frame data" do
+      {:ok, anim} = Doodle.create_animation(%{x1: 0, y1: 0, x2: 50, y2: 50})
+
+      Doodle.save_animation_frames(anim.id, [
+        %{"frame" => 0, "pixels" => [%{"x" => 1, "y" => 1, "color" => "#FF0000"}]}
+      ])
+
+      Doodle.save_animation_frames(anim.id, [
+        %{"frame" => 0, "pixels" => [%{"x" => 2, "y" => 2, "color" => "#00FF00"}]}
+      ])
+
+      by_frame = Doodle.get_animation_pixels(anim.id)
+      frame0 = Map.get(by_frame, 0, [])
+
+      # Old pixel gone, new pixel present
+      refute Enum.any?(frame0, &(&1.x == 1 and &1.y == 1))
+      assert Enum.any?(frame0, &(&1.x == 2 and &1.y == 2))
+    end
+  end
+
+  describe "delete_animation/1" do
+    test "deletes animation and cascades to pixels" do
+      {:ok, anim} = Doodle.create_animation(%{x1: 0, y1: 0, x2: 50, y2: 50})
+
+      Doodle.save_animation_frames(anim.id, [
+        %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#FF0000"}]}
+      ])
+
+      Doodle.delete_animation(anim.id)
+
+      assert Doodle.list_animations() == []
+      assert Doodle.get_animation_pixels(anim.id) == %{}
+    end
+  end
 end
