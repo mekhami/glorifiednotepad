@@ -9,7 +9,11 @@
 #   ~1080px viewport → top of screen ≈ y=405, first post ≈ y=437
 # Body has 11rem (176px) of top padding — logo should land in that gap.
 
-{:ok, _} = Application.ensure_all_started(:indie)
+# Start only the repo — don't start the full app (HTTP endpoint conflicts with
+# the running service which already owns the port).
+Application.ensure_all_started(:ecto_sql)
+Application.ensure_all_started(:ecto_sqlite3)
+{:ok, _} = Indie.Repo.start_link([])
 
 import Ecto.Query
 
