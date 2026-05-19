@@ -194,22 +194,10 @@ pixel_map =
     x < 0 or x >= 1920 or y < 0 or y >= 1080 or color == eraser
   end)
 
-# ── Clear previous logo pixels ────────────────────────────────────────────────
-# Wipe a generous region around the current layout so stale pixels from
-# previous runs (different pad/border settings) don't linger.
-
-clear_margin = 8 * dot
-{cleared, _} =
-  from(p in Pixel,
-    where:
-      p.x >= ^(border_x1 - clear_margin) and p.x <= ^(border_x2 + clear_margin) and
-      p.y >= ^(border_y1 - clear_margin) and p.y <= ^(border_y2 + clear_margin)
-  )
-  |> Repo.delete_all()
-
-IO.puts("Cleared #{cleared} old pixels.")
-
 # ── Upsert ────────────────────────────────────────────────────────────────────
+# Only write logo pixels — do NOT delete the surrounding region.
+# Deleting the bounding box leaves transparent gaps that show the salmon
+# page background, making it look like salmon pixels were added.
 
 now = DateTime.utc_now() |> DateTime.truncate(:second)
 
