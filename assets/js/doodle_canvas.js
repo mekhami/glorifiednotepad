@@ -771,9 +771,17 @@ const DoodleCanvas = {
         }
       }
 
-      // Paint new frame pixels
+      // Paint new frame pixels from server
       pixels.forEach(p => {
         allPixels.set(`${p.x},${p.y}`, p.color);
+      });
+
+      // Re-apply any locally pending pixels in this region so they survive
+      // animation ticks while waiting for the server to confirm them
+      pendingPixels.forEach(p => {
+        if (p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY) {
+          allPixels.set(`${p.x},${p.y}`, p.color);
+        }
       });
 
       redraw();
@@ -899,6 +907,9 @@ const DoodleCanvas = {
         lastDrawY = null;
         // Re-enable pointer events on content
         document.body.style.pointerEvents = '';
+        // Immediately sync so animated-region pixels reach the server
+        // before the next animation-frame tick wipes them from allPixels
+        syncPixels();
       }
     });
 
