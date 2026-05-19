@@ -37,6 +37,76 @@ defmodule IndieWeb.DoodleCanvasAnimationTest do
     end
   end
 
+  describe "save_animation broadcasts and reply" do
+    test "save_animation replies with ok and frames", %{conn: conn} do
+      {:ok, view, _html} = live(conn, "/")
+
+      view
+      |> element("#doodle-canvas")
+      |> render_hook("create_animation", %{"x1" => 0, "y1" => 0, "x2" => 50, "y2" => 50})
+
+      [anim] = Indie.Doodle.list_animations()
+
+      view
+      |> element("#doodle-canvas")
+      |> render_hook("save_animation", %{
+        "animation_id" => anim.id,
+        "frames" => [
+          %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#FF0000"}]}
+        ]
+      })
+
+      # Frame count updated
+      assert Indie.Doodle.get_animation!(anim.id).frame_count == 1
+
+      # Pixels saved
+      by_frame = Indie.Doodle.get_animation_pixels(anim.id)
+      assert map_size(by_frame) == 1
+    end
+
+    test "save_animation with full overlap deletes the covered animation", %{conn: conn} do
+      {:ok, view, _html} = live(conn, "/")
+
+      # Create animation A
+      view
+      |> element("#doodle-canvas")
+      |> render_hook("create_animation", %{"x1" => 0, "y1" => 0, "x2" => 50, "y2" => 50})
+
+      [anim_a] = Indie.Doodle.list_animations()
+
+      view
+      |> element("#doodle-canvas")
+      |> render_hook("save_animation", %{
+        "animation_id" => anim_a.id,
+        "frames" => [
+          %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#FF0000"}]}
+        ]
+      })
+
+      # Create animation B over same region
+      view
+      |> element("#doodle-canvas")
+      |> render_hook("create_animation", %{"x1" => 0, "y1" => 0, "x2" => 50, "y2" => 50})
+
+      animations = Indie.Doodle.list_animations()
+      anim_b = Enum.find(animations, &(&1.id != anim_a.id))
+
+      view
+      |> element("#doodle-canvas")
+      |> render_hook("save_animation", %{
+        "animation_id" => anim_b.id,
+        "frames" => [
+          %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#0000FF"}]}
+        ]
+      })
+
+      # A is gone
+      assert_raise Ecto.NoResultsError, fn -> Indie.Doodle.get_animation!(anim_a.id) end
+      # B persists
+      assert Indie.Doodle.get_animation!(anim_b.id)
+    end
+  end
+
   describe "save_animation event" do
     test "saves frames and updates frame_count", %{conn: conn} do
       {:ok, view, _html} = live(conn, "/")

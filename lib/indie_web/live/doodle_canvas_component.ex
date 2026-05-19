@@ -90,18 +90,40 @@ defmodule IndieWeb.DoodleCanvasComponent do
       ) do
     animation = Doodle.get_animation!(animation_id)
     frame_count = length(frames)
-    {:ok, _updated_animation} = Doodle.update_animation(animation, %{frame_count: frame_count})
+    {:ok, updated_animation} = Doodle.update_animation(animation, %{frame_count: frame_count})
 
-    Doodle.save_animation_frames(animation, frames)
+    {:ok, %{deleted_animation_ids: deleted_ids}} =
+      Doodle.save_animation_frames(updated_animation, frames)
 
-    {:noreply, socket}
-  end
+    # Build frame data for broadcasts and reply
+    pixels_by_frame = Doodle.get_animation_pixels(animation_id)
+    formatted_frames = format_frames(pixels_by_frame)
 
-  @impl true
-  def handle_event("delete_animation", %{"animation_id" => animation_id}, socket) do
-    Doodle.delete_animation(animation_id)
+    # Notify other clients of updated frames
+    Phoenix.PubSub.broadcast_from(
+      Indie.PubSub,
+      self(),
+      "doodle:pixels",
+      {:animation_updated, animation_id, formatted_frames}
+    )
 
-    {:noreply, socket}
+    # Notify other clients of any auto-deleted animations
+    Enum.each(deleted_ids, fn id ->
+      Phoenix.PubSub.broadcast_from(
+        Indie.PubSub,
+        self(),
+        "doodle:pixels",
+        {:animation_deleted, id}
+      )
+    end)
+
+    {:reply,
+     %{
+       ok: true,
+       animation_id: animation_id,
+       frames: formatted_frames,
+       deleted_animation_ids: deleted_ids
+     }, socket}
   end
 
   defp format_pixels(pixels) do
@@ -109,10 +131,10 @@ defmodule IndieWeb.DoodleCanvasComponent do
   end
 
   defp format_animations(animations) do
+    all_pixels = Doodle.get_all_animation_pixels()
+
     Enum.map(animations, fn a ->
-      frame0_pixels =
-        Doodle.get_animation_pixels(a.id)
-        |> Map.get(0, [])
+      anim_frames = Map.get(all_pixels, a.id, %{})
 
       %{
         id: a.id,
@@ -121,8 +143,14 @@ defmodule IndieWeb.DoodleCanvasComponent do
         x2: a.x2,
         y2: a.y2,
         frame_count: a.frame_count,
-        frame0_pixels: frame0_pixels
+        frames: anim_frames
       }
+    end)
+  end
+
+  defp format_frames(pixels_by_frame) do
+    Map.new(pixels_by_frame, fn {frame_idx, pixels} ->
+      {frame_idx, Enum.map(pixels, fn p -> %{x: p.x, y: p.y, color: p.color} end)}
     end)
   end
 end
