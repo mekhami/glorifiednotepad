@@ -14,7 +14,7 @@ defmodule Indie.Doodle do
   Returns the list of all pixels from the database.
   """
   def list_pixels do
-    Repo.all(Pixel)
+    Repo.all(from p in Pixel, where: is_nil(p.animation_id))
   end
 
   @doc """
@@ -169,19 +169,21 @@ defmodule Indie.Doodle do
 
     # 3. Find other animations with pixels at the same (x, y, frame) positions
     b_pixel_query =
-      from p in Pixel,
+      from(p in Pixel,
         where: p.animation_id == ^animation_id,
         select: %{x: p.x, y: p.y, frame: p.frame}
+      )
 
     affected_animation_ids =
       if pixels_to_insert != [] do
         Repo.all(
-          from p in Pixel,
+          from(p in Pixel,
             join: b in subquery(b_pixel_query),
             on: p.x == b.x and p.y == b.y and p.frame == b.frame,
             where: p.animation_id != ^animation_id and not is_nil(p.animation_id),
             select: p.animation_id,
             distinct: true
+          )
         )
       else
         []
@@ -191,15 +193,16 @@ defmodule Indie.Doodle do
     if affected_animation_ids != [] do
       overlapping_pixel_ids =
         Repo.all(
-          from p in Pixel,
+          from(p in Pixel,
             join: b in subquery(b_pixel_query),
             on: p.x == b.x and p.y == b.y and p.frame == b.frame,
             where: p.animation_id in ^affected_animation_ids,
             select: p.id
+          )
         )
 
       if overlapping_pixel_ids != [] do
-        Repo.delete_all(from p in Pixel, where: p.id in ^overlapping_pixel_ids)
+        Repo.delete_all(from(p in Pixel, where: p.id in ^overlapping_pixel_ids))
       end
     end
 
@@ -207,10 +210,11 @@ defmodule Indie.Doodle do
     surviving_ids =
       if affected_animation_ids != [] do
         Repo.all(
-          from p in Pixel,
+          from(p in Pixel,
             where: p.animation_id in ^affected_animation_ids,
             select: p.animation_id,
             distinct: true
+          )
         )
       else
         []
@@ -220,7 +224,7 @@ defmodule Indie.Doodle do
 
     # 6. Delete the empty animation records
     if deleted_animation_ids != [] do
-      Repo.delete_all(from a in Animation, where: a.id in ^deleted_animation_ids)
+      Repo.delete_all(from(a in Animation, where: a.id in ^deleted_animation_ids))
     end
 
     {:ok, %{deleted_animation_ids: deleted_animation_ids}}
