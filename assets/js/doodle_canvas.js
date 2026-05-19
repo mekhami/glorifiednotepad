@@ -78,17 +78,18 @@ const DoodleCanvas = {
       }
     };
 
-    // Draw a pixel at grid coordinates
-    const drawPixel = (gridX, gridY, color) => {
-      if (gridX < 0 || gridX >= CANVAS_WIDTH || gridY < 0 || gridY >= CANVAS_HEIGHT) {
-        return; // Out of bounds
-      }
+    // Paint a pixel on the canvas only — no allPixels update.
+    // Used for editor frame pixels which must not pollute static state.
+    const paintPixel = (gridX, gridY, color) => {
+      if (gridX < 0 || gridX >= CANVAS_WIDTH || gridY < 0 || gridY >= CANVAS_HEIGHT) return;
       ctx.fillStyle = color;
       ctx.fillRect(gridX * PIXEL_SIZE, gridY * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
-      
-      // Update our pixel cache
-      const key = `${gridX},${gridY}`;
-      allPixels.set(key, color);
+    };
+
+    // Draw a pixel at grid coordinates (also updates allPixels cache for static pixels)
+    const drawPixel = (gridX, gridY, color) => {
+      paintPixel(gridX, gridY, color);
+      allPixels.set(`${gridX},${gridY}`, color);
     };
 
     // Convert mouse coordinates to grid coordinates (accounting for zoom/pan)
@@ -174,30 +175,20 @@ const DoodleCanvas = {
       }) || null;
     };
 
-    // Draw a pixel into the current animation frame buffer (editor mode)
+    // Draw a pixel into the current animation frame buffer (editor mode).
+    // Uses paintPixel (canvas-only) — never writes to allPixels so editor
+    // pixels don't contaminate static state or bleed across frames.
     const drawEditorFramePixel = (x, y, color) => {
       if (!activeEditor) return;
       const buf = activeEditor.frameBuffers.get(activeEditor.current_frame) || new Map();
       buf.set(`${x},${y}`, color);
       activeEditor.frameBuffers.set(activeEditor.current_frame, buf);
-      drawPixel(x, y, color);
+      paintPixel(x, y, color);
     };
 
-    // Redraw canvas showing the current editor frame's pixels
-    const redrawWithEditorFrame = () => {
-      redraw();
-      if (!activeEditor) return;
-      ctx.save();
-      ctx.translate(offsetX, offsetY);
-      ctx.scale(scale, scale);
-      const buf = activeEditor.frameBuffers.get(activeEditor.current_frame) || new Map();
-      buf.forEach((color, key) => {
-        const [x, y] = key.split(',').map(Number);
-        ctx.fillStyle = color;
-        ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
-      });
-      ctx.restore();
-    };
+    // redrawWithEditorFrame is now just redraw() — the frame buffer overlay
+    // is baked into redraw() itself so every redraw path is correct.
+    const redrawWithEditorFrame = () => redraw();
 
     // Draw the canvas boundary box
     const drawBoundary = () => {
@@ -243,6 +234,18 @@ const DoodleCanvas = {
           ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
         });
       });
+
+      // Overlay active editor's current frame buffer on top of everything.
+      // Editor pixels live only in frameBuffers (not allPixels), so every
+      // redraw path — including zoom/pan — correctly shows what's been drawn.
+      if (activeEditor) {
+        const buf = activeEditor.frameBuffers.get(activeEditor.current_frame) || new Map();
+        buf.forEach((color, key) => {
+          const [x, y] = key.split(',').map(Number);
+          ctx.fillStyle = color;
+          ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+        });
+      }
       
       // Draw boundary if zoomed out
       drawBoundary();
@@ -516,6 +519,7 @@ const DoodleCanvas = {
       btnClose.addEventListener('click', () => {
         box.remove();
         activeEditor = null;
+        redraw(); // clear frame buffer overlay so discarded pixels don't linger
       });
 
       btnPrev.addEventListener('click', () => {
@@ -560,9 +564,8 @@ const DoodleCanvas = {
 
         box.remove();
         activeEditor = null;
+        redraw(); // frame buffer overlay cleared; animFrames will update on next server tick
       });
-
-      activeEditor = editorState;
       return editorState;
     };
     
