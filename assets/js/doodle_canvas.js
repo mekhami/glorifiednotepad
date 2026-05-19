@@ -933,7 +933,8 @@ const DoodleCanvas = {
                 x2: payload.x2, y2: payload.y2,
                 frame_count: 1
               });
-              createEditorBox(reply.animation_id, payload.x1, payload.y1, payload.x2, payload.y2);
+              activeEditor = createEditorBox(reply.animation_id, payload.x1, payload.y1, payload.x2, payload.y2);
+              redraw();
             } else {
               console.warn('Could not create animation region:', reply && reply.error);
             }
