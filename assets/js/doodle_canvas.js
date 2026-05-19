@@ -430,7 +430,7 @@ const DoodleCanvas = {
       const screenY1 = minY * PIXEL_SIZE * scale + offsetY + rect.top;
       const screenX2 = (maxX + 1) * PIXEL_SIZE * scale + offsetX + rect.left;
       const screenY2 = (maxY + 1) * PIXEL_SIZE * scale + offsetY + rect.top;
-      const screenW = Math.max(screenX2 - screenX1, 180);
+      const screenW = screenX2 - screenX1;
       const screenH = screenY2 - screenY1;
 
       const box = document.createElement('div');
@@ -442,7 +442,8 @@ const DoodleCanvas = {
         width: ${screenW}px;
         z-index: 100;
         font-family: monospace;
-        pointer-events: auto;
+        pointer-events: none;
+        overflow: visible;
       `;
 
       const titlebar = document.createElement('div');
@@ -450,13 +451,17 @@ const DoodleCanvas = {
         display: flex;
         align-items: center;
         gap: 4px;
+        width: max-content;
+        min-width: 100%;
+        box-sizing: border-box;
         background: rgba(255,255,255,0.9);
         border: 1px solid #555;
-        border-bottom: none;
+        border-top: none;
         padding: 3px 6px;
         font-size: 11px;
         color: #222;
         user-select: none;
+        pointer-events: auto;
       `;
 
       const btnClose = document.createElement('button');
@@ -502,7 +507,7 @@ const DoodleCanvas = {
         pointer-events: none;
       `;
 
-      box.append(titlebar, drawArea);
+      box.append(drawArea, titlebar);
       document.body.appendChild(box);
       editorState.el = box;
 
@@ -870,6 +875,12 @@ const DoodleCanvas = {
           payload,
           (reply) => {
             if (reply && reply.animation_id) {
+              animationRegions.push({
+                id: reply.animation_id,
+                x1: payload.x1, y1: payload.y1,
+                x2: payload.x2, y2: payload.y2,
+                frame_count: 1
+              });
               createEditorBox(reply.animation_id, payload.x1, payload.y1, payload.x2, payload.y2);
             } else {
               console.warn('Could not create animation region:', reply && reply.error);

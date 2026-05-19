@@ -11,7 +11,17 @@ defmodule Indie.Doodle.AnimationSupervisor do
   end
 
   def start_animation(animation) do
-    DynamicSupervisor.start_child(__MODULE__, {Indie.Doodle.AnimationServer, animation})
+    case DynamicSupervisor.start_child(__MODULE__, {Indie.Doodle.AnimationServer, animation}) do
+      {:ok, _pid} = result ->
+        result
+
+      {:error, {:already_started, pid}} ->
+        send(pid, :reload_pixels)
+        {:ok, pid}
+
+      error ->
+        error
+    end
   end
 
   def stop_animation(animation_id) do
