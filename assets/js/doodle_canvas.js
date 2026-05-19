@@ -43,20 +43,22 @@ const DoodleCanvas = {
     let allPixels = new Map(); // Cache of static pixels only (key: "x,y", value: color)
     
     // Animation state
-    let animFrames = new Map(); // animation_id → Map("x,y" → color) for current broadcast frame
-    let animationRegions = []; // [{id, x1, y1, x2, y2, frame_count}]
+    // animation_id → {frames: Map<frame_idx, Map<"x,y", color>>, current_frame: integer}
+    let animationData = new Map();
+    let animationRegions = []; // [{id, x1, y1, x2, y2}]
     let activeEditor = null;   // null | {animation_id, x1, y1, x2, y2, current_frame, total_frames, frameBuffers, el}
     let isDragMode = false;
     let dragStart = null;      // {gridX, gridY}
     
     // Store interval ID on the hook instance so destroyed() can access it
     this.syncInterval = null;
+    this.animationInterval = null;
 
 
     // Draw a line between two grid points using Bresenham's algorithm.
     // pixelFn defaults to drawPixel (static mode); pass drawEditorFramePixel
     // in editor mode so pixels go to frameBuffers without touching allPixels.
-    const drawLine = (x0, y0, x1, y1, color, pixelFn = drawPixel) => {
+    const drawLine = (x0, y0, x1, y1, color, pixelFn = drawPixel, batchFn = null) => {
       const dx = Math.abs(x1 - x0);
       const dy = Math.abs(y1 - y0);
       const sx = x0 < x1 ? 1 : -1;
@@ -64,10 +66,13 @@ const DoodleCanvas = {
       let err = dx - dy;
 
       while (true) {
-        pixelFn(x0, y0, color);
-        
+        if (x0 >= 0 && x0 < CANVAS_WIDTH && y0 >= 0 && y0 < CANVAS_HEIGHT) {
+          pixelFn(x0, y0, color);
+          if (batchFn) batchFn(x0, y0, color);
+        }
+
         if (x0 === x1 && y0 === y1) break;
-        
+
         const e2 = 2 * err;
         if (e2 > -dy) {
           err -= dy;
@@ -157,23 +162,32 @@ const DoodleCanvas = {
     // Add pixel to pending batch (skips pixels inside active animation editor)
     const batchPixel = (x, y, color) => {
       if (activeEditor) {
-        const minX = Math.min(activeEditor.x1, activeEditor.x2);
-        const maxX = Math.max(activeEditor.x1, activeEditor.x2);
-        const minY = Math.min(activeEditor.y1, activeEditor.y2);
-        const maxY = Math.max(activeEditor.y1, activeEditor.y2);
-        if (x >= minX && x <= maxX && y >= minY && y <= maxY) return;
+        const editor = {
+          minX: Math.min(activeEditor.x1, activeEditor.x2),
+          maxX: Math.max(activeEditor.x1, activeEditor.x2),
+          minY: Math.min(activeEditor.y1, activeEditor.y2),
+          maxY: Math.max(activeEditor.y1, activeEditor.y2)
+        };
+        const pixel = { minX: x, maxX: x, minY: y, maxY: y };
+        if (rectsOverlap(editor, pixel)) return;
       }
       pendingPixels.push({ x, y, color });
     };
 
+    // Returns true if two axis-aligned rects overlap.
+    // Each rect: {minX, maxX, minY, maxY}
+    const rectsOverlap = (a, b) =>
+      !(a.maxX < b.minX || a.minX > b.maxX || a.maxY < b.minY || a.minY > b.maxY);
+
     // Returns the animation region containing (gridX, gridY), or null
     const findAnimationRegion = (gridX, gridY) => {
+      const point = { minX: gridX, maxX: gridX, minY: gridY, maxY: gridY };
       return animationRegions.find(a => {
-        const minX = Math.min(a.x1, a.x2);
-        const maxX = Math.max(a.x1, a.x2);
-        const minY = Math.min(a.y1, a.y2);
-        const maxY = Math.max(a.y1, a.y2);
-        return gridX >= minX && gridX <= maxX && gridY >= minY && gridY <= maxY;
+        const region = {
+          minX: Math.min(a.x1, a.x2), maxX: Math.max(a.x1, a.x2),
+          minY: Math.min(a.y1, a.y2), maxY: Math.max(a.y1, a.y2)
+        };
+        return rectsOverlap(region, point);
       }) || null;
     };
 
@@ -190,7 +204,6 @@ const DoodleCanvas = {
 
     // redrawWithEditorFrame is now just redraw() — the frame buffer overlay
     // is baked into redraw() itself so every redraw path is correct.
-    const redrawWithEditorFrame = () => redraw();
 
     // Draw the canvas boundary box
     const drawBoundary = () => {
@@ -228,7 +241,9 @@ const DoodleCanvas = {
       });
 
       // Paint each animation's current frame on top of static pixels
-      animFrames.forEach((frameMap) => {
+      animationData.forEach((anim) => {
+        const frameMap = anim.frames.get(anim.current_frame);
+        if (!frameMap) return;
         frameMap.forEach((color, key) => {
           const [x, y] = key.split(',').map(Number);
           if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) return;
@@ -254,6 +269,9 @@ const DoodleCanvas = {
       
       // Restore context state
       ctx.restore();
+
+      // Keep editor box overlay aligned with current zoom/pan
+      repositionEditorBox();
     };
 
     // Set canvas size to fill window
@@ -327,28 +345,9 @@ const DoodleCanvas = {
       // If we have a previous position, draw a line to connect
       if (lastDrawX !== null && lastDrawY !== null) {
         if (activeEditor) {
-          // Editor mode: single pass — drawEditorFramePixel handles visual
-          // (paintPixel) + frameBuffers state without touching allPixels
           drawLine(lastDrawX, lastDrawY, gridX, gridY, currentColor, drawEditorFramePixel);
         } else {
-          // Static mode: drawLine (drawPixel → allPixels) then batch for server
-          drawLine(lastDrawX, lastDrawY, gridX, gridY, currentColor);
-          const dx = Math.abs(gridX - lastDrawX);
-          const dy = Math.abs(gridY - lastDrawY);
-          const sx = lastDrawX < gridX ? 1 : -1;
-          const sy = lastDrawY < gridY ? 1 : -1;
-          let err = dx - dy;
-          let x = lastDrawX;
-          let y = lastDrawY;
-          while (true) {
-            if (x >= 0 && x < CANVAS_WIDTH && y >= 0 && y < CANVAS_HEIGHT) {
-              batchPixel(x, y, currentColor);
-            }
-            if (x === gridX && y === gridY) break;
-            const e2 = 2 * err;
-            if (e2 > -dy) { err -= dy; x += sx; }
-            if (e2 < dx) { err += dx; y += sy; }
-          }
+          drawLine(lastDrawX, lastDrawY, gridX, gridY, currentColor, drawPixel, batchPixel);
         }
       } else {
         // First pixel
@@ -438,9 +437,9 @@ const DoodleCanvas = {
       box.id = `animation-editor-${animation_id}`;
       box.style.cssText = `
         position: fixed;
-        left: ${screenX1}px;
-        top: ${screenY1}px;
-        width: ${screenW}px;
+        left: 0;
+        top: 0;
+        width: 0;
         z-index: 100;
         font-family: monospace;
         pointer-events: none;
@@ -500,6 +499,7 @@ const DoodleCanvas = {
       titlebar.append(btnClose, btnPrev, frameLabel, btnNext, spacer, btnSave);
 
       const drawArea = document.createElement('div');
+      drawArea.className = 'draw-area';
       drawArea.style.cssText = `
         width: 100%;
         height: ${screenH}px;
@@ -526,7 +526,7 @@ const DoodleCanvas = {
             editorState.frameBuffers.set(editorState.current_frame, new Map());
           }
           frameLabel.textContent = `frame ${editorState.current_frame + 1}/${editorState.total_frames}`;
-          redrawWithEditorFrame();
+          redraw();
         }
       });
 
@@ -539,7 +539,7 @@ const DoodleCanvas = {
             editorState.frameBuffers.set(editorState.current_frame, new Map());
           }
           frameLabel.textContent = `frame ${editorState.current_frame + 1}/${editorState.total_frames}`;
-          redrawWithEditorFrame();
+          redraw();
         }
       });
 
@@ -554,16 +554,59 @@ const DoodleCanvas = {
           frames.push({ frame: frameIndex, pixels });
         });
 
-        hookThis.pushEventTo(canvas, "save_animation", {
-          animation_id: editorState.animation_id,
-          frames
-        });
-
         box.remove();
         activeEditor = null;
-        redraw(); // frame buffer overlay cleared; animFrames will update on next server tick
+
+        hookThis.pushEventTo(
+          canvas,
+          "save_animation",
+          { animation_id: editorState.animation_id, frames },
+          (reply) => {
+            if (!reply || !reply.ok) return;
+
+            // Update local animationData with canonical frames from server
+            const newFrames = new Map();
+            Object.entries(reply.frames || {}).forEach(([idx, pixels]) => {
+              const frameMap = new Map();
+              (pixels || []).forEach(p => frameMap.set(`${p.x},${p.y}`, p.color));
+              newFrames.set(Number(idx), frameMap);
+            });
+            animationData.set(reply.animation_id, { frames: newFrames, current_frame: 0 });
+
+            // Remove any animations the server cleaned up due to overlap
+            (reply.deleted_animation_ids || []).forEach(id => {
+              animationData.delete(id);
+              animationRegions = animationRegions.filter(a => a.id !== id);
+            });
+
+            redraw();
+          }
+        );
+
+        // Immediately clear the editor overlay — server reply will update animationData
+        redraw();
       });
       return editorState;
+    };
+
+    // Reposition the editor box overlay to match current zoom/pan state.
+    // Called at the end of every redraw() so the box stays aligned when
+    // the user pans or zooms while the editor is open.
+    const repositionEditorBox = () => {
+      if (!activeEditor || !activeEditor.el) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const screenX1 = activeEditor.x1 * PIXEL_SIZE * scale + offsetX + rect.left;
+      const screenY1 = activeEditor.y1 * PIXEL_SIZE * scale + offsetY + rect.top;
+      const screenX2 = (activeEditor.x2 + 1) * PIXEL_SIZE * scale + offsetX + rect.left;
+      const screenY2 = (activeEditor.y2 + 1) * PIXEL_SIZE * scale + offsetY + rect.top;
+
+      activeEditor.el.style.left = `${screenX1}px`;
+      activeEditor.el.style.top = `${screenY1}px`;
+      activeEditor.el.style.width = `${screenX2 - screenX1}px`;
+
+      const drawArea = activeEditor.el.querySelector('.draw-area');
+      if (drawArea) drawArea.style.height = `${screenY2 - screenY1}px`;
     };
     
     // ===== Color Picker Functions =====
@@ -717,6 +760,17 @@ const DoodleCanvas = {
       closeColorPicker();
     };
 
+    // Client-side animation loop — advances all animations at 4fps
+    this.animationInterval = setInterval(() => {
+      let dirty = false;
+      animationData.forEach((anim) => {
+        if (anim.frames.size <= 1) return;
+        anim.current_frame = (anim.current_frame + 1) % anim.frames.size;
+        dirty = true;
+      });
+      if (dirty) redraw();
+    }, 250);
+
     // Initialize canvas
     resizeCanvas();
     
@@ -744,47 +798,36 @@ const DoodleCanvas = {
     
     hookThis.handleEvent("load-animations", ({ animations }) => {
       animationRegions = animations.map(a => ({
-        id: a.id, x1: a.x1, y1: a.y1, x2: a.x2, y2: a.y2, frame_count: a.frame_count
+        id: a.id, x1: a.x1, y1: a.y1, x2: a.x2, y2: a.y2
       }));
 
-      // Seed animFrames with frame 0 pixels for each animation so they
-      // display immediately before the first AnimationServer tick arrives
       animations.forEach(a => {
-        const frameMap = new Map();
-        (a.frame0_pixels || []).forEach(p => {
-          frameMap.set(`${p.x},${p.y}`, p.color);
+        const frames = new Map();
+        Object.entries(a.frames || {}).forEach(([idx, pixels]) => {
+          const frameMap = new Map();
+          (pixels || []).forEach(p => frameMap.set(`${p.x},${p.y}`, p.color));
+          frames.set(Number(idx), frameMap);
         });
-        animFrames.set(a.id, frameMap);
+        animationData.set(a.id, { frames, current_frame: 0 });
       });
+
       redraw();
     });
 
-    hookThis.handleEvent("animation-frame", ({ animation_id, pixels }) => {
-      const region = animationRegions.find(a => a.id === animation_id);
-      if (!region) return;
+    hookThis.handleEvent("reload-animation", ({ animation_id, frames }) => {
+      const newFrames = new Map();
+      Object.entries(frames || {}).forEach(([idx, pixels]) => {
+        const frameMap = new Map();
+        (pixels || []).forEach(p => frameMap.set(`${p.x},${p.y}`, p.color));
+        newFrames.set(Number(idx), frameMap);
+      });
+      animationData.set(animation_id, { frames: newFrames, current_frame: 0 });
+      redraw();
+    });
 
-      // Don't overwrite the canvas while the user is editing — check both
-      // same animation and any overlapping animation (e.g. new editor dragged
-      // over an existing animated region)
-      if (activeEditor) {
-        const eMinX = Math.min(activeEditor.x1, activeEditor.x2);
-        const eMaxX = Math.max(activeEditor.x1, activeEditor.x2);
-        const eMinY = Math.min(activeEditor.y1, activeEditor.y2);
-        const eMaxY = Math.max(activeEditor.y1, activeEditor.y2);
-        const rMinX = Math.min(region.x1, region.x2);
-        const rMaxX = Math.max(region.x1, region.x2);
-        const rMinY = Math.min(region.y1, region.y2);
-        const rMaxY = Math.max(region.y1, region.y2);
-        const overlaps = !(rMaxX < eMinX || rMinX > eMaxX || rMaxY < eMinY || rMinY > eMaxY);
-        if (overlaps) return;
-      }
-
-      // Store this animation's current frame separately — never touches allPixels
-      // so overlapping animations can't fight each other over shared keys
-      const frameMap = new Map();
-      pixels.forEach(p => frameMap.set(`${p.x},${p.y}`, p.color));
-      animFrames.set(animation_id, frameMap);
-
+    hookThis.handleEvent("remove-animation", ({ animation_id }) => {
+      animationData.delete(animation_id);
+      animationRegions = animationRegions.filter(a => a.id !== animation_id);
       redraw();
     });
     
@@ -1006,6 +1049,9 @@ const DoodleCanvas = {
     // Clean up interval when hook is destroyed
     if (this.syncInterval) {
       clearInterval(this.syncInterval);
+    }
+    if (this.animationInterval) {
+      clearInterval(this.animationInterval);
     }
     
     // Clean up resize listener
