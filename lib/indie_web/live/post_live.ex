@@ -113,4 +113,9 @@ defmodule IndieWeb.PostLive do
     # Push deleted pixel coordinates to this client's JavaScript hook
     {:noreply, push_event(socket, "delete-pixels", %{coords: coords})}
   end
+
+  @impl true
+  def handle_info({:animation_frame, _animation_id, _frame_index, _pixels}, socket) do
+    {:noreply, socket}
+  end
 end

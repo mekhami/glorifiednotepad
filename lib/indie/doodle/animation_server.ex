@@ -46,7 +46,13 @@ defmodule Indie.Doodle.AnimationServer do
 
   @impl true
   def handle_info(:reload_pixels, state) do
-    pixels_by_frame = Doodle.get_animation_pixels(state.animation_id)
+    pixels_by_frame =
+      try do
+        Doodle.get_animation_pixels(state.animation_id)
+      rescue
+        _ -> state.pixels_by_frame
+      end
+
     {:noreply, %{state | pixels_by_frame: pixels_by_frame}}
   end
 
