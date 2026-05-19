@@ -16,7 +16,7 @@
 body {
   background-color: #df9390;
   margin: 0;
-  padding: 8rem 0;
+  padding: 12rem 0 8rem;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
