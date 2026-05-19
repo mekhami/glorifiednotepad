@@ -27,49 +27,71 @@ defmodule Indie.Doodle do
   @canvas_height 1080
 
   def save_pixels(pixels) do
-    # Separate background color pixels (to delete) from regular pixels (to save)
-    {pixels_to_delete, pixels_to_save} =
-      pixels
-      |> Enum.split_with(fn p -> p["color"] == @background_color end)
+    animations = list_animations()
 
-    # Delete background color pixels
+    {pixels_to_delete, pixels_to_save} =
+      Enum.split_with(pixels, fn p -> p["color"] == @background_color end)
+
+    # Handle deletions
     deleted_coords =
-      pixels_to_delete
-      |> Enum.map(fn p ->
-        delete_pixel(p["x"], p["y"])
-        %{x: p["x"], y: p["y"]}
+      Enum.map(pixels_to_delete, fn p ->
+        x = p["x"]
+        y = p["y"]
+
+        case find_animation_for_pixel(x, y, animations) do
+          nil ->
+            delete_pixel(x, y)
+
+          animation ->
+            delete_pixel_from_all_frames(x, y, animation.id)
+            notify_animation_server(animation.id)
+        end
+
+        %{x: x, y: y}
       end)
 
-    # Save non-background pixels, filtering out-of-bounds coordinates
-    saved_pixels =
-      pixels_to_save
-      |> Enum.reject(fn p ->
+    # Handle saves — split animated vs static
+    valid_pixels =
+      Enum.reject(pixels_to_save, fn p ->
         x = p["x"]
         y = p["y"]
         x < 0 or x >= @canvas_width or y < 0 or y >= @canvas_height
       end)
-      |> Enum.map(fn p ->
-        %{
-          x: p["x"],
-          y: p["y"],
-          color: p["color"],
-          inserted_at: DateTime.utc_now() |> DateTime.truncate(:second),
-          updated_at: DateTime.utc_now() |> DateTime.truncate(:second)
-        }
+
+    {animated_pixels, static_pixels} =
+      Enum.split_with(valid_pixels, fn p ->
+        find_animation_for_pixel(p["x"], p["y"], animations) != nil
       end)
 
-    # Only proceed if we have pixels to save
-    if saved_pixels != [] do
-      # Upsert all pixels at once
+    # Save static pixels
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    static_pixel_data =
+      Enum.map(static_pixels, fn p ->
+        %{x: p["x"], y: p["y"], color: p["color"], inserted_at: now, updated_at: now}
+      end)
+
+    if static_pixel_data != [] do
       Repo.insert_all(
         Pixel,
-        saved_pixels,
+        static_pixel_data,
         on_conflict: {:replace, [:color, :updated_at]},
-        conflict_target: [:x, :y]
+        conflict_target: {:unsafe_fragment, "(x, y) WHERE animation_id IS NULL"}
       )
     end
 
-    %{saved: saved_pixels, deleted: deleted_coords}
+    # Save animated pixels (write to all frames)
+    animated_pixels
+    |> Enum.group_by(fn p ->
+      find_animation_for_pixel(p["x"], p["y"], animations).id
+    end)
+    |> Enum.each(fn {animation_id, pixels} ->
+      animation = Enum.find(animations, &(&1.id == animation_id))
+      save_pixel_to_all_frames(pixels, animation, now)
+      notify_animation_server(animation_id)
+    end)
+
+    %{saved: static_pixel_data, deleted: deleted_coords}
   end
 
   @doc """
@@ -77,7 +99,7 @@ defmodule Indie.Doodle do
   Useful for eraser functionality if needed later.
   """
   def delete_pixel(x, y) do
-    query = from(p in Pixel, where: p.x == ^x and p.y == ^y)
+    query = from(p in Pixel, where: p.x == ^x and p.y == ^y and is_nil(p.animation_id))
     Repo.delete_all(query)
   end
 
@@ -141,5 +163,55 @@ defmodule Indie.Doodle do
 
   def delete_animation(id) do
     Repo.delete_all(from a in Animation, where: a.id == ^id)
+  end
+
+  defp find_animation_for_pixel(x, y, animations) do
+    Enum.find(animations, fn a ->
+      min_x = min(a.x1, a.x2)
+      max_x = max(a.x1, a.x2)
+      min_y = min(a.y1, a.y2)
+      max_y = max(a.y1, a.y2)
+      x >= min_x and x <= max_x and y >= min_y and y <= max_y
+    end)
+  end
+
+  defp delete_pixel_from_all_frames(x, y, animation_id) do
+    Repo.delete_all(
+      from p in Pixel,
+        where: p.x == ^x and p.y == ^y and p.animation_id == ^animation_id
+    )
+  end
+
+  defp save_pixel_to_all_frames(pixels, animation, now) do
+    pixel_rows =
+      for p <- pixels,
+          frame <- 0..(animation.frame_count - 1) do
+        %{
+          x: p["x"],
+          y: p["y"],
+          color: p["color"],
+          animation_id: animation.id,
+          frame: frame,
+          inserted_at: now,
+          updated_at: now
+        }
+      end
+
+    Enum.each(pixels, fn p ->
+      delete_pixel_from_all_frames(p["x"], p["y"], animation.id)
+    end)
+
+    if pixel_rows != [] do
+      Repo.insert_all(Pixel, pixel_rows)
+    end
+  end
+
+  defp notify_animation_server(animation_id) do
+    case Registry.lookup(Indie.Doodle.AnimationRegistry, animation_id) do
+      [{pid, _}] -> send(pid, :reload_pixels)
+      [] -> :ok
+    end
+  rescue
+    ArgumentError -> :ok
   end
 end

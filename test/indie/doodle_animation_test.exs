@@ -105,6 +105,64 @@ defmodule Indie.DoodleAnimationTest do
     end
   end
 
+  describe "save_pixels/1 with animated regions" do
+    test "pixel outside animation region saves as static" do
+      {:ok, anim} = Doodle.create_animation(%{x1: 100, y1: 100, x2: 200, y2: 200})
+
+      Doodle.save_animation_frames(anim.id, [
+        %{"frame" => 0, "pixels" => []},
+        %{"frame" => 1, "pixels" => []}
+      ])
+
+      {:ok, updated_anim} = Doodle.update_animation(anim, %{frame_count: 2})
+      _updated_anim = updated_anim
+
+      result = Doodle.save_pixels([%{"x" => 10, "y" => 10, "color" => "#FF0000"}])
+      assert length(result.saved) == 1
+
+      # Verify it's in doodle_pixels as a static pixel
+      pixels = Indie.Repo.all(Indie.Doodle.Pixel)
+      static = Enum.filter(pixels, &is_nil(&1.animation_id))
+      assert Enum.any?(static, &(&1.x == 10 and &1.y == 10))
+    end
+
+    test "pixel inside animation region writes to all frames" do
+      {:ok, anim} = Doodle.create_animation(%{x1: 0, y1: 0, x2: 100, y2: 100})
+
+      Doodle.save_animation_frames(anim.id, [
+        %{"frame" => 0, "pixels" => []},
+        %{"frame" => 1, "pixels" => []}
+      ])
+
+      {:ok, _} = Doodle.update_animation(anim, %{frame_count: 2})
+
+      Doodle.save_pixels([%{"x" => 50, "y" => 50, "color" => "#FF0000"}])
+
+      by_frame = Doodle.get_animation_pixels(anim.id)
+
+      assert Enum.any?(Map.get(by_frame, 0, []), &(&1.x == 50 and &1.y == 50 and &1.color == "#FF0000"))
+      assert Enum.any?(Map.get(by_frame, 1, []), &(&1.x == 50 and &1.y == 50 and &1.color == "#FF0000"))
+    end
+
+    test "eraser pixel inside animation region removes from all frames" do
+      {:ok, anim} = Doodle.create_animation(%{x1: 0, y1: 0, x2: 100, y2: 100})
+
+      Doodle.save_animation_frames(anim.id, [
+        %{"frame" => 0, "pixels" => [%{"x" => 50, "y" => 50, "color" => "#FF0000"}]},
+        %{"frame" => 1, "pixels" => [%{"x" => 50, "y" => 50, "color" => "#0000FF"}]}
+      ])
+
+      {:ok, _} = Doodle.update_animation(anim, %{frame_count: 2})
+
+      Doodle.save_pixels([%{"x" => 50, "y" => 50, "color" => "#df9390"}])
+
+      by_frame = Doodle.get_animation_pixels(anim.id)
+
+      refute Enum.any?(Map.get(by_frame, 0, []), &(&1.x == 50 and &1.y == 50))
+      refute Enum.any?(Map.get(by_frame, 1, []), &(&1.x == 50 and &1.y == 50))
+    end
+  end
+
   describe "delete_animation/1" do
     test "deletes animation and cascades to pixels" do
       {:ok, anim} = Doodle.create_animation(%{x1: 0, y1: 0, x2: 50, y2: 50})
