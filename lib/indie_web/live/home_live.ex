@@ -131,6 +131,11 @@ defmodule IndieWeb.HomeLive do
     {:noreply, push_event(socket, "delete-pixels", %{coords: coords})}
   end
 
+  @impl true
+  def handle_info({:animation_frame, animation_id, _frame_index, pixels}, socket) do
+    {:noreply, push_event(socket, "animation-frame", %{animation_id: animation_id, pixels: pixels})}
+  end
+
   defp add_pixel_colors_to_posts(posts) do
     Enum.map(posts, fn post ->
       Map.put(post, :pixel_colors, IndieWeb.Pixels.generate_pixel_colors(post.id))
