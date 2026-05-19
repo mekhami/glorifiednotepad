@@ -53,8 +53,10 @@ const DoodleCanvas = {
     this.syncInterval = null;
 
 
-    // Draw a line between two grid points using Bresenham's algorithm
-    const drawLine = (x0, y0, x1, y1, color) => {
+    // Draw a line between two grid points using Bresenham's algorithm.
+    // pixelFn defaults to drawPixel (static mode); pass drawEditorFramePixel
+    // in editor mode so pixels go to frameBuffers without touching allPixels.
+    const drawLine = (x0, y0, x1, y1, color, pixelFn = drawPixel) => {
       const dx = Math.abs(x1 - x0);
       const dy = Math.abs(y1 - y0);
       const sx = x0 < x1 ? 1 : -1;
@@ -62,7 +64,7 @@ const DoodleCanvas = {
       let err = dx - dy;
 
       while (true) {
-        drawPixel(x0, y0, color);
+        pixelFn(x0, y0, color);
         
         if (x0 === x1 && y0 === y1) break;
         
@@ -324,33 +326,28 @@ const DoodleCanvas = {
       
       // If we have a previous position, draw a line to connect
       if (lastDrawX !== null && lastDrawY !== null) {
-        drawLine(lastDrawX, lastDrawY, gridX, gridY, currentColor);
-        // Batch all pixels in the line
-        const dx = Math.abs(gridX - lastDrawX);
-        const dy = Math.abs(gridY - lastDrawY);
-        const sx = lastDrawX < gridX ? 1 : -1;
-        const sy = lastDrawY < gridY ? 1 : -1;
-        let err = dx - dy;
-        let x = lastDrawX;
-        let y = lastDrawY;
-        
-        while (true) {
-          if (x >= 0 && x < CANVAS_WIDTH && y >= 0 && y < CANVAS_HEIGHT) {
-            if (activeEditor) {
-              drawEditorFramePixel(x, y, currentColor);
-            } else {
+        if (activeEditor) {
+          // Editor mode: single pass — drawEditorFramePixel handles visual
+          // (paintPixel) + frameBuffers state without touching allPixels
+          drawLine(lastDrawX, lastDrawY, gridX, gridY, currentColor, drawEditorFramePixel);
+        } else {
+          // Static mode: drawLine (drawPixel → allPixels) then batch for server
+          drawLine(lastDrawX, lastDrawY, gridX, gridY, currentColor);
+          const dx = Math.abs(gridX - lastDrawX);
+          const dy = Math.abs(gridY - lastDrawY);
+          const sx = lastDrawX < gridX ? 1 : -1;
+          const sy = lastDrawY < gridY ? 1 : -1;
+          let err = dx - dy;
+          let x = lastDrawX;
+          let y = lastDrawY;
+          while (true) {
+            if (x >= 0 && x < CANVAS_WIDTH && y >= 0 && y < CANVAS_HEIGHT) {
               batchPixel(x, y, currentColor);
             }
-          }
-          if (x === gridX && y === gridY) break;
-          const e2 = 2 * err;
-          if (e2 > -dy) {
-            err -= dy;
-            x += sx;
-          }
-          if (e2 < dx) {
-            err += dx;
-            y += sy;
+            if (x === gridX && y === gridY) break;
+            const e2 = 2 * err;
+            if (e2 > -dy) { err -= dy; x += sx; }
+            if (e2 < dx) { err += dx; y += sy; }
           }
         }
       } else {
