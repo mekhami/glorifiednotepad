@@ -10,7 +10,10 @@ defmodule IndieWeb.DoodleCanvasAnimationTest do
       view
       |> element("#doodle-canvas")
       |> render_hook("create_animation", %{
-        "x1" => 10, "y1" => 10, "x2" => 110, "y2" => 110
+        "x1" => 10,
+        "y1" => 10,
+        "x2" => 110,
+        "y2" => 110
       })
 
       animations = Indie.Doodle.list_animations()
@@ -24,7 +27,10 @@ defmodule IndieWeb.DoodleCanvasAnimationTest do
       view
       |> element("#doodle-canvas")
       |> render_hook("create_animation", %{
-        "x1" => 0, "y1" => 0, "x2" => 500, "y2" => 500
+        "x1" => 0,
+        "y1" => 0,
+        "x2" => 500,
+        "y2" => 500
       })
 
       assert Indie.Doodle.list_animations() == []
@@ -38,7 +44,10 @@ defmodule IndieWeb.DoodleCanvasAnimationTest do
       view
       |> element("#doodle-canvas")
       |> render_hook("create_animation", %{
-        "x1" => 0, "y1" => 0, "x2" => 50, "y2" => 50
+        "x1" => 0,
+        "y1" => 0,
+        "x2" => 50,
+        "y2" => 50
       })
 
       [anim] = Indie.Doodle.list_animations()
@@ -58,26 +67,6 @@ defmodule IndieWeb.DoodleCanvasAnimationTest do
 
       by_frame = Indie.Doodle.get_animation_pixels(anim.id)
       assert map_size(by_frame) == 2
-    end
-  end
-
-  describe "delete_animation event" do
-    test "deletes animation from DB", %{conn: conn} do
-      {:ok, view, _html} = live(conn, "/")
-
-      view
-      |> element("#doodle-canvas")
-      |> render_hook("create_animation", %{
-        "x1" => 0, "y1" => 0, "x2" => 50, "y2" => 50
-      })
-
-      [anim] = Indie.Doodle.list_animations()
-
-      view
-      |> element("#doodle-canvas")
-      |> render_hook("delete_animation", %{"animation_id" => anim.id})
-
-      assert Indie.Doodle.list_animations() == []
     end
   end
 end

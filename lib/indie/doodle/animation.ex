@@ -5,12 +5,12 @@ defmodule Indie.Doodle.Animation do
   @max_dimension 200
 
   schema "animations" do
-    field :x1, :integer
-    field :y1, :integer
-    field :x2, :integer
-    field :y2, :integer
-    field :frame_count, :integer, default: 1
-    field :fps, :integer, default: 4
+    field(:x1, :integer)
+    field(:y1, :integer)
+    field(:x2, :integer)
+    field(:y2, :integer)
+    field(:frame_count, :integer, default: 1)
+    field(:fps, :integer, default: 4)
 
     timestamps(type: :utc_datetime)
   end

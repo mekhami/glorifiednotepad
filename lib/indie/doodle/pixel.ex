@@ -3,11 +3,11 @@ defmodule Indie.Doodle.Pixel do
   import Ecto.Changeset
 
   schema "doodle_pixels" do
-    field :x, :integer
-    field :y, :integer
-    field :color, :string
-    field :animation_id, :integer
-    field :frame, :integer
+    field(:x, :integer)
+    field(:y, :integer)
+    field(:color, :string)
+    field(:animation_id, :integer)
+    field(:frame, :integer)
 
     timestamps(type: :utc_datetime)
   end

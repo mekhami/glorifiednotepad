@@ -1,6 +1,4 @@
 defmodule Indie.Application do
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
   @moduledoc false
 
   use Application
@@ -12,27 +10,13 @@ defmodule Indie.Application do
       Indie.Repo,
       {DNSCluster, query: Application.get_env(:indie, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Indie.PubSub},
-      # Start a worker by calling: Indie.Worker.start_link(arg)
-      # {Indie.Worker, arg},
-      {Registry, keys: :unique, name: Indie.Doodle.AnimationRegistry},
-      Indie.Doodle.AnimationSupervisor,
-      # Start to serve requests, typically the last entry
       IndieWeb.Endpoint
     ]
 
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Indie.Supervisor]
-    {:ok, pid} = Supervisor.start_link(children, opts)
-
-    # Start GenServers for all saved animations after supervisor tree is up
-    Task.start(fn -> Indie.Doodle.start_all_animation_servers() end)
-
-    {:ok, pid}
+    Supervisor.start_link(children, opts)
   end
 
-  # Tell Phoenix to update the endpoint configuration
-  # whenever the application is updated.
   @impl true
   def config_change(changed, _new, removed) do
     IndieWeb.Endpoint.config_change(changed, removed)

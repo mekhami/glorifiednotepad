@@ -83,20 +83,22 @@ defmodule IndieWeb.DoodleCanvasComponent do
   end
 
   @impl true
-  def handle_event("save_animation", %{"animation_id" => animation_id, "frames" => frames}, socket) do
+  def handle_event(
+        "save_animation",
+        %{"animation_id" => animation_id, "frames" => frames},
+        socket
+      ) do
     animation = Doodle.get_animation!(animation_id)
     frame_count = length(frames)
-    {:ok, updated_animation} = Doodle.update_animation(animation, %{frame_count: frame_count})
+    {:ok, _updated_animation} = Doodle.update_animation(animation, %{frame_count: frame_count})
 
     Doodle.save_animation_frames(animation_id, frames)
-    Indie.Doodle.AnimationSupervisor.start_animation(updated_animation)
 
     {:noreply, socket}
   end
 
   @impl true
   def handle_event("delete_animation", %{"animation_id" => animation_id}, socket) do
-    Indie.Doodle.AnimationSupervisor.stop_animation(animation_id)
     Doodle.delete_animation(animation_id)
 
     {:noreply, socket}

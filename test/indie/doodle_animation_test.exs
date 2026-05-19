@@ -140,8 +140,15 @@ defmodule Indie.DoodleAnimationTest do
 
       by_frame = Doodle.get_animation_pixels(anim.id)
 
-      assert Enum.any?(Map.get(by_frame, 0, []), &(&1.x == 50 and &1.y == 50 and &1.color == "#FF0000"))
-      assert Enum.any?(Map.get(by_frame, 1, []), &(&1.x == 50 and &1.y == 50 and &1.color == "#FF0000"))
+      assert Enum.any?(
+               Map.get(by_frame, 0, []),
+               &(&1.x == 50 and &1.y == 50 and &1.color == "#FF0000")
+             )
+
+      assert Enum.any?(
+               Map.get(by_frame, 1, []),
+               &(&1.x == 50 and &1.y == 50 and &1.color == "#FF0000")
+             )
     end
 
     test "eraser pixel inside animation region removes from all frames" do

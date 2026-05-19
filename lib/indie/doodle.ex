@@ -44,7 +44,6 @@ defmodule Indie.Doodle do
 
           animation ->
             delete_pixel_from_all_frames(x, y, animation.id)
-            notify_animation_server(animation.id)
         end
 
         %{x: x, y: y}
@@ -88,7 +87,6 @@ defmodule Indie.Doodle do
     |> Enum.each(fn {animation_id, pixels} ->
       animation = Enum.find(animations, &(&1.id == animation_id))
       save_pixel_to_all_frames(pixels, animation, now)
-      notify_animation_server(animation_id)
     end)
 
     %{saved: static_pixel_data, deleted: deleted_coords}
@@ -165,13 +163,6 @@ defmodule Indie.Doodle do
     Repo.delete_all(from(a in Animation, where: a.id == ^id))
   end
 
-  def start_all_animation_servers do
-    list_animations()
-    |> Enum.each(fn animation ->
-      Indie.Doodle.AnimationSupervisor.start_animation(animation)
-    end)
-  end
-
   defp find_animation_for_pixel(x, y, animations) do
     Enum.find(animations, fn a ->
       min_x = min(a.x1, a.x2)
@@ -218,14 +209,5 @@ defmodule Indie.Doodle do
           {:unsafe_fragment, "(x, y, animation_id, frame) WHERE animation_id IS NOT NULL"}
       )
     end
-  end
-
-  defp notify_animation_server(animation_id) do
-    case Registry.lookup(Indie.Doodle.AnimationRegistry, animation_id) do
-      [{pid, _}] -> send(pid, :reload_pixels)
-      [] -> :ok
-    end
-  rescue
-    ArgumentError -> :ok
   end
 end
