@@ -165,6 +165,13 @@ defmodule Indie.Doodle do
     Repo.delete_all(from a in Animation, where: a.id == ^id)
   end
 
+  def start_all_animation_servers do
+    list_animations()
+    |> Enum.each(fn animation ->
+      Indie.Doodle.AnimationSupervisor.start_animation(animation)
+    end)
+  end
+
   defp find_animation_for_pixel(x, y, animations) do
     Enum.find(animations, fn a ->
       min_x = min(a.x1, a.x2)
