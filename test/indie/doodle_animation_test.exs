@@ -302,4 +302,31 @@ defmodule Indie.DoodleAnimationTest do
       assert Doodle.get_animation_pixels(anim.id) == %{}
     end
   end
+
+  describe "get_all_animation_pixels/0" do
+    test "returns pixels grouped by animation_id then frame" do
+      {:ok, anim_a} = Doodle.create_animation(%{x1: 0, y1: 0, x2: 50, y2: 50})
+      {:ok, anim_b} = Doodle.create_animation(%{x1: 100, y1: 100, x2: 150, y2: 150})
+
+      {:ok, _} = Doodle.save_animation_frames(anim_a, [
+        %{"frame" => 0, "pixels" => [%{"x" => 5, "y" => 5, "color" => "#FF0000"}]},
+        %{"frame" => 1, "pixels" => [%{"x" => 6, "y" => 6, "color" => "#00FF00"}]}
+      ])
+
+      {:ok, _} = Doodle.save_animation_frames(anim_b, [
+        %{"frame" => 0, "pixels" => [%{"x" => 105, "y" => 105, "color" => "#0000FF"}]}
+      ])
+
+      all = Doodle.get_all_animation_pixels()
+
+      assert map_size(all) == 2
+      assert [%{x: 5, y: 5, color: "#FF0000"}] = get_in(all, [anim_a.id, 0])
+      assert [%{x: 6, y: 6, color: "#00FF00"}] = get_in(all, [anim_a.id, 1])
+      assert [%{x: 105, y: 105, color: "#0000FF"}] = get_in(all, [anim_b.id, 0])
+    end
+
+    test "returns empty map when no animations" do
+      assert Doodle.get_all_animation_pixels() == %{}
+    end
+  end
 end

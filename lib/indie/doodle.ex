@@ -235,6 +235,30 @@ defmodule Indie.Doodle do
     |> Enum.group_by(& &1.frame)
   end
 
+  @doc """
+  Returns all animation pixels grouped by animation_id, then by frame index.
+  Returns %{animation_id => %{frame_index => [%{x, y, color}]}}.
+  Single query — use this instead of calling get_animation_pixels/1 per animation.
+  """
+  def get_all_animation_pixels do
+    from(p in Pixel,
+      where: not is_nil(p.animation_id),
+      select: %{x: p.x, y: p.y, color: p.color, frame: p.frame, animation_id: p.animation_id}
+    )
+    |> Repo.all()
+    |> Enum.group_by(& &1.animation_id)
+    |> Map.new(fn {anim_id, pixels} ->
+      frames =
+        pixels
+        |> Enum.group_by(& &1.frame)
+        |> Map.new(fn {frame_idx, frame_pixels} ->
+          {frame_idx, Enum.map(frame_pixels, fn p -> %{x: p.x, y: p.y, color: p.color} end)}
+        end)
+
+      {anim_id, frames}
+    end)
+  end
+
   def delete_animation(id) do
     Repo.delete_all(from(a in Animation, where: a.id == ^id))
   end
