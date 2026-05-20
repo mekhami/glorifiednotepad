@@ -220,7 +220,7 @@ count =
         Pixel,
         chunk,
         on_conflict: {:replace, [:color, :updated_at]},
-        conflict_target: [:x, :y]
+        conflict_target: {:unsafe_fragment, "(x, y) WHERE animation_id IS NULL"}
       )
     acc + n
   end)
