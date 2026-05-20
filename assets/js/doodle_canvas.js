@@ -716,11 +716,6 @@ const DoodleCanvas = {
       const colorToShow = customColor || currentColor;
       hexPicker.color = colorToShow;
       hexInput.color = colorToShow;
-      
-      // Automatically enable pipette mode when opening color picker
-      if (!isPipetteMode) {
-        togglePipetteMode();
-      }
     };
     
     // Close color picker popup
@@ -773,9 +768,18 @@ const DoodleCanvas = {
     // Handle canvas click in pipette mode
     const handleCanvasClickInPipetteMode = (gridX, gridY) => {
       const key = `${gridX},${gridY}`;
-      const pixelColor = allPixels.get(key) || BACKGROUND_COLOR;
-      
-      applyCustomColor(pixelColor);
+      // Check static pixels first, then animation current frames
+      let pixelColor = allPixels.get(key);
+      if (!pixelColor) {
+        for (const [, anim] of animationData) {
+          const frameMap = anim.frames.get(anim.current_frame);
+          if (frameMap && frameMap.has(key)) {
+            pixelColor = frameMap.get(key);
+            break;
+          }
+        }
+      }
+      applyCustomColor(pixelColor || BACKGROUND_COLOR);
       closeColorPicker();
     };
 
