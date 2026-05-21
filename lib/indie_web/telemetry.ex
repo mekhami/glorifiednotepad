@@ -2,22 +2,62 @@ defmodule IndieWeb.Telemetry do
   use Supervisor
   import Telemetry.Metrics
 
+  require Logger
+
+  @tracked_views [IndieWeb.HomeLive, IndieWeb.PostLive]
+  @tracked_components [IndieWeb.DoodleCanvasComponent]
+
   def start_link(arg) do
     Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
   end
 
   @impl true
   def init(_arg) do
+    :telemetry.attach_many(
+      "indie-liveview-perf",
+      [
+        [:phoenix, :live_view, :mount, :stop],
+        [:phoenix, :live_view, :render, :stop],
+        [:phoenix, :live_component, :update, :stop]
+      ],
+      &__MODULE__.handle_event/4,
+      nil
+    )
+
     children = [
-      # Telemetry poller will execute the given period measurements
-      # every 10_000ms. Learn more here: https://hexdocs.pm/telemetry_metrics
       {:telemetry_poller, measurements: periodic_measurements(), period: 10_000}
-      # Add reporters as children of your supervision tree.
-      # {Telemetry.Metrics.ConsoleReporter, metrics: metrics()}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
   end
+
+  def handle_event([:phoenix, :live_view, :mount, :stop], measurements, metadata, _config) do
+    view = metadata.socket.view
+
+    if view in @tracked_views do
+      ms = System.convert_time_unit(measurements.duration, :native, :millisecond)
+      connected = metadata.socket.connected?
+      Logger.info("[LV Perf] #{inspect(view)} mount (connected=#{connected}) #{ms}ms")
+    end
+  end
+
+  def handle_event([:phoenix, :live_view, :render, :stop], measurements, metadata, _config) do
+    view = metadata.socket.view
+
+    if view in @tracked_views do
+      ms = System.convert_time_unit(measurements.duration, :native, :millisecond)
+      Logger.info("[LV Perf] #{inspect(view)} render #{ms}ms")
+    end
+  end
+
+  def handle_event([:phoenix, :live_component, :update, :stop], measurements, metadata, _config) do
+    if metadata.component in @tracked_components do
+      ms = System.convert_time_unit(measurements.duration, :native, :millisecond)
+      Logger.info("[LV Perf] #{inspect(metadata.component)} update #{ms}ms")
+    end
+  end
+
+  def handle_event(_event, _measurements, _metadata, _config), do: :ok
 
   def metrics do
     [

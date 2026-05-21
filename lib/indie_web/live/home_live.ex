@@ -3,30 +3,45 @@ defmodule IndieWeb.HomeLive do
 
   import IndieWeb.MarkdownHelpers
 
+  require Logger
+
   alias Indie.{Post, Comments, Comment}
 
   @impl true
   def mount(_params, _session, socket) do
+    connected = connected?(socket)
+
     # Subscribe to pixel updates when connected
-    if connected?(socket) do
+    if connected do
       Phoenix.PubSub.subscribe(Indie.PubSub, "doodle:pixels")
     end
 
+    t0 = System.monotonic_time(:millisecond)
     all_posts = Post.published()
+    t1 = System.monotonic_time(:millisecond)
+
     posts_to_show = Enum.take(all_posts, 10)
     has_more = length(all_posts) > 10
 
-    # Add pixel colors to each post
     posts_with_pixels = add_pixel_colors_to_posts(posts_to_show)
+    t2 = System.monotonic_time(:millisecond)
 
-    # Load comments for all shown posts in one query (batch, not N+1)
     post_ids = Enum.map(posts_to_show, & &1.id)
 
-    # Ensure every post_id has an entry (empty list for posts with no comments)
     comments_by_post =
       post_ids
       |> Comments.list_comments_for_posts()
       |> then(fn result -> Enum.reduce(post_ids, result, &Map.put_new(&2, &1, [])) end)
+
+    t3 = System.monotonic_time(:millisecond)
+
+    Logger.info(
+      "[HomeLive] mount (connected=#{connected}) — " <>
+        "Post.published=#{t1 - t0}ms (#{length(all_posts)} posts), " <>
+        "pixel_colors=#{t2 - t1}ms, " <>
+        "comments=#{t3 - t2}ms, " <>
+        "total=#{t3 - t0}ms"
+    )
 
     socket =
       socket
