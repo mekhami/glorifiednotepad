@@ -32,7 +32,7 @@ defmodule Indie.Markdown.VideoTransformer do
       webm_path = String.replace_suffix(path, ".mp4", ".webm")
 
       """
-      <video controls width="100%">
+      <video controls width="100%" preload="none">
       <source src="#{webm_path}" type="video/webm" />
       <source src="#{path}" type="video/mp4" />
       </video>

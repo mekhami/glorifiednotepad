@@ -62,6 +62,7 @@ defmodule Indie.Post do
       |> Indie.Markdown.CollapsibleTransformer.transform()
       |> Earmark.as_ast!(breaks: true)
       |> Indie.Markdown.HighlightTransformer.transform()
+      |> Indie.Markdown.ImgTransformer.transform()
       |> Earmark.Transform.transform()
       |> Indie.Markdown.SidenotesTransformer.replace_placeholders(post_id)
       |> String.replace(~r/( {2,})(<mark)/u, fn full ->
