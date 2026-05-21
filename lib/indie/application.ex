@@ -11,6 +11,7 @@ defmodule Indie.Application do
       {DNSCluster, query: Application.get_env(:indie, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Indie.PubSub},
       Indie.Doodle.CanvasServer,
+      Indie.PostCache,
       IndieWeb.Endpoint
     ]
 

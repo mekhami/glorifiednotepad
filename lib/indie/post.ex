@@ -8,9 +8,10 @@ defmodule Indie.Post do
   @content_dir "content"
 
   @doc """
-  Loads all posts from the content directory, sorted by date (newest first).
+  Loads all posts from disk and parses them. Called by PostCache on startup.
+  Use Post.all/0 or Post.published/0 for cached access.
   """
-  def all do
+  def load_all do
     @content_dir
     |> content_dir_path()
     |> File.ls!()
@@ -20,11 +21,19 @@ defmodule Indie.Post do
   end
 
   @doc """
+  Loads all posts from the content directory, sorted by date (newest first).
+  Served from PostCache — O(1).
+  """
+  def all do
+    Indie.PostCache.all()
+  end
+
+  @doc """
   Gets all published posts (excludes drafts), sorted by date (newest first).
+  Served from PostCache — O(1).
   """
   def published do
-    all()
-    |> Enum.reject(& &1.draft)
+    Indie.PostCache.published()
   end
 
   @doc """
