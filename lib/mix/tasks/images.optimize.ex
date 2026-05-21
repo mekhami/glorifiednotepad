@@ -292,7 +292,17 @@ defmodule Mix.Tasks.Images.Optimize do
 
   defp already_optimized?(file) do
     marker_file = file <> @optimized_marker
-    File.exists?(marker_file)
+
+    case File.stat(marker_file) do
+      {:ok, marker_stat} ->
+        source_stat = File.stat!(file)
+        # Marker must be same age or newer than source.
+        # If source was updated after the marker was written, re-optimize.
+        marker_stat.mtime >= source_stat.mtime
+
+      {:error, _} ->
+        false
+    end
   end
 
   # Skip files with Phoenix digest fingerprints (-[a-f0-9]{32} before extension)
