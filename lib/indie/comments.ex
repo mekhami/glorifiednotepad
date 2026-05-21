@@ -18,6 +18,19 @@ defmodule Indie.Comments do
   end
 
   @doc """
+  Returns comments for multiple posts in one query, grouped by post_id.
+  Replaces N per-post queries with a single `WHERE post_id IN (...)`.
+  Returns a map of `%{post_id => [comment, ...]}`.
+  """
+  def list_comments_for_posts(post_ids) when is_list(post_ids) do
+    Comment
+    |> where([c], c.post_id in ^post_ids)
+    |> order_by([c], asc: c.inserted_at)
+    |> Repo.all()
+    |> Enum.group_by(& &1.post_id)
+  end
+
+  @doc """
   Creates a comment.
   """
   def create_comment(attrs \\ %{}) do

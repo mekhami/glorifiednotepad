@@ -19,13 +19,14 @@ defmodule IndieWeb.HomeLive do
     # Add pixel colors to each post
     posts_with_pixels = add_pixel_colors_to_posts(posts_to_show)
 
-    # Load comments for all posts
+    # Load comments for all shown posts in one query (batch, not N+1)
+    post_ids = Enum.map(posts_to_show, & &1.id)
+
+    # Ensure every post_id has an entry (empty list for posts with no comments)
     comments_by_post =
-      posts_to_show
-      |> Enum.map(fn post ->
-        {post.id, Comments.list_comments_for_post(post.id)}
-      end)
-      |> Map.new()
+      post_ids
+      |> Comments.list_comments_for_posts()
+      |> then(fn result -> Enum.reduce(post_ids, result, &Map.put_new(&2, &1, [])) end)
 
     socket =
       socket
@@ -63,12 +64,14 @@ defmodule IndieWeb.HomeLive do
     # Load comments for newly shown posts
     new_posts = Enum.drop(posts_to_show, socket.assigns.posts_shown)
 
+    # Load comments for newly shown posts in one query
+    new_post_ids = Enum.map(new_posts, & &1.id)
+
+    # Ensure every new post_id has an entry (empty list for posts with no comments)
     new_comments =
-      new_posts
-      |> Enum.map(fn post ->
-        {post.id, Comments.list_comments_for_post(post.id)}
-      end)
-      |> Map.new()
+      new_post_ids
+      |> Comments.list_comments_for_posts()
+      |> then(fn result -> Enum.reduce(new_post_ids, result, &Map.put_new(&2, &1, [])) end)
 
     updated_comments = Map.merge(socket.assigns.comments_by_post, new_comments)
 

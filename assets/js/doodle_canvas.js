@@ -54,6 +54,30 @@ const DoodleCanvas = {
     this.syncInterval = null;
     this.animationInterval = null;
 
+    // --- Offscreen rendering state ---
+    // Pre-render pixel art into an OffscreenCanvas so pan/zoom is O(1) drawImage
+    // instead of O(n_pixels) fillRect. rebuildOffscreen() is only called when
+    // pixel data changes; pan/zoom just re-composites the cached image.
+    const offscreen = new OffscreenCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    const offCtx = offscreen.getContext('2d');
+    const imageData = new ImageData(CANVAS_WIDTH, CANVAS_HEIGHT);
+    const data = imageData.data;
+    let offscreenDirty = true;
+
+    // Hex → [r, g, b] with a small cache — avoids redundant parseInt on every pixel
+    const colorCache = new Map();
+    const parseHex = (hex) => {
+      if (colorCache.has(hex)) return colorCache.get(hex);
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      const result = [r, g, b];
+      colorCache.set(hex, result);
+      return result;
+    };
+    const BG_RGB = parseHex(BACKGROUND_COLOR);
+    // --- End offscreen state ---
+
 
     // Draw a line between two grid points using Bresenham's algorithm.
     // pixelFn defaults to drawPixel (static mode); pass drawEditorFramePixel
@@ -97,6 +121,7 @@ const DoodleCanvas = {
     const drawPixel = (gridX, gridY, color) => {
       paintPixel(gridX, gridY, color);
       allPixels.set(`${gridX},${gridY}`, color);
+      offscreenDirty = true;
     };
 
     // Convert mouse coordinates to grid coordinates (accounting for zoom/pan)
@@ -123,8 +148,9 @@ const DoodleCanvas = {
         const key = `${pixel.x},${pixel.y}`;
         allPixels.set(key, pixel.color);
       });
-      // Redraw the canvas after loading all pixels
-      redraw();
+      // Rebuild offscreen and schedule redraw
+      offscreenDirty = true;
+      scheduleRedraw();
     };
 
     // Paint pixels received from other users
@@ -134,8 +160,8 @@ const DoodleCanvas = {
         const key = `${pixel.x},${pixel.y}`;
         allPixels.set(key, pixel.color);
       });
-      // Redraw the canvas
-      redraw();
+      offscreenDirty = true;
+      scheduleRedraw();
     };
 
     // Delete pixels received from other users (eraser sync)
@@ -145,8 +171,8 @@ const DoodleCanvas = {
         const key = `${coord.x},${coord.y}`;
         allPixels.delete(key);
       });
-      // Redraw the canvas
-      redraw();
+      offscreenDirty = true;
+      scheduleRedraw();
     };
 
     // Sync pending pixels with server
@@ -231,64 +257,86 @@ const DoodleCanvas = {
       }
     };
 
-    // Redraw entire canvas
-    const redraw = () => {
-      // Clear the physical canvas
-      const displayWidth = canvas.width;
-      const displayHeight = canvas.height;
-      ctx.clearRect(0, 0, displayWidth, displayHeight);
-      
-      // Save context state
-      ctx.save();
-      
-      // Apply zoom and pan transformations
-      ctx.translate(offsetX, offsetY);
-      ctx.scale(scale, scale);
-      
-      // Draw background
-      ctx.fillStyle = BACKGROUND_COLOR;
-      ctx.fillRect(0, 0, CANVAS_WIDTH * PIXEL_SIZE, CANVAS_HEIGHT * PIXEL_SIZE);
-      
-      // Draw all cached pixels
+    // Rebuild the offscreen canvas from allPixels + current animation frames.
+    // Uses typed-array writes + one putImageData — much faster than per-pixel
+    // fillRect. Called only when pixel data changes; pan/zoom skips this.
+    const rebuildOffscreen = () => {
+      // Fill background
+      for (let i = 0; i < data.length; i += 4) {
+        data[i] = BG_RGB[0]; data[i + 1] = BG_RGB[1]; data[i + 2] = BG_RGB[2]; data[i + 3] = 255;
+      }
+      // Write static pixels — use indexOf+slice instead of split(',').map(Number)
       allPixels.forEach((color, key) => {
-        const [x, y] = key.split(',').map(Number);
+        const comma = key.indexOf(',');
+        const x = +key.slice(0, comma);
+        const y = +key.slice(comma + 1);
         if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) return;
-        ctx.fillStyle = color;
-        ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+        const rgb = parseHex(color);
+        const idx = (y * CANVAS_WIDTH + x) * 4;
+        data[idx] = rgb[0]; data[idx + 1] = rgb[1]; data[idx + 2] = rgb[2]; data[idx + 3] = 255;
       });
-
-      // Paint each animation's current frame on top of static pixels
+      // Write animation current frames on top of static pixels
       animationData.forEach((anim) => {
         const frameMap = anim.frames.get(anim.current_frame);
         if (!frameMap) return;
         frameMap.forEach((color, key) => {
-          const [x, y] = key.split(',').map(Number);
+          const comma = key.indexOf(',');
+          const x = +key.slice(0, comma);
+          const y = +key.slice(comma + 1);
           if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) return;
-          ctx.fillStyle = color;
-          ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+          const rgb = parseHex(color);
+          const idx = (y * CANVAS_WIDTH + x) * 4;
+          data[idx] = rgb[0]; data[idx + 1] = rgb[1]; data[idx + 2] = rgb[2]; data[idx + 3] = 255;
         });
       });
+      offCtx.putImageData(imageData, 0, 0);
+      offscreenDirty = false;
+    };
+
+    // Redraw entire canvas. When no pixel data has changed (pan/zoom/resize),
+    // offscreenDirty is false and this is just O(1): clearRect + drawImage.
+    const redraw = () => {
+      if (offscreenDirty) rebuildOffscreen();
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+      ctx.scale(scale, scale);
+      ctx.imageSmoothingEnabled = false;
+      // Upscale the 1920×1080 offscreen to the PIXEL_SIZE-multiplied virtual size
+      ctx.drawImage(offscreen, 0, 0, CANVAS_WIDTH * PIXEL_SIZE, CANVAS_HEIGHT * PIXEL_SIZE);
 
       // Overlay active editor's current frame buffer on top of everything.
-      // Editor pixels live only in frameBuffers (not allPixels), so every
-      // redraw path — including zoom/pan — correctly shows what's been drawn.
+      // Editor pixels live only in frameBuffers (not allPixels/offscreen), so
+      // every redraw path — including zoom/pan — correctly shows drawn pixels.
       if (activeEditor) {
         const buf = activeEditor.frameBuffers.get(activeEditor.current_frame) || new Map();
         buf.forEach((color, key) => {
-          const [x, y] = key.split(',').map(Number);
+          const comma = key.indexOf(',');
+          const x = +key.slice(0, comma);
+          const y = +key.slice(comma + 1);
           ctx.fillStyle = color;
           ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
         });
       }
-      
+
       // Draw boundary if zoomed out
       drawBoundary();
-      
-      // Restore context state
+
       ctx.restore();
 
       // Keep editor box overlay aligned with current zoom/pan
       repositionEditorBox();
+    };
+
+    // RAF-coalesced scheduler — prevents multiple full redraws per frame from
+    // stacked server events. Use for non-interactive redraws only.
+    let redrawPending = false;
+    const scheduleRedraw = () => {
+      if (!redrawPending) {
+        redrawPending = true;
+        requestAnimationFrame(() => { redrawPending = false; redraw(); });
+      }
     };
 
     // Set canvas size to fill window
@@ -348,7 +396,7 @@ const DoodleCanvas = {
       
       scale = newScale;
       
-      redraw();
+      scheduleRedraw();
     };
 
     // Handle drawing
@@ -598,6 +646,7 @@ const DoodleCanvas = {
               animationRegions = animationRegions.filter(a => a.id !== id);
             });
 
+            offscreenDirty = true;
             redraw();
           }
         );
@@ -791,20 +840,40 @@ const DoodleCanvas = {
         anim.current_frame = (anim.current_frame + 1) % anim.frames.size;
         dirty = true;
       });
-      if (dirty) redraw();
+      if (dirty) { offscreenDirty = true; redraw(); }
     }, 250);
 
-    // Initialize canvas
-    resizeCanvas();
+    // Initialize canvas — deferred to RAF so other hooks (SidenotesAlign, etc.)
+    // can run their mounted() first before the heavy canvas draw kicks in.
+    requestAnimationFrame(() => resizeCanvas());
     
     // Store resize handler so we can clean it up
     this.resizeHandler = () => resizeCanvas();
     window.addEventListener('resize', this.resizeHandler);
     
     // Start periodic sync every 2 seconds
-    this.syncInterval = setInterval(() => {
+    hookThis.syncInterval = setInterval(() => {
       syncPixels();
     }, 2000);
+
+    // Pause intervals when tab is hidden, resume on return (saves CPU)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        clearInterval(hookThis.animationInterval);
+        clearInterval(hookThis.syncInterval);
+      } else {
+        hookThis.animationInterval = setInterval(() => {
+          let dirty = false;
+          animationData.forEach((anim) => {
+            if (anim.frames.size <= 1) return;
+            anim.current_frame = (anim.current_frame + 1) % anim.frames.size;
+            dirty = true;
+          });
+          if (dirty) { offscreenDirty = true; redraw(); }
+        }, 250);
+        hookThis.syncInterval = setInterval(() => syncPixels(), 2000);
+      }
+    });
     
     // Listen for pixel broadcasts from server
     this.handleEvent("load-pixels", ({ pixels }) => {
@@ -834,7 +903,8 @@ const DoodleCanvas = {
         animationData.set(a.id, { frames, current_frame: 0 });
       });
 
-      redraw();
+      offscreenDirty = true;
+      scheduleRedraw();
     });
 
     hookThis.handleEvent("reload-animation", ({ animation_id, frames }) => {
@@ -845,13 +915,15 @@ const DoodleCanvas = {
         newFrames.set(Number(idx), frameMap);
       });
       animationData.set(animation_id, { frames: newFrames, current_frame: 0 });
-      redraw();
+      offscreenDirty = true;
+      scheduleRedraw();
     });
 
     hookThis.handleEvent("remove-animation", ({ animation_id }) => {
       animationData.delete(animation_id);
       animationRegions = animationRegions.filter(a => a.id !== animation_id);
-      redraw();
+      offscreenDirty = true;
+      scheduleRedraw();
     });
     
     // Clear old localStorage data (cleanup)
@@ -903,7 +975,7 @@ const DoodleCanvas = {
         offsetY += dy;
         lastPanX = e.clientX;
         lastPanY = e.clientY;
-        redraw();
+        scheduleRedraw();
       } else if (isDragMode && dragStart) {
         const { gridX, gridY } = getGridCoords(e.clientX, e.clientY);
         redraw();
