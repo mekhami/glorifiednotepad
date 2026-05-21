@@ -1,6 +1,8 @@
 defmodule IndieWeb.DoodleCanvasComponent do
   use IndieWeb, :live_component
 
+  require Logger
+
   alias Indie.Doodle
   alias Indie.Doodle.CanvasServer
 
@@ -13,8 +15,22 @@ defmodule IndieWeb.DoodleCanvasComponent do
   def update(_assigns, socket) do
     socket =
       if connected?(socket) and !Map.has_key?(socket.assigns, :pixels_loaded) do
+        t0 = System.monotonic_time(:millisecond)
+
         formatted_pixels = CanvasServer.get_pixels()
+        t_pixels = System.monotonic_time(:millisecond)
+
         formatted_animations = CanvasServer.get_animations()
+        t_anim = System.monotonic_time(:millisecond)
+
+        pixel_count = length(formatted_pixels)
+        anim_count = length(formatted_animations)
+
+        Logger.info(
+          "[Canvas] initial load — pixels=#{t_pixels - t0}ms (#{pixel_count} pixels), " <>
+            "animations=#{t_anim - t_pixels}ms (#{anim_count} animations), " <>
+            "total=#{t_anim - t0}ms"
+        )
 
         socket
         |> assign(:pixels_loaded, true)

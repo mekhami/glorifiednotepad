@@ -6,6 +6,38 @@ const DoodleCanvas = {
     const hookThis = this;
     const canvas = this.el;
     const ctx = canvas.getContext('2d');
+
+    // --- Performance timing ---
+    // All times relative to page navigation start for full load picture
+    const perfMark = (label, extra) => {
+      const sinceMounted = performance.now() - perfT0;
+      // Navigation timing: time since page started loading
+      const fromPageLoad = performance.now() - (performance.getEntriesByType('navigation')[0]?.startTime ?? 0);
+      const msg = extra !== undefined
+        ? `[Canvas Perf] +${fromPageLoad.toFixed(0)}ms from nav | +${sinceMounted.toFixed(0)}ms from mount | ${label} | ${extra}`
+        : `[Canvas Perf] +${fromPageLoad.toFixed(0)}ms from nav | +${sinceMounted.toFixed(0)}ms from mount | ${label}`;
+      console.log(msg);
+    };
+    const perfT0 = performance.now();
+    perfMark('hook mounted');
+
+    // Track initial load completion (both pixels + animations received)
+    let initialPixelsLoaded = false;
+    let initialAnimationsLoaded = false;
+    let initialRenderLogged = false;
+
+    // Wrap scheduleRedraw to detect the very first render after initial load
+    const scheduleInitialRender = () => {
+      scheduleRedraw();
+      if (!initialRenderLogged && initialPixelsLoaded && initialAnimationsLoaded) {
+        initialRenderLogged = true;
+        requestAnimationFrame(() => {
+          perfMark('first full render complete (RAF fired)');
+        });
+      }
+    };
+    // --- End performance timing setup ---
+
     // Canvas configuration
     const PIXEL_SIZE = 2;
     const CANVAS_WIDTH = 1920;
@@ -159,6 +191,7 @@ const DoodleCanvas = {
 
     // Load pixels from server (initial load)
     const loadPixelsFromServer = (pixels) => {
+      const t = performance.now();
       pixels.forEach(pixel => {
         const key = `${pixel.x},${pixel.y}`;
         allPixels.set(key, pixel.color);
@@ -168,7 +201,9 @@ const DoodleCanvas = {
       });
       offCtx.putImageData(imageData, 0, 0);
       offscreenDirty = false;
-      scheduleRedraw();
+      perfMark('pixels processed + offscreen built', `${pixels.length} pixels, took ${(performance.now() - t).toFixed(0)}ms`);
+      initialPixelsLoaded = true;
+      scheduleInitialRender();
     };
 
     // Paint pixels received from other users
@@ -924,6 +959,7 @@ const DoodleCanvas = {
     
     // Listen for pixel broadcasts from server
     this.handleEvent("load-pixels", ({ pixels }) => {
+      perfMark('load-pixels event received', `${pixels.length} pixels`);
       loadPixelsFromServer(pixels);
     });
     
@@ -936,6 +972,9 @@ const DoodleCanvas = {
     });
     
     hookThis.handleEvent("load-animations", ({ animations }) => {
+      perfMark('load-animations event received', `${animations.length} animations`);
+      const t = performance.now();
+
       animationRegions = animations.map(a => ({
         id: a.id, x1: a.x1, y1: a.y1, x2: a.x2, y2: a.y2
       }));
@@ -951,7 +990,9 @@ const DoodleCanvas = {
       });
 
       rebuildOffscreen();
-      scheduleRedraw();
+      perfMark('animations processed + offscreen rebuilt', `took ${(performance.now() - t).toFixed(0)}ms`);
+      initialAnimationsLoaded = true;
+      scheduleInitialRender();
     });
 
     hookThis.handleEvent("reload-animation", ({ animation_id, frames }) => {
