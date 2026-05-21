@@ -6,6 +6,7 @@ const DoodleCanvas = {
     const hookThis = this;
     const canvas = this.el;
     const ctx = canvas.getContext('2d');
+    console.log('[canvas] mounted() start', performance.now().toFixed(1) + 'ms');
     
     // Canvas configuration
     const PIXEL_SIZE = 2;
@@ -160,6 +161,7 @@ const DoodleCanvas = {
 
     // Load pixels from server (initial load)
     const loadPixelsFromServer = (pixels) => {
+      const t0 = performance.now();
       pixels.forEach(pixel => {
         const key = `${pixel.x},${pixel.y}`;
         allPixels.set(key, pixel.color);
@@ -167,8 +169,11 @@ const DoodleCanvas = {
           u32[pixel.y * CANVAS_WIDTH + pixel.x] = parseHexU32(pixel.color);
         }
       });
+      const t1 = performance.now();
       offCtx.putImageData(imageData, 0, 0);
+      const t2 = performance.now();
       offscreenDirty = false;
+      console.log(`[canvas] load-pixels: ${pixels.length} pixels | map+u32 ${(t1-t0).toFixed(1)}ms | putImageData ${(t2-t1).toFixed(1)}ms`);
       scheduleRedraw();
     };
 
@@ -363,7 +368,12 @@ const DoodleCanvas = {
     };
 
     // Set canvas size to fill window
+    let firstResize = true;
     const resizeCanvas = () => {
+      if (firstResize) {
+        console.log('[canvas] resizeCanvas (first paint)', performance.now().toFixed(1) + 'ms');
+        firstResize = false;
+      }
       const displayWidth = window.innerWidth;
       const displayHeight = window.innerHeight;
       canvas.width = displayWidth;
@@ -937,6 +947,7 @@ const DoodleCanvas = {
     });
     
     hookThis.handleEvent("load-animations", ({ animations }) => {
+      const t0 = performance.now();
       animationRegions = animations.map(a => ({
         id: a.id, x1: a.x1, y1: a.y1, x2: a.x2, y2: a.y2
       }));
@@ -952,6 +963,8 @@ const DoodleCanvas = {
       });
 
       rebuildOffscreen();
+      const t1 = performance.now();
+      console.log(`[canvas] load-animations: ${animations.length} animations | rebuildOffscreen ${(t1-t0).toFixed(1)}ms`);
       scheduleRedraw();
     });
 
