@@ -60,9 +60,11 @@ const DoodleCanvas = {
     // pixel data changes; pan/zoom just re-composites the cached image.
     const offscreen = new OffscreenCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
     const offCtx = offscreen.getContext('2d');
+    // ImageData starts all-transparent (zeros). Background color shows through
+    // the canvas element itself via body { background-color } — no fill needed.
     const imageData = new ImageData(CANVAS_WIDTH, CANVAS_HEIGHT);
-    const data = imageData.data;
-    let offscreenDirty = true;
+    const u32 = new Uint32Array(imageData.data.buffer);
+    let offscreenDirty = false;
 
     // Hex → [r, g, b] with a small cache — avoids redundant parseInt on every pixel
     const colorCache = new Map();
@@ -75,7 +77,19 @@ const DoodleCanvas = {
       colorCache.set(hex, result);
       return result;
     };
-    const BG_RGB = parseHex(BACKGROUND_COLOR);
+
+    // Uint32 RGBA helper (little-endian: stored as R,G,B,A in memory)
+    const toU32 = (r, g, b) => ((255 << 24) | (b << 16) | (g << 8) | r) >>> 0;
+
+    // Hex → u32 with its own cache layer on top of parseHex
+    const u32Cache = new Map();
+    const parseHexU32 = (hex) => {
+      if (u32Cache.has(hex)) return u32Cache.get(hex);
+      const [r, g, b] = parseHex(hex);
+      const val = toU32(r, g, b);
+      u32Cache.set(hex, val);
+      return val;
+    };
     // --- End offscreen state ---
 
 
@@ -121,6 +135,9 @@ const DoodleCanvas = {
     const drawPixel = (gridX, gridY, color) => {
       paintPixel(gridX, gridY, color);
       allPixels.set(`${gridX},${gridY}`, color);
+      if (gridX >= 0 && gridX < CANVAS_WIDTH && gridY >= 0 && gridY < CANVAS_HEIGHT) {
+        u32[gridY * CANVAS_WIDTH + gridX] = parseHexU32(color);
+      }
       offscreenDirty = true;
     };
 
@@ -144,34 +161,42 @@ const DoodleCanvas = {
     // Load pixels from server (initial load)
     const loadPixelsFromServer = (pixels) => {
       pixels.forEach(pixel => {
-        // Add to cache without drawing (redraw will handle rendering)
         const key = `${pixel.x},${pixel.y}`;
         allPixels.set(key, pixel.color);
+        if (pixel.x >= 0 && pixel.x < CANVAS_WIDTH && pixel.y >= 0 && pixel.y < CANVAS_HEIGHT) {
+          u32[pixel.y * CANVAS_WIDTH + pixel.x] = parseHexU32(pixel.color);
+        }
       });
-      // Rebuild offscreen and schedule redraw
-      offscreenDirty = true;
+      offCtx.putImageData(imageData, 0, 0);
+      offscreenDirty = false;
       scheduleRedraw();
     };
 
     // Paint pixels received from other users
     const paintPixelsFromServer = (pixels) => {
       pixels.forEach(pixel => {
-        // Add to cache without drawing (redraw will handle rendering)
         const key = `${pixel.x},${pixel.y}`;
         allPixels.set(key, pixel.color);
+        if (pixel.x >= 0 && pixel.x < CANVAS_WIDTH && pixel.y >= 0 && pixel.y < CANVAS_HEIGHT) {
+          u32[pixel.y * CANVAS_WIDTH + pixel.x] = parseHexU32(pixel.color);
+        }
       });
-      offscreenDirty = true;
+      offCtx.putImageData(imageData, 0, 0);
+      offscreenDirty = false;
       scheduleRedraw();
     };
 
     // Delete pixels received from other users (eraser sync)
     const deletePixelsFromServer = (coords) => {
       coords.forEach(coord => {
-        // Remove from cache
         const key = `${coord.x},${coord.y}`;
         allPixels.delete(key);
+        if (coord.x >= 0 && coord.x < CANVAS_WIDTH && coord.y >= 0 && coord.y < CANVAS_HEIGHT) {
+          u32[coord.y * CANVAS_WIDTH + coord.x] = 0; // transparent — body bg shows through
+        }
       });
-      offscreenDirty = true;
+      offCtx.putImageData(imageData, 0, 0);
+      offscreenDirty = false;
       scheduleRedraw();
     };
 
@@ -257,25 +282,21 @@ const DoodleCanvas = {
       }
     };
 
-    // Rebuild the offscreen canvas from allPixels + current animation frames.
-    // Uses typed-array writes + one putImageData — much faster than per-pixel
-    // fillRect. Called only when pixel data changes; pan/zoom skips this.
+    // Full rebuild — clears to transparent then repaints all pixels.
+    // Only called for bulk state changes (load-animations, reload-animation,
+    // remove-animation). Normal pixel edits use incremental u32 writes instead.
     const rebuildOffscreen = () => {
-      // Fill background
-      for (let i = 0; i < data.length; i += 4) {
-        data[i] = BG_RGB[0]; data[i + 1] = BG_RGB[1]; data[i + 2] = BG_RGB[2]; data[i + 3] = 255;
-      }
-      // Write static pixels — use indexOf+slice instead of split(',').map(Number)
+      // Clear to transparent — body background-color shows through the canvas element
+      u32.fill(0);
+      // Write static pixels
       allPixels.forEach((color, key) => {
         const comma = key.indexOf(',');
         const x = +key.slice(0, comma);
         const y = +key.slice(comma + 1);
         if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) return;
-        const rgb = parseHex(color);
-        const idx = (y * CANVAS_WIDTH + x) * 4;
-        data[idx] = rgb[0]; data[idx + 1] = rgb[1]; data[idx + 2] = rgb[2]; data[idx + 3] = 255;
+        u32[y * CANVAS_WIDTH + x] = parseHexU32(color);
       });
-      // Write animation current frames on top of static pixels
+      // Write animation current frames on top
       animationData.forEach((anim) => {
         const frameMap = anim.frames.get(anim.current_frame);
         if (!frameMap) return;
@@ -284,9 +305,7 @@ const DoodleCanvas = {
           const x = +key.slice(0, comma);
           const y = +key.slice(comma + 1);
           if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) return;
-          const rgb = parseHex(color);
-          const idx = (y * CANVAS_WIDTH + x) * 4;
-          data[idx] = rgb[0]; data[idx + 1] = rgb[1]; data[idx + 2] = rgb[2]; data[idx + 3] = 255;
+          u32[y * CANVAS_WIDTH + x] = parseHexU32(color);
         });
       });
       offCtx.putImageData(imageData, 0, 0);
@@ -296,7 +315,11 @@ const DoodleCanvas = {
     // Redraw entire canvas. When no pixel data has changed (pan/zoom/resize),
     // offscreenDirty is false and this is just O(1): clearRect + drawImage.
     const redraw = () => {
-      if (offscreenDirty) rebuildOffscreen();
+      if (offscreenDirty) {
+        // imageData already up-to-date via incremental u32 writes — just sync to offscreen
+        offCtx.putImageData(imageData, 0, 0);
+        offscreenDirty = false;
+      }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.save();
@@ -832,16 +855,49 @@ const DoodleCanvas = {
       closeColorPicker();
     };
 
-    // Client-side animation loop — advances all animations at 4fps
-    this.animationInterval = setInterval(() => {
+    // Client-side animation loop — advances all animations at 4fps.
+    // Incremental: only touches the animation region pixels, not all 53K static pixels.
+    const advanceAnimationFrames = () => {
       let dirty = false;
       animationData.forEach((anim) => {
         if (anim.frames.size <= 1) return;
+
+        const prevFrameMap = anim.frames.get(anim.current_frame);
         anim.current_frame = (anim.current_frame + 1) % anim.frames.size;
+        const nextFrameMap = anim.frames.get(anim.current_frame);
+
+        // Restore previous frame pixels to underlying static pixel or transparent
+        if (prevFrameMap) {
+          prevFrameMap.forEach((_, key) => {
+            const comma = key.indexOf(',');
+            const x = +key.slice(0, comma);
+            const y = +key.slice(comma + 1);
+            if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) return;
+            const staticColor = allPixels.get(key);
+            u32[y * CANVAS_WIDTH + x] = staticColor ? parseHexU32(staticColor) : 0;
+          });
+        }
+
+        // Apply new frame pixels
+        if (nextFrameMap) {
+          nextFrameMap.forEach((color, key) => {
+            const comma = key.indexOf(',');
+            const x = +key.slice(0, comma);
+            const y = +key.slice(comma + 1);
+            if (x < 0 || x >= CANVAS_WIDTH || y < 0 || y >= CANVAS_HEIGHT) return;
+            u32[y * CANVAS_WIDTH + x] = parseHexU32(color);
+          });
+        }
+
         dirty = true;
       });
-      if (dirty) { offscreenDirty = true; redraw(); }
-    }, 250);
+      if (dirty) {
+        offCtx.putImageData(imageData, 0, 0);
+        offscreenDirty = false;
+        redraw();
+      }
+    };
+    this.animationInterval = setInterval(advanceAnimationFrames, 250);
 
     // Initialize canvas — deferred to RAF so other hooks (SidenotesAlign, etc.)
     // can run their mounted() first before the heavy canvas draw kicks in.
@@ -862,15 +918,7 @@ const DoodleCanvas = {
         clearInterval(hookThis.animationInterval);
         clearInterval(hookThis.syncInterval);
       } else {
-        hookThis.animationInterval = setInterval(() => {
-          let dirty = false;
-          animationData.forEach((anim) => {
-            if (anim.frames.size <= 1) return;
-            anim.current_frame = (anim.current_frame + 1) % anim.frames.size;
-            dirty = true;
-          });
-          if (dirty) { offscreenDirty = true; redraw(); }
-        }, 250);
+        hookThis.animationInterval = setInterval(advanceAnimationFrames, 250);
         hookThis.syncInterval = setInterval(() => syncPixels(), 2000);
       }
     });
@@ -903,7 +951,7 @@ const DoodleCanvas = {
         animationData.set(a.id, { frames, current_frame: 0 });
       });
 
-      offscreenDirty = true;
+      rebuildOffscreen();
       scheduleRedraw();
     });
 
@@ -915,14 +963,14 @@ const DoodleCanvas = {
         newFrames.set(Number(idx), frameMap);
       });
       animationData.set(animation_id, { frames: newFrames, current_frame: 0 });
-      offscreenDirty = true;
+      rebuildOffscreen();
       scheduleRedraw();
     });
 
     hookThis.handleEvent("remove-animation", ({ animation_id }) => {
       animationData.delete(animation_id);
       animationRegions = animationRegions.filter(a => a.id !== animation_id);
-      offscreenDirty = true;
+      rebuildOffscreen();
       scheduleRedraw();
     });
     
