@@ -26,17 +26,12 @@ import ExpandOnClick from "./expand_on_click"
 import ImageMagnifier from "./image_magnifier"
 import SidenotesAlign from "./sidenotes_align"
 
-console.log('[timing] app.js executing', performance.now().toFixed(1) + 'ms')
-
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
   hooks: {DoodleCanvas, ExpandOnClick, ImageMagnifier, SidenotesAlign},
 })
-
-liveSocket.getSocket().onOpen(() => console.log('[timing] WebSocket open', performance.now().toFixed(1) + 'ms'))
-liveSocket.getSocket().onError(() => console.log('[timing] WebSocket error', performance.now().toFixed(1) + 'ms'))
 
 // Show progress bar on live navigation and form submits
 topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})

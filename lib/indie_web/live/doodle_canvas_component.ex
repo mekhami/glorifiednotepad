@@ -2,45 +2,24 @@ defmodule IndieWeb.DoodleCanvasComponent do
   use IndieWeb, :live_component
 
   alias Indie.Doodle
+  alias Indie.Doodle.CanvasServer
 
   @impl true
   def mount(socket) do
-    {:ok, socket}
+    {:ok, assign(socket, :doodle_help_open, false)}
   end
 
   @impl true
   def update(_assigns, socket) do
     socket =
-      if !Map.has_key?(socket.assigns, :pixels_loaded) do
-        t0 = System.monotonic_time(:millisecond)
-        pixels = Doodle.list_pixels()
-        t1 = System.monotonic_time(:millisecond)
-        animations = Doodle.list_animations()
-        t2 = System.monotonic_time(:millisecond)
-        formatted_pixels = format_pixels(pixels)
-        t3 = System.monotonic_time(:millisecond)
-        formatted_animations = format_animations(animations)
-        t4 = System.monotonic_time(:millisecond)
-
-        require Logger
-        Logger.info("[canvas] list_pixels #{t1 - t0}ms (#{length(pixels)} rows)")
-        Logger.info("[canvas] list_animations #{t2 - t1}ms")
-        Logger.info("[canvas] format_pixels #{t3 - t2}ms")
-        Logger.info("[canvas] format_animations #{t4 - t3}ms")
-        Logger.info("[canvas] total update/2 #{t4 - t0}ms")
+      if connected?(socket) and !Map.has_key?(socket.assigns, :pixels_loaded) do
+        formatted_pixels = CanvasServer.get_pixels()
+        formatted_animations = CanvasServer.get_animations()
 
         socket
-        |> assign(:doodle_help_open, false)
         |> assign(:pixels_loaded, true)
-        |> then(fn socket ->
-          if connected?(socket) do
-            socket
-            |> push_event("load-pixels", %{pixels: formatted_pixels})
-            |> push_event("load-animations", %{animations: formatted_animations})
-          else
-            socket
-          end
-        end)
+        |> push_event("load-pixels", %{pixels: formatted_pixels})
+        |> push_event("load-animations", %{animations: formatted_animations})
       else
         socket
       end
@@ -61,6 +40,8 @@ defmodule IndieWeb.DoodleCanvasComponent do
   @impl true
   def handle_event("save_pixels", %{"pixels" => pixels}, socket) do
     result = Doodle.save_pixels(pixels)
+
+    CanvasServer.update_pixels(result.saved, result.deleted)
 
     if result.saved != [] do
       Phoenix.PubSub.broadcast_from(
@@ -87,6 +68,8 @@ defmodule IndieWeb.DoodleCanvasComponent do
       Enum.reduce(result.modified_animation_ids, socket, fn animation_id, acc ->
         pixels_by_frame = Doodle.get_animation_pixels(animation_id)
         formatted_frames = format_frames(pixels_by_frame)
+
+        CanvasServer.update_animation_frames(animation_id, formatted_frames)
 
         Phoenix.PubSub.broadcast_from(
           Indie.PubSub,
@@ -134,6 +117,10 @@ defmodule IndieWeb.DoodleCanvasComponent do
     pixels_by_frame = Doodle.get_animation_pixels(animation_id)
     formatted_frames = format_frames(pixels_by_frame)
 
+    CanvasServer.upsert_animation(updated_animation, formatted_frames)
+
+    Enum.each(deleted_ids, fn id -> CanvasServer.remove_animation(id) end)
+
     # Notify other clients of updated frames
     Phoenix.PubSub.broadcast_from(
       Indie.PubSub,
@@ -159,28 +146,6 @@ defmodule IndieWeb.DoodleCanvasComponent do
        frames: formatted_frames,
        deleted_animation_ids: deleted_ids
      }, socket}
-  end
-
-  defp format_pixels(pixels) do
-    Enum.map(pixels, fn p -> %{x: p.x, y: p.y, color: p.color} end)
-  end
-
-  defp format_animations(animations) do
-    all_pixels = Doodle.get_all_animation_pixels()
-
-    Enum.map(animations, fn a ->
-      anim_frames = Map.get(all_pixels, a.id, %{})
-
-      %{
-        id: a.id,
-        x1: a.x1,
-        y1: a.y1,
-        x2: a.x2,
-        y2: a.y2,
-        frame_count: a.frame_count,
-        frames: anim_frames
-      }
-    end)
   end
 
   defp format_frames(pixels_by_frame) do

@@ -10,6 +10,7 @@ defmodule Indie.Application do
       Indie.Repo,
       {DNSCluster, query: Application.get_env(:indie, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Indie.PubSub},
+      Indie.Doodle.CanvasServer,
       IndieWeb.Endpoint
     ]
 
