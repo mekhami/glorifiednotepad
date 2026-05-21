@@ -8,23 +8,35 @@ defmodule Mix.Tasks.Images.Optimize do
 
   This task will:
   - Find all .jpg, .jpeg, .png, and .webp files in priv/static/images/
-  - Optimize them losslessly using jpegoptim, oxipng, and cwebp
+  - Optimize PNGs with two passes: lossy quantization (pngquant) then lossless
+    recompression (oxipng/optipng). The lossy pass can reduce complex or
+    photographic PNGs by 70–90%; the lossless pass squeezes the remainder.
+  - Optimize JPEGs losslessly using jpegoptim
+  - Optimize WebP files losslessly using cwebp
   - Report size savings
-  - Skip already-optimized images (idempotent)
+  - Skip already-optimized images (idempotent via .optimized sidecar files)
 
   ## Required System Dependencies
 
+  - pngquant (for lossy PNG quantization — strongly recommended)
   - jpegoptim (for JPEG optimization)
-  - oxipng or optipng (for PNG optimization, oxipng is faster but requires cargo)
+  - oxipng or optipng (for lossless PNG recompression, oxipng preferred)
   - webp (for WebP optimization, includes cwebp tool)
+
+  Install on macOS:
+
+      brew install pngquant jpegoptim oxipng webp
 
   Install on Ubuntu/Debian:
 
-      sudo apt install jpegoptim optipng webp
+      sudo apt install pngquant jpegoptim optipng webp
 
   For better PNG optimization, install oxipng via cargo:
 
       cargo install oxipng
+
+  pngquant is optional but highly recommended. If missing, only lossless PNG
+  optimization runs (much smaller savings for photographic or complex images).
 
   """
 
@@ -98,6 +110,9 @@ defmodule Mix.Tasks.Images.Optimize do
       # Try oxipng first, fallback to optipng
       png_tool = System.find_executable("oxipng") || System.find_executable("optipng")
 
+      # pngquant for lossy pre-processing (optional but strongly recommended)
+      pngquant = System.find_executable("pngquant")
+
       case png_tool do
         nil ->
           Mix.shell().error("⚠️  PNG optimizer not found. Install with: sudo apt install optipng")
@@ -105,11 +120,18 @@ defmodule Mix.Tasks.Images.Optimize do
           {0, 0}
 
         tool ->
+          if is_nil(pngquant) do
+            Mix.shell().info(
+              "  ⚠️  pngquant not found — skipping lossy PNG step (lossless only).\n" <>
+                "       Install: brew install pngquant / sudo apt install pngquant"
+            )
+          end
+
           png_files
           |> Enum.reject(&fingerprinted?/1)
           |> Enum.reject(&already_optimized?/1)
           |> Enum.reduce({0, 0}, fn file, {count, savings} ->
-            case optimize_png(tool, file) do
+            case optimize_png(tool, pngquant, file) do
               {:ok, saved} ->
                 mark_optimized(file)
                 {count + 1, savings + saved}
@@ -172,10 +194,41 @@ defmodule Mix.Tasks.Images.Optimize do
     end
   end
 
-  defp optimize_png(png_tool, file) do
+  defp optimize_png(png_tool, pngquant, file) do
     size_before = File.stat!(file).size
 
-    # Detect which tool we're using and adjust arguments
+    # Step 1: Lossy quantization with pngquant (if available).
+    # Dramatically reduces size for photographic or complex RGBA images
+    # (typically 70–90% smaller) by reducing color palette depth.
+    # --quality=65-85: target quality range; exit 99 means the image couldn't
+    # be quantized to the minimum quality — pngquant leaves the original intact
+    # in that case, so it is always safe to ignore a non-zero exit here.
+    if pngquant do
+      case System.cmd(pngquant, [
+             "--quality=65-85",
+             "--force",
+             "--ext",
+             ".png",
+             "--strip",
+             file
+           ]) do
+        {_, 0} ->
+          :ok
+
+        {_, 99} ->
+          # Quality floor not met — original kept, no action needed
+          :ok
+
+        {output, code} ->
+          Mix.shell().info(
+            "  ⚠️  pngquant exited #{code} for #{Path.basename(file)}: #{String.trim(output)}"
+          )
+      end
+    end
+
+    # Step 2: Lossless recompression with oxipng/optipng.
+    # Squeezes the deflate stream and strips metadata from whatever pngquant
+    # produced (or the original if pngquant was skipped/failed).
     args =
       cond do
         String.ends_with?(png_tool, "oxipng") ->
@@ -185,7 +238,6 @@ defmodule Mix.Tasks.Images.Optimize do
           ["-o2", "-strip", "all", "-quiet", file]
 
         true ->
-          # Default to oxipng args
           ["--opt", "2", "--strip", "safe", "--quiet", file]
       end
 
