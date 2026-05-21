@@ -12,8 +12,22 @@ defmodule IndieWeb.DoodleCanvasComponent do
   def update(_assigns, socket) do
     socket =
       if !Map.has_key?(socket.assigns, :pixels_loaded) do
+        t0 = System.monotonic_time(:millisecond)
         pixels = Doodle.list_pixels()
+        t1 = System.monotonic_time(:millisecond)
         animations = Doodle.list_animations()
+        t2 = System.monotonic_time(:millisecond)
+        formatted_pixels = format_pixels(pixels)
+        t3 = System.monotonic_time(:millisecond)
+        formatted_animations = format_animations(animations)
+        t4 = System.monotonic_time(:millisecond)
+
+        require Logger
+        Logger.info("[canvas] list_pixels #{t1 - t0}ms (#{length(pixels)} rows)")
+        Logger.info("[canvas] list_animations #{t2 - t1}ms")
+        Logger.info("[canvas] format_pixels #{t3 - t2}ms")
+        Logger.info("[canvas] format_animations #{t4 - t3}ms")
+        Logger.info("[canvas] total update/2 #{t4 - t0}ms")
 
         socket
         |> assign(:doodle_help_open, false)
@@ -21,8 +35,8 @@ defmodule IndieWeb.DoodleCanvasComponent do
         |> then(fn socket ->
           if connected?(socket) do
             socket
-            |> push_event("load-pixels", %{pixels: format_pixels(pixels)})
-            |> push_event("load-animations", %{animations: format_animations(animations)})
+            |> push_event("load-pixels", %{pixels: formatted_pixels})
+            |> push_event("load-animations", %{animations: formatted_animations})
           else
             socket
           end
