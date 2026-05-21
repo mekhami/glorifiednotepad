@@ -173,7 +173,7 @@ const DoodleCanvas = {
       offCtx.putImageData(imageData, 0, 0);
       const t2 = performance.now();
       offscreenDirty = false;
-      console.log(`[canvas] load-pixels: ${pixels.length} pixels | map+u32 ${(t1-t0).toFixed(1)}ms | putImageData ${(t2-t1).toFixed(1)}ms`);
+      console.log(`[canvas] load-pixels: ${pixels.length} pixels | map+u32 ${(t1-t0).toFixed(1)}ms | putImageData ${(t2-t1).toFixed(1)}ms | arrived at ${t0.toFixed(1)}ms`);
       scheduleRedraw();
     };
 
