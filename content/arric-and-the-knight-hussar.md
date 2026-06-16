@@ -35,7 +35,7 @@ Arric nods and lays back on the reedy salt sands, hands crossed behind his head.
 
 "I have seen the Gesta flowers in bloom! It is the greatest beauty on the plains. I spent a summer and autumn with a girl, in my youth, and we followed the flowers across the salt pan. This was before I took my oaths." The knight smiles fondly, tossing dead, dry reed onto the fire. "I think she married and left for the city, maybe Caibo? I can't remember."
 
-Arric felt his heart sink for the old man. Caibo had been razed near the beginning of the war that ended the Imperium. People only told stories of that war as warning - against trusting outsiders, against leaving the village for the city, against fealty to lords at all. The two sat in quiet for a few minutes. Arric would not break the silence. The dramak came back, curled her legs up under her body, and laid her insectoid head against the ground. This shook the men out of their reverie, and the Knight Hussar stood up and brushed himself off.
+Arric feels his heart sink for the old man. Caibo was razed near the beginning of the war that ended the Imperium. People only told stories of that war as warning - against trusting outsiders, against leaving the village for the city, against fealty to lords at all. The two sit in quiet for a few minutes. Arric does not break the silence. The dramak comes back, curls her legs up under her body, and lays her insectoid head against the ground. This shakes the two men out of their reverie, and the Knight Hussar stands up and brushes himself off.
 
 "Ah, I suppose I should move on. The stories of your peoples' hospitality are true, my friend on the plains. If you find yourself in need, you can call upon old Sharrukenazzar at the Syfort, where I am most often found."
 
