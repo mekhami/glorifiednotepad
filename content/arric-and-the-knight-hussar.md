@@ -39,4 +39,4 @@ Arric feels his heart sink for the old man. Caibo was razed near the beginning o
 
 "Ah, I suppose I should move on. The stories of your peoples' hospitality are true, my friend on the plains. If you find yourself in need, you can call upon old Sharrukenazzar at the Syfort, where I am most often found."
 
-Arric stands, takes off his hat and shakes the old man's hand. "Sharrukenazzar, fair winds for you." As the Knight Hussar clambers up into his aircraft's cradle, he salutes Arric in the Hussar manner, closed fist raised over his head. The vehicle's sheer, nearly invisible membranes begin to vibrate, buzzing loudly, and it kicks off, disappearing against the lavender sky.
+Arric stands, takes off his hat and shakes the old man's hand. "Sharrukenazzar, fair winds for you." As the Knight Hussar clambers up into his aircraft's cradle, he salutes Arric in the Hussar manner, closed fist raised over his head. The vehicle's sheer, nearly invisible membranes begin to vibrate louder and louder until it kicks off, disappearing against the lavender sky.
