@@ -63,20 +63,22 @@ defmodule Indie.WritingExercises.TaggerTest do
   describe "tag_words/1" do
     test "tags a list of words" do
       result = Tagger.tag_words(["the", "quick", "brown", "fox"])
+
       assert result == [
-        %{word: "the", tag: :det},
-        %{word: "quick", tag: :adj},
-        %{word: "brown", tag: :adj},
-        %{word: "fox", tag: :nn}
-      ]
+               %{word: "the", tag: :det},
+               %{word: "quick", tag: :adj},
+               %{word: "brown", tag: :adj},
+               %{word: "fox", tag: :nn}
+             ]
     end
 
     test "preserves original word casing in output" do
       result = Tagger.tag_words(["The", "Quick"])
+
       assert result == [
-        %{word: "The", tag: :det},
-        %{word: "Quick", tag: :adj}
-      ]
+               %{word: "The", tag: :det},
+               %{word: "Quick", tag: :adj}
+             ]
     end
   end
 end
