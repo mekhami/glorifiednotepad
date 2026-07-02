@@ -8,13 +8,15 @@
       <p>{@exercise.instructions}</p>
     </div>
 
-    <textarea
-      id="exercise-textarea"
-      class="exercise-textarea"
-      phx-change="check"
-      phx-debounce="300"
-      placeholder="Start writing here..."
-    >{@text}</textarea>
+    <.form id="exercise-form" for={%{}} phx-change="check">
+      <textarea
+        id="exercise-textarea"
+        name="text"
+        class="exercise-textarea"
+        phx-debounce="300"
+        placeholder="Start writing here..."
+      >{@text}</textarea>
+    </.form>
 
     <div class="exercise-panel">
       <%= if @violations == [] and @word_count == 0 do %>

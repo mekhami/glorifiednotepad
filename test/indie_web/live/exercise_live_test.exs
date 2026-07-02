@@ -16,7 +16,7 @@ defmodule IndieWeb.ExerciseLiveTest do
       {:ok, view, _html} = live(conn, "/exercises")
 
       view
-      |> element("#exercise-textarea")
+      |> element("#exercise-form")
       |> render_change(%{text: "The beautiful sunset."})
 
       assert view
@@ -32,7 +32,7 @@ defmodule IndieWeb.ExerciseLiveTest do
       {:ok, view, _html} = live(conn, "/exercises")
 
       view
-      |> element("#exercise-textarea")
+      |> element("#exercise-form")
       |> render_change(%{text: "My dog ran across the field and jumped into the lake."})
 
       assert view
@@ -44,7 +44,7 @@ defmodule IndieWeb.ExerciseLiveTest do
       {:ok, view, _html} = live(conn, "/exercises")
 
       view
-      |> element("#exercise-textarea")
+      |> element("#exercise-form")
       |> render_change(%{text: "One two three four five."})
 
       assert view
