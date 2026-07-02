@@ -30,6 +30,7 @@ defmodule IndieWeb.Router do
     live("/", HomeLive)
     live("/p/:slug", PostLive)
     live("/podloader", PodloaderLive)
+    live("/exercises", ExerciseLive)
     get("/feed.rss", FeedController, :rss)
   end
 

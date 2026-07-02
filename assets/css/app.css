@@ -1776,3 +1776,135 @@ mark.hl-red {
     display: block;
   }
 }
+
+/* Writing Exercises Page */
+.exercise-page {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.exercise-card {
+  background: #fdf8f0;
+  border: 1px solid #e2d9cc;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+  padding: 2rem;
+  border-radius: 4px;
+}
+
+.exercise-header {
+  margin-bottom: 1rem;
+}
+
+.exercise-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111;
+  margin: 0;
+}
+
+.exercise-instructions {
+  font-size: 0.9rem;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2d9cc;
+}
+
+.exercise-textarea {
+  width: 100%;
+  min-height: 16rem;
+  padding: 1rem;
+  font-family: monospace;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #222;
+  background: #fffcf8;
+  border: 1px solid #d5ccc0;
+  border-radius: 3px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.exercise-textarea:focus {
+  outline: none;
+  border-color: #8a7f73;
+  box-shadow: 0 0 0 2px rgba(68,76,114,0.15);
+}
+
+.exercise-panel {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #e2d9cc;
+  border-radius: 3px;
+  font-size: 0.85rem;
+}
+
+.panel-placeholder {
+  color: #aaa;
+  font-style: italic;
+  margin: 0;
+}
+
+.panel-clean {
+  color: #2e7d32;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+
+.panel-violation-count {
+  color: #b71c1c;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.panel-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.75rem;
+}
+
+.panel-item {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.15rem 0;
+}
+
+.panel-word {
+  font-weight: 600;
+  color: #222;
+}
+
+.panel-tag {
+  color: #999;
+  font-size: 0.8rem;
+}
+
+.panel-word-count {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 0.4rem;
+}
+
+.panel-range {
+  color: #aaa;
+}
+
+.progress-bar-bg {
+  height: 6px;
+  background: #e2d9cc;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.fill-green { background: #2e7d32; }
+.fill-yellow { background: #f9a825; }
+.fill-red { background: #c62828; }

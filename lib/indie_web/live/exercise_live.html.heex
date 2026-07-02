@@ -1,0 +1,53 @@
+<div class="exercise-page">
+  <div class="exercise-card">
+    <div class="exercise-header">
+      <h1 class="exercise-title">✏️ {@exercise.title}</h1>
+    </div>
+
+    <div class="exercise-instructions">
+      <p>{@exercise.instructions}</p>
+    </div>
+
+    <textarea
+      id="exercise-textarea"
+      class="exercise-textarea"
+      phx-change="check"
+      phx-debounce="300"
+      placeholder="Start writing here..."
+    >{@text}</textarea>
+
+    <div class="exercise-panel">
+      <%= if @violations == [] and @word_count == 0 do %>
+        <p class="panel-placeholder">Start writing to see feedback</p>
+      <% else %>
+        <%= if @violations == [] and @word_count > 0 do %>
+          <p class="panel-clean">✓ No forbidden words</p>
+        <% else %>
+          <p class="panel-violation-count">
+            ⚠ Forbidden words ({length(@violations)})
+          </p>
+          <ul class="panel-list">
+            <li :for={v <- @violations} class="panel-item">
+              <span class="panel-word">{v.word}</span>
+              <span class="panel-tag">{tag_label(v.tag)}</span>
+            </li>
+          </ul>
+        <% end %>
+
+        <div class="panel-word-count">
+          Words: {@word_count}
+          <span class="panel-range">
+            / {@exercise.min_words}–{@exercise.max_words}
+          </span>
+        </div>
+        <div class="progress-bar-bg">
+          <div
+            class={"progress-bar-fill #{progress_color(@word_count, @exercise)}"}
+            style={"width: #{progress_pct(@word_count, @exercise)}%"}
+          >
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
