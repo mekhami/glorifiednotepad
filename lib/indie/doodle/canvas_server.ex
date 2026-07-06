@@ -5,8 +5,14 @@ defmodule Indie.Doodle.CanvasServer do
   Loads all data from DB once on startup, then maintains state
   incrementally as pixels/animations are saved. All reads are O(1).
   DB writes still go through Doodle context — this is a read cache only.
+
+  Also refreshes itself from the database every 60s so that out-of-band
+  changes (e.g. the seed_logo.exs script) are picked up without restarting
+  the server.
   """
   use GenServer
+
+  @refresh_interval 60_000
 
   alias Indie.Doodle
 
@@ -69,7 +75,14 @@ defmodule Indie.Doodle.CanvasServer do
 
   @impl true
   def init(_) do
-    {:ok, load_initial_state()}
+    state = load_initial_state()
+    :timer.send_interval(@refresh_interval, self(), :refresh_from_db)
+    {:ok, state}
+  end
+
+  @impl true
+  def handle_info(:refresh_from_db, _state) do
+    {:noreply, load_initial_state()}
   end
 
   @impl true

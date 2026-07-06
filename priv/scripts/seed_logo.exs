@@ -15,8 +15,6 @@ Application.ensure_all_started(:ecto_sql)
 Application.ensure_all_started(:ecto_sqlite3)
 {:ok, _} = Indie.Repo.start_link([])
 
-import Ecto.Query
-
 alias Indie.Repo
 alias Indie.Doodle.Pixel
 
