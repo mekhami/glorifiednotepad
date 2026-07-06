@@ -39,19 +39,30 @@ case "$1" in
     echo "Viewing nginx logs..."
     ssh indie@45.55.203.183 'sudo tail -f /var/log/nginx/glorifiednotepad_error.log'
     ;;
+  seed-logo)
+    echo "Running seed logo script..."
+    ssh indie@45.55.203.183 'bash /opt/indie-repo/deployment/seed_logo.sh'
+    ;;
+  seed-logo-cron)
+    echo "Installing daily cron job for seed logo at 6:00 AM..."
+    ssh indie@45.55.203.183 '(crontab -l 2>/dev/null | grep -v seed_logo; echo "0 6 * * * /opt/indie-repo/deployment/seed_logo.sh >> /var/log/indie/seed_logo.log 2>&1") | crontab -'
+    echo "Done. Logo will re-seed daily at 6:00 AM."
+    ;;
   *)
-    echo "Usage: $0 {deploy|logs|status|restart|stop|start|backup|ssh|nginx-logs}"
+    echo "Usage: $0 {deploy|logs|status|restart|stop|start|backup|ssh|nginx-logs|seed-logo|seed-logo-cron}"
     echo ""
     echo "Commands:"
-    echo "  deploy      - Build and deploy to production"
-    echo "  logs        - View application logs"
-    echo "  status      - Check service status"
-    echo "  restart     - Restart the service"
-    echo "  stop        - Stop the service"
-    echo "  start       - Start the service"
-    echo "  backup      - Backup the database"
-    echo "  ssh         - SSH into the server"
-    echo "  nginx-logs  - View nginx error logs"
+    echo "  deploy          - Build and deploy to production"
+    echo "  logs            - View application logs"
+    echo "  status          - Check service status"
+    echo "  restart         - Restart the service"
+    echo "  stop            - Stop the service"
+    echo "  start           - Start the service"
+    echo "  backup          - Backup the database"
+    echo "  ssh             - SSH into the server"
+    echo "  nginx-logs      - View nginx error logs"
+    echo "  seed-logo       - Run the seed logo script now"
+    echo "  seed-logo-cron  - Install a daily cron job (6 AM) for seed logo"
     exit 1
     ;;
 esac
