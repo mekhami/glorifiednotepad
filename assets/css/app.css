@@ -1908,3 +1908,66 @@ mark.hl-red {
 .fill-green { background: #2e7d32; }
 .fill-yellow { background: #f9a825; }
 .fill-red { background: #c62828; }
+
+/* ── Audio Player ── */
+
+.iap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  margin: 1.5rem 0;
+  background: #3a4160;
+  border: 1px solid #5a6285;
+}
+
+.iap-play,
+.iap-vol {
+  background: none;
+  border: none;
+  color: #ac9d9e;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.iap-play:hover,
+.iap-vol:hover {
+  color: #c5b8b9;
+}
+
+.iap-track {
+  flex: 1;
+  height: 6px;
+  background: #2f3556;
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  min-width: 60px;
+}
+
+.iap-fill {
+  height: 100%;
+  background: #8fa9b5;
+  border-radius: 3px;
+  width: 0%;
+  pointer-events: none;
+}
+
+.iap-time {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #ac9d9e;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.iap-slider {
+  width: 60px;
+  height: 4px;
+  accent-color: #8fa9b5;
+  cursor: pointer;
+  flex-shrink: 0;
+}

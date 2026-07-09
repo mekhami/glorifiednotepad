@@ -18,7 +18,7 @@ defmodule IndieWeb do
   """
 
   def static_paths,
-    do: ~w(assets downloads fonts images videos favicon.ico favicon.svg robots.txt)
+    do: ~w(assets downloads fonts images videos audio favicon.ico favicon.svg robots.txt)
 
   def router do
     quote do

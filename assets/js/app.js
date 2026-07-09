@@ -25,6 +25,7 @@ import DoodleCanvas from "./doodle_canvas"
 import ExpandOnClick from "./expand_on_click"
 import ImageMagnifier from "./image_magnifier"
 import SidenotesAlign from "./sidenotes_align"
+import "./audio_player"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {

@@ -93,7 +93,8 @@ log "Compiling assets..."
 cd assets
 npm install || error "Failed to install npm packages"
 cd ..
-MIX_ENV=prod mix assets.deploy || error "Failed to compile assets"
+mkdir -p /var/lib/indie/image-cache
+IMAGE_CACHE_PATH=/var/lib/indie/image-cache MIX_ENV=prod mix assets.deploy || error "Failed to compile assets"
 
 # Step 6: Build release
 log "Building release..."

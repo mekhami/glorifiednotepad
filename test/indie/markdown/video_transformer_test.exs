@@ -8,7 +8,7 @@ defmodule Indie.Markdown.VideoTransformerTest do
 
     result = VideoTransformer.transform(input)
 
-    assert result =~ ~s(<video controls width="100%">)
+    assert result =~ ~s(<video controls width="100%" preload="none">)
     assert result =~ ~s(<source src="/videos/demo.webm" type="video/webm" />)
     assert result =~ ~s(<source src="/videos/demo.mp4" type="video/mp4" />)
     assert result =~ "</video>"

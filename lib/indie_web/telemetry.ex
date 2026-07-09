@@ -36,8 +36,7 @@ defmodule IndieWeb.Telemetry do
 
     if view in @tracked_views do
       ms = System.convert_time_unit(measurements.duration, :native, :millisecond)
-      connected = metadata.socket.connected?
-      Logger.info("[LV Perf] #{inspect(view)} mount (connected=#{connected}) #{ms}ms")
+      Logger.info("[LV Perf] #{inspect(view)} mount #{ms}ms")
     end
   end
 
