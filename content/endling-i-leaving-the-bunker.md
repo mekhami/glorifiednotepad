@@ -27,6 +27,8 @@ All that to say, I'm leaving the bunker. It would be pretty pointless to stay. I
 
 ---
 
+*Next: [Endling II - Departure](/p/endling-ii---departure)*
+
 *This is the first in a series of articles that will track my play through of the game [Endling](https://mallenhall.com/pages/game-info/endling) by M. Allen Hall. There are obviously some heavy themes in this game, and I don't intend to shy away from them. But I also understand if you'd rather not go on this journey with me.*
 
 *The first two articles, including this one, introduce the protagonist and the situation. After that, the game enters a hex-flower-crawling phase, where you go on a journey whose scope is indeterminate. There are survival elements and mechanics, and there are more introspective journaling elements, intertwined in a way that I find fascinating, and I am very eager to explore it.*

@@ -7,6 +7,10 @@ draft: false
 sidenotes: false
 ---
 
+*Previous: [Endling I - Leaving the Bunker](/p/endling-i-leaving-the-bunker)*
+
+---
+
 Back before the war, I had a habit of overpacking. I would take a weekend trip to New York or Toronto or Nashville, somewhere plenty civilized enough to have a corner store where anything I forgot to bring could be found, and for some reason I'd take four changes of clothes, extra socks, two phone chargers (just in case one stopped working!), my wallet, passport, two books, a pair of shoes (even though I was wearing a pair already), headphones, earbuds, pencils, toiletries, laptop, pencils, ibuprofen, and my shaving kit. All for a three day stay at a decent hotel. It became a running gag with my friends.
 
 Nobody's laughing now, though. My rucksack, which is half again as tall as I am, is filled to the brim with supplies of an entirely different nature. Mostly food, and an extra change of cold weather gear.
