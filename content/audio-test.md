@@ -2,7 +2,7 @@
 title: "Audio Player Test"
 id: audio-test
 date: 2026-07-09
-width: 40%
+width: 50%
 draft: true
 ---
 
