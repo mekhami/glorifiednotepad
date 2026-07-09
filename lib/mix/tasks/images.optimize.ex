@@ -231,40 +231,66 @@ defmodule Mix.Tasks.Images.Optimize do
 
   defp optimization_status(cache, file) do
     source_stat = File.stat!(file)
+    source_sha256 = sha256_hex!(file)
 
-    if already_optimized?(file, source_stat) do
-      {:already_optimized, cache}
-    else
-      source_sha256 = sha256_hex!(file)
+    cond do
+      already_optimized?(file, source_stat) ->
+        cache = seed_cache_for_already_optimized(cache, file, source_sha256)
+        {:already_optimized, cache}
 
-      if is_nil(cache.path) do
+      cache_hit_on_sha?(cache, file, source_sha256) ->
+        {:restored_from_cache, cache}
+
+      true ->
         {{:needs_optimization, source_sha256}, cache}
+    end
+  end
+
+  defp seed_cache_for_already_optimized(cache, file, source_sha256) do
+    if is_nil(cache.path) do
+      cache
+    else
+      rel_path = Path.relative_to(file, @images_dir)
+
+      if cache_hit?(cache.manifest, rel_path, source_sha256) do
+        cache
       else
-        rel_path = Path.relative_to(file, @images_dir)
+        store_in_cache(cache, file, source_sha256)
+      end
+    end
+  end
 
-        if cache_hit?(cache.manifest, rel_path, source_sha256) do
-          cached_file = Path.join(cache.path, rel_path)
+  defp cache_hit_on_sha?(cache, file, source_sha256) do
+    if is_nil(cache.path) do
+      false
+    else
+      rel_path = Path.relative_to(file, @images_dir)
 
-          if File.exists?(cached_file) do
-            File.cp!(cached_file, file)
-            mark_optimized(file)
-            source_size = source_stat.size
-            restored_size = File.stat!(file).size
-            saved = source_size - restored_size
+      if cache_hit?(cache.manifest, rel_path, source_sha256) do
+        cached_file = Path.join(cache.path, rel_path)
 
-            if saved > 0 do
-              Mix.shell().info(
-                "  #{Path.basename(file)}: restored from cache (saved #{format_bytes(saved)})"
-              )
-            end
+        if File.exists?(cached_file) do
+          source_stat = File.stat!(file)
+          File.cp!(cached_file, file)
+          mark_optimized(file)
+          source_size = source_stat.size
+          restored_size = File.stat!(file).size
+          saved = source_size - restored_size
 
-            {:restored_from_cache, cache}
+          if saved > 0 do
+            Mix.shell().info(
+              "  #{Path.basename(file)}: restored from cache (saved #{format_bytes(saved)})"
+            )
           else
-            {{:needs_optimization, source_sha256}, cache}
+            Mix.shell().info("  #{Path.basename(file)}: restored from cache")
           end
+
+          true
         else
-          {{:needs_optimization, source_sha256}, cache}
+          false
         end
+      else
+        false
       end
     end
   end
