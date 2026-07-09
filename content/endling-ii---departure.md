@@ -33,7 +33,7 @@ Snow and stone and scrub as far as the eye can see. I can't make out much of the
 
 It's cold, but my gear is actually excellent. Connor was an experienced outdoorsman, and he insisted that we get the best that money could buy, back when we made these plans. Contingency plans. That's what we called them. Anyways, I can feel the cold but I don't _feel_ the cold, y'know? It's just there, but it's not bothering me.
 
-I took one last look at the bunker. The temptation to go back inside nearly overwhelmed me. I sat there and stared at it, paced back and forth. I actually shouted at it, like if I got angry enough it would shut its own doors and I wouldn't have a choice anymore. White Fang. I bit my tongue hard enough to draw blood, just trying to keep myself from surrendering. It felt like I stood there for an hour like this, but I think it was honestly on a few minutes. Even as I sit here writing this, I'm not convinced I made the right choice.
+I took one last look at the bunker. The temptation to go back inside nearly overwhelmed me. I sat there and stared at it, paced back and forth. I actually shouted at it, like if I got angry enough it would shut its own doors and I wouldn't have a choice anymore. White Fang. I bit my tongue hard enough to draw blood, just trying to keep myself from surrendering. It felt like I stood there for an hour like this, but I think it was honestly only a few minutes. Even as I sit here writing this, I'm not convinced I made the right choice.
 
 Goodbye, Bunker. Thanks for keeping them safe as long as you did.
 
