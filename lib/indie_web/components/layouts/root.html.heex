@@ -20,53 +20,5 @@
   </head>
   <body>
     {@inner_content}
-    <details id="rootring-widget" class="rootring-widget">
-      <summary aria-label="rootring webring">
-        <span class="rr-summary-tab">rootring [+]</span>
-      </summary>
-      <div class="rr-stamp">
-        <div class="rr-pixels">
-          <span style="background:#FF0000"></span><span style="background:#00FF00"></span><span style="background:#0000FF"></span><span style="background:#FFFF00"></span><span style="background:#FF00FF"></span><span style="background:#00FFFF"></span><span style="background:#FFA500"></span><span style="background:#800080"></span><span style="background:#A52A2A"></span><span style="background:#df9390"></span><span style="background:#444c72"></span><span style="background:#6c868f"></span>
-          <span style="background:#00FFFF"></span><span style="background:#FF0000"></span><span style="background:#FFFF00"></span><span style="background:#800080"></span><span style="background:#0000FF"></span><span style="background:#FFA500"></span><span style="background:#00FF00"></span><span style="background:#A52A2A"></span><span style="background:#FF00FF"></span><span style="background:#444c72"></span><span style="background:#df9390"></span><span style="background:#6c868f"></span>
-          <span style="background:#800080"></span><span style="background:#FFA500"></span><span style="background:#00FF00"></span><span style="background:#FF0000"></span><span style="background:#A52A2A"></span><span style="background:#0000FF"></span><span style="background:#FFFF00"></span><span style="background:#00FFFF"></span><span style="background:#FF00FF"></span><span style="background:#6c868f"></span><span style="background:#444c72"></span><span style="background:#df9390"></span>
-        </div>
-        <div
-          class="rr-label-bar"
-          role="button"
-          aria-label="collapse webring"
-          onclick="document.getElementById('rootring-widget').removeAttribute('open'); sessionStorage.setItem('rootring-closed', '1');"
-        >
-          <a href="https://rootr.ing/" onclick="event.stopPropagation()">rootring</a>
-          <span class="rr-close">[-]</span>
-        </div>
-        <nav class="rr-nav-links" aria-label="Webring navigation">
-          <a class="rr-link" href="https://rootr.ing/prev?site=https://glorifiednotepad.net">
-            <span class="sym">&lt;</span> prev
-          </a>
-          <a class="rr-link" href="https://rootr.ing/random"><span class="sym">~</span> rand</a>
-          <a class="rr-link" href="https://rootr.ing/directory">
-            <span class="sym">#</span> ring
-          </a>
-          <a class="rr-link" href="https://rootr.ing/next?site=https://glorifiednotepad.net">
-            <span class="sym">&gt;</span> next
-          </a>
-        </nav>
-      </div>
-    </details>
-    <script>
-      (function() {
-        var w = document.getElementById('rootring-widget');
-        if (!sessionStorage.getItem('rootring-closed')) {
-          w.setAttribute('open', '');
-        }
-        w.addEventListener('toggle', function() {
-          if (w.open) {
-            sessionStorage.removeItem('rootring-closed');
-          } else {
-            sessionStorage.setItem('rootring-closed', '1');
-          }
-        });
-      })();
-    </script>
   </body>
 </html>
