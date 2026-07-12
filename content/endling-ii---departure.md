@@ -39,6 +39,8 @@ Goodbye, Bunker. Thanks for keeping them safe as long as you did.
 
 --- 
 
+*Next: [Endling III - Dances With wolves](/p/endling-iii-dances-with-wolves)*
+
 *Thus ends the introduction. These two posts were the first step in the game Endling. From here, the actual mechanics of the game begin, and I'll take note of those where it's interesting. Oracle results from Tarot cards and the tracking of supply and fuel and all of that. The hexflower-crawl mechanic is really neat, and I may throw up an image of that in the footnotes to the next post to give you an idea of what it's like.*
 
 *I hope you're enjoying this so far. I'm enjoying writing it.*
