@@ -28,8 +28,6 @@ I read a [good blog post](https://guccifuligincloak.blogspot.com/2020/01/the-fou
 
 In this case, they want magical treasures to get enough power to go home. They can't have it because the caves are patrolled by undead sailors led by their admiral with strict orders to keep the caverns secure for the Necromancer. What are they doing about that?
 
-![Undead Sailors](/images/Pasted image 20260907092642.png)
-
 I imagine they have some sort of barricaded den. A safe place to sleep and all that. Other than that, rather than just going out and driving off the undead, I think they sneak around a lot, climbing on the walls and ceilings and dropping down behind the undead, Mission Impossible style, to grab some junk and detritus and hop back to their den to sort it out.
 
 So they have secret passages and they grab as much as their little webbed hands can hold and head home. What do they do with it when they are there?
