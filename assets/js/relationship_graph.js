@@ -127,6 +127,9 @@ const RelationshipGraph = {
       node.vy = 0;
     });
 
+    // Build nodeMap once for O(1) edge lookups
+    const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
     // Force-directed iterations
     for (let iter = 0; iter < params.maxIterations; iter++) {
       // Repulsion: all nodes repel each other
@@ -137,8 +140,8 @@ const RelationshipGraph = {
           const dx = n2.x - n1.x;
           const dy = n2.y - n1.y;
           const distSq = dx * dx + dy * dy;
-          const dist = Math.sqrt(distSq) || 1;
-          const force = params.repulsionStrength / distSq;
+          const dist = Math.max(1, Math.sqrt(distSq));
+          const force = params.repulsionStrength / (dist * dist);
           const fx = (force * dx) / dist;
           const fy = (force * dy) / dist;
           n1.vx -= fx;
@@ -148,15 +151,15 @@ const RelationshipGraph = {
         }
       }
 
-      // Attraction: connected nodes attract
+      // Attraction: connected nodes attract (Hooke's law: F = k * displacement)
       edges.forEach(edge => {
-        const source = nodes.find(n => n.id === edge.source);
-        const target = nodes.find(n => n.id === edge.target);
+        const source = nodeMap.get(edge.source);
+        const target = nodeMap.get(edge.target);
         if (!source || !target) return;
         const dx = target.x - source.x;
         const dy = target.y - source.y;
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const force = (dist * dist) / params.idealEdgeLength * params.attractionStrength;
+        const force = (dist - params.idealEdgeLength) * params.attractionStrength;
         const fx = (force * dx) / dist;
         const fy = (force * dy) / dist;
         source.vx += fx;
