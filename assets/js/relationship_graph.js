@@ -55,9 +55,10 @@ const RelationshipGraph = {
 
     // Listen for graph data from LiveView
     this.handleEvent("load_graph", ({ nodes, edges }) => {
-      this.nodes = nodes || [];
+      this.nodes = (nodes || []).map(n => ({ ...n, vx: 0, vy: 0 }));
       this.edges = edges || [];
-      this.fitToView();
+      this.initForceLayout();    // compute positions
+      this.fitToView();          // center/scale to viewport
       this.render();
     });
 
@@ -104,6 +105,88 @@ const RelationshipGraph = {
     this.scale = Math.min(canvasWidth / graphWidth, canvasHeight / graphHeight, 2);
     this.offsetX = canvasWidth / 2 - (minX + maxX) / 2 * this.scale;
     this.offsetY = canvasHeight / 2 - (minY + maxY) / 2 * this.scale;
+  },
+
+  initForceLayout() {
+    const { nodes, edges } = this;
+    const params = FORCE_PARAMS;
+    const rand = this.random;
+
+    // Initialize positions randomly within canvas bounds
+    const canvasWidth = this.canvas.width / window.devicePixelRatio;
+    const canvasHeight = this.canvas.height / window.devicePixelRatio;
+    const centerX = canvasWidth / 2;
+    const centerY = canvasHeight / 2;
+    const spread = Math.min(canvasWidth, canvasHeight) * 0.3;
+
+    nodes.forEach(node => {
+      // Random initial position around center
+      node.x = centerX + (rand() - 0.5) * spread;
+      node.y = centerY + (rand() - 0.5) * spread;
+      node.vx = 0;
+      node.vy = 0;
+    });
+
+    // Force-directed iterations
+    for (let iter = 0; iter < params.maxIterations; iter++) {
+      // Repulsion: all nodes repel each other
+      for (let i = 0; i < nodes.length; i++) {
+        const n1 = nodes[i];
+        for (let j = i + 1; j < nodes.length; j++) {
+          const n2 = nodes[j];
+          const dx = n2.x - n1.x;
+          const dy = n2.y - n1.y;
+          const distSq = dx * dx + dy * dy;
+          const dist = Math.sqrt(distSq) || 1;
+          const force = params.repulsionStrength / distSq;
+          const fx = (force * dx) / dist;
+          const fy = (force * dy) / dist;
+          n1.vx -= fx;
+          n1.vy -= fy;
+          n2.vx += fx;
+          n2.vy += fy;
+        }
+      }
+
+      // Attraction: connected nodes attract
+      edges.forEach(edge => {
+        const source = nodes.find(n => n.id === edge.source);
+        const target = nodes.find(n => n.id === edge.target);
+        if (!source || !target) return;
+        const dx = target.x - source.x;
+        const dy = target.y - source.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const force = (dist * dist) / params.idealEdgeLength * params.attractionStrength;
+        const fx = (force * dx) / dist;
+        const fy = (force * dy) / dist;
+        source.vx += fx;
+        source.vy += fy;
+        target.vx -= fx;
+        target.vy -= fy;
+      });
+
+      // Center gravity
+      nodes.forEach(node => {
+        const dx = centerX - node.x;
+        const dy = centerY - node.y;
+        node.vx += dx * params.centerGravity;
+        node.vy += dy * params.centerGravity;
+      });
+
+      // Apply velocity with damping
+      nodes.forEach(node => {
+        node.vx *= params.damping;
+        node.vy *= params.damping;
+        node.x += node.vx;
+        node.y += node.vy;
+      });
+    }
+
+    // Clean up velocity properties
+    nodes.forEach(node => {
+      delete node.vx;
+      delete node.vy;
+    });
   },
 
   // Coordinate transforms
