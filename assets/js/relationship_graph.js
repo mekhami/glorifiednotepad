@@ -40,6 +40,7 @@ const RelationshipGraph = {
 
     // Drag state
     this.draggedNode = null;
+    this.hasMoved = false;
 
     // Seeded random for deterministic layout
     this.random = createSeededRandom(FORCE_PARAMS.seed);
@@ -240,6 +241,7 @@ const RelationshipGraph = {
       // Start dragging this node
       e.preventDefault();
       this.draggedNode = node;
+      this.hasMoved = true;
       this.canvas.style.cursor = 'grabbing';
       return;
     }
