@@ -1,4 +1,26 @@
+// Seeded RNG (Mulberry32) — deterministic layout per seed
+function createSeededRandom(seed) {
+  let state = seed >>> 0;
+  return function() {
+    state = (state + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(state ^ (state >>> 15), state | 1);
+    t = (t + Math.imul(t ^ (t >>> 7), t | 61)) >>> 0;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const FORCE_PARAMS = {
+  repulsionStrength: 15000,
+  attractionStrength: 0.08,
+  idealEdgeLength: 180,
+  centerGravity: 0.01,
+  damping: 0.85,
+  maxIterations: 300,
+  seed: 42
+};
+
 const RelationshipGraph = {
+
   mounted() {
     this.canvas = this.el;
     this.ctx = this.canvas.getContext('2d');
@@ -15,6 +37,9 @@ const RelationshipGraph = {
     this.isPanning = false;
     this.lastPanX = 0;
     this.lastPanY = 0;
+
+    // Seeded random for deterministic layout
+    this.random = createSeededRandom(FORCE_PARAMS.seed);
 
     // Canvas size
     this.resizeCanvas();
