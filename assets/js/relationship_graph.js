@@ -38,6 +38,9 @@ const RelationshipGraph = {
     this.lastPanX = 0;
     this.lastPanY = 0;
 
+    // Drag state
+    this.draggedNode = null;
+
     // Seeded random for deterministic layout
     this.random = createSeededRandom(FORCE_PARAMS.seed);
 
@@ -225,14 +228,29 @@ const RelationshipGraph = {
   },
 
   handleMouseDown(e) {
-    // Left click (button 0) starts panning — drag to move canvas
+    const rect = this.canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const graphPos = this.screenToGraph(mouseX, mouseY);
+
+    // Check if clicking on a node
+    const node = this.getNodeAt(graphPos.x, graphPos.y);
+
+    if (node && e.button === 0) {
+      // Start dragging this node
+      e.preventDefault();
+      this.draggedNode = node;
+      this.canvas.style.cursor = 'grabbing';
+      return;
+    }
+
+    // Left click on empty space — start panning
     if (e.button === 0) {
-      const rect = this.canvas.getBoundingClientRect();
       e.preventDefault();
       this.isPanning = true;
       this.hasMoved = false;
-      this.lastPanX = e.clientX - rect.left;
-      this.lastPanY = e.clientY - rect.top;
+      this.lastPanX = mouseX;
+      this.lastPanY = mouseY;
       this.canvas.style.cursor = 'grabbing';
     }
   },
@@ -241,6 +259,14 @@ const RelationshipGraph = {
     const rect = this.canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
+
+    if (this.draggedNode) {
+      const graphPos = this.screenToGraph(mouseX, mouseY);
+      this.draggedNode.x = graphPos.x;
+      this.draggedNode.y = graphPos.y;
+      this.render();
+      return;
+    }
 
     if (this.isPanning) {
       const dx = mouseX - this.lastPanX;
@@ -269,6 +295,12 @@ const RelationshipGraph = {
   },
 
   handleMouseUp(e) {
+    if (this.draggedNode) {
+      this.draggedNode = null;
+      this.canvas.style.cursor = 'default';
+      return;
+    }
+
     if (this.isPanning) {
       this.isPanning = false;
       this.canvas.style.cursor = 'default';
@@ -277,7 +309,7 @@ const RelationshipGraph = {
 
   handleClick(e) {
     // Only treat as click if mouse didn't move (not a drag)
-    if (this.hasMoved) {
+    if (this.hasMoved || this.draggedNode) {
       this.hasMoved = false;
       return;
     }
