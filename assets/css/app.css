@@ -30,6 +30,12 @@ body:has(.admin-container) {
   padding: 0;
 }
 
+/* Stonetop pages - dark sepia background */
+body.stonetop-body {
+  background-color: #1a1512;
+  padding: 0;
+}
+
 .post-header {
   background-color: #444c72;
   color: #ac9d9e;
@@ -1848,4 +1854,377 @@ mark.hl-red {
   accent-color: #8fa9b5;
   cursor: pointer;
   flex-shrink: 0;
+}
+
+/* =========================================================
+   Stonetop Relationship Graph — Sepia + Grayscale Theme
+   ========================================================= */
+
+.stonetop-graph-page {
+  max-width: none;
+  padding: 0;
+  margin: 0;
+  min-height: 100vh;
+  background: #1a1512;
+}
+
+.graph-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background: #2d2520;
+  border-bottom: 2px solid #0d0d0d;
+  box-shadow: 0 4px 0 #0d0d0d;
+}
+
+.graph-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #d4c9b8;
+  font-family: monospace;
+}
+
+.graph-legend {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.8rem;
+  color: #999;
+  font-family: monospace;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-node {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #0d0d0d;
+}
+
+.legend-node.pc {
+  background: #8b7355;
+}
+
+.legend-node.npc {
+  background: #555;
+}
+
+.legend-edge {
+  width: 24px;
+  height: 2px;
+  background: #8b7355;
+}
+
+.graph-container {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 80px);
+  overflow: hidden;
+}
+
+.graph-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: #1a1512;
+}
+
+/* Character Popup Dialog */
+.character-popup {
+  position: absolute;
+  width: 280px;
+  background: #2d2520;
+  border: 2px solid #0d0d0d;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  font-family: monospace;
+  transform: translate(-50%, -100%);
+  margin-top: -12px;
+}
+
+.character-popup.popup-below {
+  transform: translate(-50%, 0);
+  margin-top: 12px;
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #5c4a3a;
+  border-bottom: 2px solid #0d0d0d;
+}
+
+.popup-thumbnail {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #0d0d0d;
+  flex-shrink: 0;
+  background: #555;
+}
+
+.popup-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: sepia(0.35) grayscale(0.4);
+}
+
+.popup-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #d4c9b8;
+}
+
+.popup-name {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #e8dfcc;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.popup-close {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.popup-close:hover {
+  background: #8b7355;
+  color: #fafafa;
+}
+
+.popup-body {
+  padding: 1rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.popup-description {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #d4c9b8;
+  white-space: pre-wrap;
+}
+
+.popup-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
+}
+
+.popup-tags .tag {
+  color: #fafafa;
+}
+
+.popup-relationships h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid #5c4a3a;
+  padding-bottom: 0.4rem;
+}
+
+.popup-relationships ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.popup-relationships li {
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed #5c4a3a;
+}
+
+.popup-relationships li:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.rel-name {
+  font-size: 0.8rem;
+  color: #999;
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.rel-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #d4c9b8;
+}
+
+.no-relationships {
+  color: #666;
+  font-style: italic;
+  font-size: 0.8rem;
+}
+
+/* Admin Styles */
+.stonetop-admin .admin-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #5c4a3a;
+  filter: sepia(0.35) grayscale(0.4);
+}
+
+.stonetop-admin .admin-thumb.placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #d4c9b8;
+  background: #5c4a3a;
+  border: 2px solid #5c4a3a;
+}
+
+.stonetop-admin .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.stonetop-admin .rel-desc {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #d4c9b8;
+}
+
+.avatar-upload input[type="file"] {
+  display: none;
+}
+
+.upload-preview {
+  margin-top: 0.5rem;
+}
+
+.preview-img {
+  max-width: 150px;
+  max-height: 150px;
+  border-radius: 8px;
+  border: 2px solid #5c4a3a;
+  filter: sepia(0.35) grayscale(0.4);
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #5c4a3a;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+}
+
+.modal-window {
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  background-color: #2d2520;
+  border: 2px solid #0d0d0d;
+  box-shadow: 8px 8px 0 #0d0d0d;
+  font-family: monospace;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background-color: #5c4a3a;
+  border-bottom: 2px solid #0d0d0d;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #e8dfcc;
+  font-size: 1rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  background: #8b7355;
+  color: #fafafa;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Stop propagation utility */
+.stop-propagation {
+  /* This class is used with phx-click="stopPropagation" to prevent modal close on window click */
 }

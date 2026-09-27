@@ -490,4 +490,38 @@ defmodule IndieWeb.CoreComponents do
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
   end
+
+  @doc """
+  Renders a modal dialog.
+  """
+  attr :id, :string, required: true
+  attr :show, :boolean, default: false
+  attr :on_close, :string, required: true, doc: "JS event to push on close"
+  attr :title, :string, required: true
+  slot :inner_block, required: true
+
+  def modal(assigns) do
+    ~H"""
+    <div
+      :if={@show}
+      id={@id}
+      class="modal-overlay"
+      phx-click={JS.push(@on_close)}
+      phx-window-keydown={JS.push(@on_close)}
+      phx-key="escape"
+    >
+      <div class="modal-window" phx-click={JS.exec("stop")}>
+        <div class="modal-header">
+          <h3><%= @title %></h3>
+          <button type="button" class="modal-close" phx-click={@on_close}>
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
+        <div class="modal-body">
+          {render_slot(@inner_block)}
+        </div>
+      </div>
+    </div>
+    """
+  end
 end

@@ -10,6 +10,15 @@ defmodule IndieWeb.Router do
     plug(:put_secure_browser_headers)
   end
 
+  pipeline :stonetop do
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_live_flash)
+    plug(:put_root_layout, html: {IndieWeb.Layouts, :stonetop})
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+  end
+
   pipeline :admin do
     plug(:accepts, ["html"])
     plug(:fetch_session)
@@ -34,11 +43,18 @@ defmodule IndieWeb.Router do
     get("/feed.rss", FeedController, :rss)
   end
 
+  scope "/", IndieWeb do
+    pipe_through(:stonetop)
+
+    live("/stonetop", StonetopLive)
+  end
+
   scope "/admin", IndieWeb.Admin do
     pipe_through(:admin)
 
     live_session :admin, on_mount: {IndieWeb.Admin.AdminLive, :admin} do
       live("/comments", CommentModerationLive, :index)
+      live("/stonetop", StonetopAdminLive)
     end
   end
 
