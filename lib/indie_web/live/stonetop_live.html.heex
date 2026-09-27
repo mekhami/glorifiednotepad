@@ -1,82 +1,86 @@
 <div id="stonetop-graph-page" class="stonetop-graph-page">
-    <header class="graph-header">
-      <h1>Stonetop Campaign</h1>
-      <div class="graph-legend">
-        <span class="legend-item">
-          <span class="legend-node pc"></span> Player Characters
-        </span>
-        <span class="legend-item">
-          <span class="legend-node npc"></span> NPCs
-        </span>
-        <span class="legend-item">
-          <span class="legend-edge"></span> Relationships
-        </span>
-      </div>
-    </header>
+  <header class="graph-header">
+    <h1>Stonetop Campaign</h1>
+    <div class="graph-legend">
+      <span class="legend-item">
+        <span class="legend-node pc"></span> Player Characters
+      </span>
+      <span class="legend-item">
+        <span class="legend-node npc"></span> NPCs
+      </span>
+      <span class="legend-item">
+        <span class="legend-edge"></span> Relationships
+      </span>
+    </div>
+  </header>
 
-    <div class="graph-container">
-      <canvas
-        id="graph-canvas"
-        phx-hook="RelationshipGraph"
-        phx-update="ignore"
-        class="graph-canvas"
-      ></canvas>
+  <div class="graph-container">
+    <canvas
+      id="graph-canvas"
+      phx-hook="RelationshipGraph"
+      phx-update="ignore"
+      class="graph-canvas"
+    >
+    </canvas>
+    
+<!-- Character Popup Dialog -->
+    <%= if @selected_character do %>
+      <div
+        id="character-popup"
+        class={["character-popup", @popup_y < 320 && "popup-below"]}
+        style={"left: #{@popup_x}px; top: #{@popup_y}px;"}
+      >
+        <div class="popup-header">
+          <div class="popup-thumbnail">
+            <%= if @selected_character.image_url do %>
+              <img
+                src={"/uploads/stonetop/" <> @selected_character.image_url}
+                alt={@selected_character.name}
+              />
+            <% else %>
+              <div class="popup-placeholder">
+                <span>{String.first(@selected_character.name)}</span>
+              </div>
+            <% end %>
+          </div>
+          <h3 class="popup-name">{@selected_character.name}</h3>
+          <button class="popup-close" phx-click="close_detail">
+            <.icon name="hero-x-mark" class="size-4" />
+          </button>
+        </div>
 
-      <!-- Character Popup Dialog -->
-      <%= if @selected_character do %>
-        <div
-          id="character-popup"
-          class={["character-popup", @popup_y < 320 && "popup-below"]}
-          style={"left: #{@popup_x}px; top: #{@popup_y}px;"}
-        >
-          <div class="popup-header">
-            <div class="popup-thumbnail">
-              <%= if @selected_character.image_url do %>
-                <img src={"/uploads/stonetop/" <> @selected_character.image_url} alt={@selected_character.name} />
-              <% else %>
-                <div class="popup-placeholder">
-                  <span><%= String.first(@selected_character.name) %></span>
-                </div>
-              <% end %>
-            </div>
-            <h3 class="popup-name"><%= @selected_character.name %></h3>
-            <button class="popup-close" phx-click="close_detail">
-              <.icon name="hero-x-mark" class="size-4" />
-            </button>
+        <div class="popup-body">
+          <p class="popup-description">{@selected_character.description}</p>
+
+          <div class="popup-tags">
+            <%= for tag <- @selected_character.tags do %>
+              <span class="tag">{tag}</span>
+            <% end %>
           </div>
 
-          <div class="popup-body">
-            <p class="popup-description"><%= @selected_character.description %></p>
-
-            <div class="popup-tags">
-              <%= for tag <- @selected_character.tags do %>
-                <span class="tag"><%= tag %></span>
-              <% end %>
-            </div>
-
-            <div class="popup-relationships">
-              <h4>Relationships</h4>
-              <%= if @character_relationships && length(@character_relationships) > 0 do %>
-                <ul>
-                  <%= for rel <- @character_relationships do %>
-                    <li>
-                      <span class="rel-name">
-                        <%= if rel.source_id == @selected_character.id do %>
-                          → <%= rel.target.name %>
-                        <% else %>
-                          ← <%= rel.source.name %>
-                        <% end %>
-                      </span>
-                      <p class="rel-desc"><%= rel.description %></p>
-                    </li>
-                  <% end %>
-                </ul>
-              <% else %>
-                <p class="no-relationships">No relationships yet.</p>
-              <% end %>
-            </div>
+          <div class="popup-relationships">
+            <h4>Relationships</h4>
+            <%= if @character_relationships && length(@character_relationships) > 0 do %>
+              <ul>
+                <%= for rel <- @character_relationships do %>
+                  <li>
+                    <span class="rel-name">
+                      <%= if rel.source_id == @selected_character.id do %>
+                        → {rel.target.name}
+                      <% else %>
+                        ← {rel.source.name}
+                      <% end %>
+                    </span>
+                    <p class="rel-desc">{rel.description}</p>
+                  </li>
+                <% end %>
+              </ul>
+            <% else %>
+              <p class="no-relationships">No relationships yet.</p>
+            <% end %>
           </div>
         </div>
-      <% end %>
-    </div>
+      </div>
+    <% end %>
   </div>
+</div>

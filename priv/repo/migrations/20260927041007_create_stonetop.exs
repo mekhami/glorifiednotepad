@@ -6,7 +6,7 @@ defmodule Indie.Repo.Migrations.CreateStonetop do
       add :id, :binary_id, primary_key: true
       add :name, :string, null: false
       add :description, :text, default: ""
-      add :tags, :map, default: %{}
+      add :tags, {:array, :string}, default: []
       add :image_url, :string
       add :position_x, :float, default: 0.0
       add :position_y, :float, default: 0.0
@@ -19,7 +19,7 @@ defmodule Indie.Repo.Migrations.CreateStonetop do
       add :source_id, :binary_id, null: false
       add :target_id, :binary_id, null: false
       add :description, :text, default: ""
-      add :tags, :map, default: %{}
+      add :tags, {:array, :string}, default: []
       timestamps()
     end
 

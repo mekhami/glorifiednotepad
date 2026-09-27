@@ -15,7 +15,10 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
       |> assign(:relationships, relationships)
       |> assign(:active_tab, "characters")
       |> assign(:character_form, to_form(Character.changeset(%Character{}, %{}), as: :character))
-      |> assign(:relationship_form, to_form(Relationship.changeset(%Relationship{}, %{}), as: :relationship))
+      |> assign(
+        :relationship_form,
+        to_form(Relationship.changeset(%Relationship{}, %{}), as: :relationship)
+      )
       |> assign(:editing_character, nil)
       |> assign(:editing_relationship, nil)
       |> assign(:show_character_modal, false)
@@ -51,6 +54,7 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
   @impl true
   def handle_event("open_character_modal", %{"id" => id}, socket) do
     character = Stonetop.get_character!(id)
+
     {:noreply,
      socket
      |> assign(:editing_character, character)
@@ -67,6 +71,33 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
      |> assign(:character_form, character_form(socket))
      |> assign(:show_character_modal, true)
      |> assign(:avatar_entries, [])}
+  end
+
+  @impl true
+  def handle_event("close_modal", _, socket) do
+    # Close whichever modal is open
+    socket =
+      if socket.assigns.show_character_modal do
+        socket
+        |> assign(:show_character_modal, false)
+        |> assign(:editing_character, nil)
+        |> assign(:character_form, character_form(socket))
+        |> assign(:avatar_entries, [])
+      else
+        socket
+      end
+
+    socket =
+      if socket.assigns.show_relationship_modal do
+        socket
+        |> assign(:show_relationship_modal, false)
+        |> assign(:editing_relationship, nil)
+        |> assign(:relationship_form, relationship_form(socket))
+      else
+        socket
+      end
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -106,6 +137,7 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
            |> assign(:show_character_modal, false)
            |> assign(:editing_character, nil)
            |> assign(:characters, Stonetop.list_characters())}
+
         {:error, changeset} ->
           {:noreply, assign(socket, :character_form, to_form(changeset, as: :character))}
       end
@@ -117,6 +149,7 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
            |> put_flash(:info, "Character created")
            |> assign(:show_character_modal, false)
            |> assign(:characters, Stonetop.list_characters())}
+
         {:error, changeset} ->
           {:noreply, assign(socket, :character_form, to_form(changeset, as: :character))}
       end
@@ -134,6 +167,7 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
 
       character ->
         Stonetop.delete_character(character)
+
         {:noreply,
          socket
          |> put_flash(:info, "Character deleted")
@@ -202,6 +236,7 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
            |> assign(:show_relationship_modal, false)
            |> assign(:editing_relationship, nil)
            |> assign(:relationships, Stonetop.list_relationships())}
+
         {:error, changeset} ->
           {:noreply, assign(socket, :relationship_form, to_form(changeset, as: :relationship))}
       end
@@ -213,6 +248,7 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
            |> put_flash(:info, "Relationship created")
            |> assign(:show_relationship_modal, false)
            |> assign(:relationships, Stonetop.list_relationships())}
+
         {:error, changeset} ->
           {:noreply, assign(socket, :relationship_form, to_form(changeset, as: :relationship))}
       end
@@ -225,6 +261,7 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
 
     if relationship do
       Stonetop.delete_relationship(relationship)
+
       {:noreply,
        socket
        |> put_flash(:info, "Relationship deleted")
@@ -253,6 +290,7 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
 
   defp process_character_params(params, avatar) do
     attrs = Map.put(params, "tags", parse_tags(params["tags"]))
+
     if avatar do
       Map.put(attrs, "image_url", avatar.path)
     else
@@ -270,32 +308,33 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
     |> Enum.map(&String.trim/1)
     |> Enum.reject(&(&1 == ""))
   end
+
   defp parse_tags(nil), do: []
 
   defp get_avatar_upload(socket) do
     case consume_uploaded_entries(socket, :avatar, fn %{} = entry ->
-      # Generate path: uploads/stonetop/{character_id}/{filename}
-      character_id =
-        case socket.assigns.editing_character do
-          nil -> Ecto.UUID.generate()
-          character -> character.id
-        end
+           # Generate path: uploads/stonetop/{character_id}/{filename}
+           character_id =
+             case socket.assigns.editing_character do
+               nil -> Ecto.UUID.generate()
+               character -> character.id
+             end
 
-      ext = Path.extname(entry.client_name)
-      filename = "avatar#{ext}"
-      dest_dir = Path.join("priv/static/uploads/stonetop", character_id)
+           ext = Path.extname(entry.client_name)
+           filename = "avatar#{ext}"
+           dest_dir = Path.join("priv/static/uploads/stonetop", character_id)
 
-      try do
-        File.mkdir_p!(dest_dir)
-        dest_path = Path.join(dest_dir, filename)
-        File.cp!(entry.path, dest_path)
-        %{path: "uploads/stonetop/#{character_id}/#{filename}"}
-      rescue
-        e in [File.Error, ErlangError] ->
-          IO.inspect(e, label: "Upload failed")
-          nil
-      end
-    end) do
+           try do
+             File.mkdir_p!(dest_dir)
+             dest_path = Path.join(dest_dir, filename)
+             File.cp!(entry.path, dest_path)
+             %{path: "uploads/stonetop/#{character_id}/#{filename}"}
+           rescue
+             e in [File.Error, ErlangError] ->
+               IO.inspect(e, label: "Upload failed")
+               nil
+           end
+         end) do
       {[entry | _], _socket} -> entry
       _ -> nil
     end

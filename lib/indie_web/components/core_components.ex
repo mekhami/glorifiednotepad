@@ -502,17 +502,17 @@ defmodule IndieWeb.CoreComponents do
 
   def modal(assigns) do
     ~H"""
-    <div
-      :if={@show}
-      id={@id}
-      class="modal-overlay"
-      phx-click={JS.push(@on_close)}
-      phx-window-keydown={JS.push(@on_close)}
-      phx-key="escape"
-    >
-      <div class="modal-window" phx-click={JS.exec("stop")}>
+    <div :if={@show} id={@id} class="modal-overlay">
+      <div
+        class="modal-backdrop"
+        phx-click={@on_close}
+        phx-window-keydown={JS.push(@on_close)}
+        phx-key="escape"
+      >
+      </div>
+      <div class="modal-window">
         <div class="modal-header">
-          <h3><%= @title %></h3>
+          <h3>{@title}</h3>
           <button type="button" class="modal-close" phx-click={@on_close}>
             <.icon name="hero-x-mark" class="size-5" />
           </button>

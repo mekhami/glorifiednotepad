@@ -11,7 +11,7 @@ defmodule Indie.Stonetop do
 
   @doc "Returns all characters ordered by name"
   def list_characters do
-    Repo.all(from c in Character, order_by: c.name)
+    Repo.all(from(c in Character, order_by: c.name))
   end
 
   @doc "Returns a character by id"
@@ -20,11 +20,10 @@ defmodule Indie.Stonetop do
   @doc "Returns a character by id or nil"
   def get_character(id), do: Repo.get(Character, id)
 
-  @doc "Creates a character with random initial position"
+  @doc "Creates a character"
   def create_character(attrs \\ %{}) do
-    random_position = %{position_x: :rand.uniform() * 800, position_y: :rand.uniform() * 600}
     %Character{}
-    |> Character.changeset(Map.merge(attrs, random_position))
+    |> Character.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -47,6 +46,7 @@ defmodule Indie.Stonetop do
   end
 
   defp maybe_preload_relationships(nil), do: nil
+
   defp maybe_preload_relationships(character) do
     Repo.preload(character, [:source_relationships, :target_relationships])
   end
@@ -55,16 +55,17 @@ defmodule Indie.Stonetop do
 
   @doc "Returns all relationships with source and target preloaded"
   def list_relationships do
-    Repo.all(from r in Relationship, preload: [:source, :target], order_by: r.inserted_at)
+    Repo.all(from(r in Relationship, preload: [:source, :target], order_by: r.inserted_at))
   end
 
   @doc "Returns relationships for a character (both incoming and outgoing)"
   def get_relationships_for_character(character_id) do
     Repo.all(
-      from r in Relationship,
-      where: r.source_id == ^character_id or r.target_id == ^character_id,
-      preload: [:source, :target],
-      order_by: r.inserted_at
+      from(r in Relationship,
+        where: r.source_id == ^character_id or r.target_id == ^character_id,
+        preload: [:source, :target],
+        order_by: r.inserted_at
+      )
     )
   end
 
@@ -107,8 +108,8 @@ defmodule Indie.Stonetop do
       description: character.description,
       tags: character.tags,
       image_url: character.image_url,
-      x: character.position_x,
-      y: character.position_y
+      x: :rand.uniform() * 800,
+      y: :rand.uniform() * 600
     }
   end
 
@@ -120,13 +121,5 @@ defmodule Indie.Stonetop do
       description: relationship.description,
       tags: relationship.tags
     }
-  end
-
-  # --- Position Updates ---
-
-  @doc "Updates character position (for drag-to-reposition)"
-  def update_position(id, x, y) do
-    character = get_character!(id)
-    update_character(character, %{position_x: x, position_y: y})
   end
 end

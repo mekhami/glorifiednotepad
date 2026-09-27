@@ -2,7 +2,12 @@ import Config
 
 # Configure the database
 config :indie, Indie.Repo,
-  database: "indie_test.db",
+  adapter: Ecto.Adapters.Postgres,
+  username: "indie",
+  password: "indie",
+  database: "indie_test",
+  hostname: "localhost",
+  port: 5433,
   pool_size: 5,
   pool: Ecto.Adapters.SQL.Sandbox
 

@@ -63,7 +63,7 @@ defmodule Indie.MixProject do
       {:bandit, "~> 1.5"},
       {:earmark, "~> 1.4"},
       {:ecto_sql, "~> 3.11"},
-      {:ecto_sqlite3, "~> 0.17"},
+      {:postgrex, "~> 0.17"},
       {:phoenix_ecto, "~> 4.6"}
     ]
   end
