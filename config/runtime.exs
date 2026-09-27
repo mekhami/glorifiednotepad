@@ -45,11 +45,16 @@ config :indie, IndieWeb.Endpoint, http: [port: String.to_integer(System.get_env(
 
 # Configure database for production
 if config_env() == :prod do
-  database_path = System.get_env("DATABASE_PATH") || "indie_prod.db"
-
+  # PostgreSQL configuration via environment variables
   config :indie, Indie.Repo,
-    database: database_path,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "5")
+    adapter: Ecto.Adapters.Postgres,
+    hostname: System.get_env("DATABASE_HOST") || "localhost",
+    port: String.to_integer(System.get_env("DATABASE_PORT") || "5432"),
+    database: System.get_env("DATABASE_NAME") || "indie_prod",
+    username: System.get_env("DATABASE_USER") || "indie",
+    password: System.get_env("DATABASE_PASSWORD") || "",
+    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+    ssl: false
 end
 
 if config_env() == :prod do

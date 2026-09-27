@@ -75,6 +75,48 @@ apt install -y nginx certbot python3-certbot-nginx
 
 # Install git (if not already installed)
 apt install -y git
+
+# Install PostgreSQL 16
+apt install -y postgresql-16 postgresql-client-16
+```
+
+### 1.5. Configure PostgreSQL
+
+Create database and user for the application:
+
+```bash
+# Switch to postgres user and create database/user
+sudo -u postgres psql << 'EOF'
+CREATE USER indie WITH ENCRYPTED PASSWORD 'your_secure_password_here';
+CREATE DATABASE indie_prod OWNER indie;
+GRANT ALL PRIVILEGES ON DATABASE indie_prod TO indie;
+\q
+EOF
+```
+
+Configure PostgreSQL authentication for local connections:
+
+```bash
+# Edit pg_hba.conf to allow password authentication for indie user
+sudo nano /etc/postgresql/16/main/pg_hba.conf
+```
+
+Find the lines for local and host connections and update them:
+```
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+local   indie_prod      indie                                   md5
+host    indie_prod      indie           127.0.0.1/32            md5
+host    indie_prod      indie           ::1/128                 md5
+```
+
+Restart PostgreSQL:
+```bash
+sudo systemctl restart postgresql
+```
+
+Test the connection:
+```bash
+PGPASSWORD='your_secure_password_here' psql -h localhost -U indie -d indie_prod -c "SELECT version();"
 ```
 
 ### 2. Create Application User
@@ -246,15 +288,22 @@ Copy the output, then create the `.env.prod` file on the **server**:
 sudo -u indie nano /opt/indie/.env.prod
 ```
 
-Add this content (replace `YOUR_SECRET_KEY_BASE` with the generated value):
+Add this content (replace `YOUR_SECRET_KEY_BASE` and `your_secure_password_here` with the generated values):
 
 ```bash
 export SECRET_KEY_BASE=YOUR_SECRET_KEY_BASE
 export PHX_SERVER=true
 export PORT=4000
-export DATABASE_PATH=/var/lib/indie/indie_prod.db
+
+# PostgreSQL Configuration
+export DATABASE_HOST=localhost
+export DATABASE_PORT=5432
+export DATABASE_NAME=indie_prod
+export DATABASE_USER=indie
+export DATABASE_PASSWORD=your_secure_password_here
+
 export PHX_HOST=glorifiednotepad.net
-export POOL_SIZE=5
+export POOL_SIZE=10
 ```
 
 Save and exit (Ctrl+X, Y, Enter).
@@ -348,6 +397,38 @@ sudo certbot renew --dry-run
 
 Visit https://glorifiednotepad.net - should show a valid SSL certificate!
 
+### 7. Migrate Existing SQLite Data to PostgreSQL (If Applicable)
+
+If you have an existing SQLite database with production data (comments, etc.), migrate it to PostgreSQL:
+
+```bash
+# On the server, copy the migration script
+sudo cp /opt/indie-repo/priv/scripts/migrate_sqlite_to_pg.sh /opt/indie/
+
+# Run the migration (reads from .env.prod for PostgreSQL config)
+cd /opt/indie
+sudo -u indie bash -c 'source /opt/indie/.env.prod && SQLITE_PATH=/var/lib/indie/indie_prod.db bash migrate_sqlite_to_pg.sh'
+```
+
+Verify the migration worked:
+```bash
+# Check that comments were migrated
+PGPASSWORD="your_secure_password_here" psql -h localhost -U indie -d indie_prod -c "SELECT id, post_id, author_name, inserted_at FROM comments ORDER BY inserted_at;"
+
+# Check all table counts
+PGPASSWORD="your_secure_password_here" psql -h localhost -U indie -d indie_prod -c "
+SELECT 'schema_migrations' as table_name, COUNT(*) FROM schema_migrations
+UNION ALL SELECT 'comments', COUNT(*) FROM comments
+UNION ALL SELECT 'animations', COUNT(*) FROM animations
+UNION ALL SELECT 'doodle_pixels', COUNT(*) FROM doodle_pixels;
+"
+```
+
+Once verified, you can keep the old SQLite file as a backup:
+```bash
+sudo cp /var/lib/indie/indie_prod.db /var/lib/indie/backups/indie_prod_sqlite_backup_$(date +%Y%m%d).db
+```
+
 ---
 
 ## Subsequent Deployments
@@ -410,16 +491,19 @@ Common issues:
 - Missing environment variables in `.env.prod`
 - Wrong file permissions
 - Port 4000 already in use
-- Database file permissions
+- Database connection issues
 
 ### Database Issues
 
 ```bash
-# Check database file exists and has correct permissions
-ssh indie@redactedip 'ls -la /var/lib/indie/'
+# Check PostgreSQL is running
+ssh indie@redactedip 'sudo systemctl status postgresql'
 
-# Fix permissions if needed
-ssh indie@redactedip 'sudo chown indie:indie /var/lib/indie/indie_prod.db*'
+# Check database connection
+ssh indie@redactedip 'PGPASSWORD="your_secure_password_here" psql -h localhost -U indie -d indie_prod -c "SELECT 1;"'
+
+# Check database size
+ssh indie@redactedip 'PGPASSWORD="your_secure_password_here" psql -h localhost -U indie -d indie_prod -c "SELECT pg_size_pretty(pg_database_size('indie_prod'));"'
 ```
 
 ### Run Migration Manually
@@ -427,6 +511,19 @@ ssh indie@redactedip 'sudo chown indie:indie /var/lib/indie/indie_prod.db*'
 ```bash
 ssh indie@redactedip
 sudo -u indie bash -c 'source /opt/indie/.env.prod && /opt/indie/bin/indie eval "Indie.Release.migrate()"'
+```
+
+### PostgreSQL Connection Issues
+
+```bash
+# Check PostgreSQL logs
+ssh indie@redactedip 'sudo tail -f /var/log/postgresql/postgresql-16-main.log'
+
+# Check pg_hba.conf
+ssh indie@redactedip 'cat /etc/postgresql/16/main/pg_hba.conf'
+
+# Restart PostgreSQL
+ssh indie@redactedip 'sudo systemctl restart postgresql'
 ```
 
 ### Nginx Issues
@@ -496,13 +593,20 @@ ssh indie@redactedip 'sudo systemctl start indie'
 
 ```bash
 # Manual backup
-ssh indie@redactedip 'sudo cp /var/lib/indie/indie_prod.db /var/lib/indie/backups/indie_prod_$(date +%Y%m%d_%H%M%S).db'
+ssh indie@redactedip 'PGPASSWORD="your_secure_password_here" pg_dump -h localhost -U indie indie_prod > /var/lib/indie/backups/indie_prod_$(date +%Y%m%d_%H%M%S).sql'
 
 # Set up automated daily backups with cron
 ssh indie@redactedip
 sudo crontab -e -u indie
 # Add this line:
-0 2 * * * cp /var/lib/indie/indie_prod.db /var/lib/indie/backups/indie_prod_$(date +\%Y\%m\%d).db
+0 2 * * * PGPASSWORD="your_secure_password_here" pg_dump -h localhost -U indie indie_prod > /var/lib/indie/backups/indie_prod_$(date +\%Y\%m\%d).sql
+```
+
+### Restore Database
+
+```bash
+# To restore from a backup
+ssh indie@redactedip 'PGPASSWORD="your_secure_password_here" psql -h localhost -U indie -d indie_prod < /var/lib/indie/backups/indie_prod_20260115_020000.sql'
 ```
 
 ### Delete Old Comments
@@ -590,7 +694,7 @@ ssh indie@redactedip 'sudo systemctl restart indie'
 ssh indie@redactedip 'sudo systemctl status indie'
 
 # Backup database
-ssh indie@redactedip 'sudo cp /var/lib/indie/indie_prod.db /var/lib/indie/backups/backup_$(date +%Y%m%d_%H%M%S).db'
+ssh indie@redactedip 'PGPASSWORD="your_secure_password_here" pg_dump -h localhost -U indie indie_prod > /var/lib/indie/backups/backup_$(date +%Y%m%d_%H%M%S).sql'
 
 # Check SSL certificate
 ssh indie@redactedip 'sudo certbot certificates'
