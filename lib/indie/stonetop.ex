@@ -107,9 +107,7 @@ defmodule Indie.Stonetop do
       name: character.name,
       description: character.description,
       tags: character.tags,
-      image_url: character.image_url,
-      x: :rand.uniform() * 800,
-      y: :rand.uniform() * 600
+      image_url: character.image_url
     }
   end
 
