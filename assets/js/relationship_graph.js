@@ -787,8 +787,9 @@ const RelationshipGraph = {
 
     // Determine color based on tags — sepia/grayscale palette
     const isPC = node.tags?.includes('pc') || node.tags?.includes('player');
-    const fillColor = isPC ? '#8b7355' : '#555'; // sepia for PC, gray for NPC
-    const borderColor = isHovered ? '#c4a882' : '#0d0d0d';
+    const isDeceased = node.tags?.includes('deceased');
+    const fillColor = isDeceased ? '#2d2927' : isPC ? '#8b7355' : '#555'; // sepia for PC, gray for NPC
+    const borderColor = isDeceased ? '#bababa' : isHovered ? '#c4a882' : '#0d0d0d';
 
     ctx.fillStyle = fillColor;
     ctx.fill();
@@ -799,16 +800,16 @@ const RelationshipGraph = {
     // Draw image if available
     if (node.image_url) {
       // We'd need to preload images - for now draw initials
-      this.drawInitials(ctx, node.name, pos.x, pos.y, radius);
+      this.drawInitials(ctx, node.name, isDeceased, pos.x, pos.y, radius);
     } else {
-      this.drawInitials(ctx, node.name, pos.x, pos.y, radius);
+      this.drawInitials(ctx, node.name, isDeceased, pos.x, pos.y, radius);
     }
 
     // Draw name label
     this.drawNodeLabel(ctx, node, pos.x, pos.y, radius);
   },
 
-  drawInitials(ctx, name, x, y, radius) {
+  drawInitials(ctx, name, isDeceased, x, y, radius) {
     const initials = name
       .split(' ')
       .map(w => w[0])
@@ -819,7 +820,7 @@ const RelationshipGraph = {
     const responsive = getResponsiveParams();
     const fontSize = Math.max(14, Math.floor(responsive.nodeRadius * 0.6));
 
-    ctx.fillStyle = '#d4c9b8';
+    ctx.fillStyle = isDeceased ? '#626262' : '#d4c9b8';
     ctx.font = `bold ${fontSize}px monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
