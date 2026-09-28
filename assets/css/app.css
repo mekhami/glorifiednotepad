@@ -1954,6 +1954,11 @@ mark.hl-red {
   background: #555;
 }
 
+.legend-node.deceased {
+  background: #2d2927;
+  border-color: #bababa;
+}
+
 .legend-edge {
   width: 24px;
   height: 2px;
