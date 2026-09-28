@@ -194,6 +194,101 @@ const RelationshipGraph = {
       delete node.vx;
       delete node.vy;
     });
+
+    // Post-layout: reduce edge crossings
+    this.reduceCrossings(nodes, edges);
+  },
+
+  // Post-layout edge crossing reduction
+  reduceCrossings(nodes, edges) {
+    const MAX_PASSES = 5;
+    const NEIGHBOR_RADIUS = 150; // screen pixels
+
+    const countCrossings = () => {
+      let crossings = 0;
+      for (let i = 0; i < edges.length; i++) {
+        for (let j = i + 1; j < edges.length; j++) {
+          if (this.edgesCross(edges[i], edges[j], nodes)) crossings++;
+        }
+      }
+      return crossings;
+    };
+
+    let bestCrossings = countCrossings();
+
+    for (let pass = 0; pass < MAX_PASSES; pass++) {
+      let improved = false;
+
+      for (let i = 0; i < nodes.length; i++) {
+        const n1 = nodes[i];
+        const screenPos1 = this.graphToScreen(n1.x, n1.y);
+
+        // Find nearby nodes
+        for (let j = i + 1; j < nodes.length; j++) {
+          const n2 = nodes[j];
+          const screenPos2 = this.graphToScreen(n2.x, n2.y);
+
+          const dx = screenPos2.x - screenPos1.x;
+          const dy = screenPos2.y - screenPos1.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist > NEIGHBOR_RADIUS) continue;
+
+          // Try swapping positions
+          const tempX = n1.x;
+          const tempY = n1.y;
+          n1.x = n2.x;
+          n1.y = n2.y;
+          n2.x = tempX;
+          n2.y = tempY;
+
+          const newCrossings = countCrossings();
+          if (newCrossings < bestCrossings) {
+            bestCrossings = newCrossings;
+            improved = true;
+          } else {
+            // Swap back
+            n2.x = n1.x;
+            n2.y = n1.y;
+            n1.x = tempX;
+            n1.y = tempY;
+          }
+        }
+      }
+
+      if (!improved) break;
+    }
+  },
+
+  // Check if two edges cross (line segment intersection)
+  edgesCross(e1, e2, nodes) {
+    const a = nodes.find(n => n.id === e1.source);
+    const b = nodes.find(n => n.id === e1.target);
+    const c = nodes.find(n => n.id === e2.source);
+    const d = nodes.find(n => n.id === e2.target);
+    if (!a || !b || !c || !d) return false;
+
+    // Skip if edges share a node
+    if (e1.source === e2.source || e1.source === e2.target ||
+        e1.target === e2.source || e1.target === e2.target) return false;
+
+    return this.segmentsIntersect(a, b, c, d);
+  },
+
+  // Line segment intersection test (graph coordinates)
+  segmentsIntersect(a, b, c, d) {
+    const x1 = a.x, y1 = a.y;
+    const x2 = b.x, y2 = b.y;
+    const x3 = c.x, y3 = c.y;
+    const x4 = d.x, y4 = d.y;
+
+    const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+    if (Math.abs(denom) < 1e-10) return false; // Parallel or collinear
+
+    const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+    const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
+
+    return t > 0 && t < 1 && u > 0 && u < 1;
   },
 
   // Coordinate transforms
