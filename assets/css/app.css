@@ -2131,8 +2131,8 @@ mark.hl-red {
 }
 
 /* Admin modal label color - cream on dark background */
-.stonetop-admin .modal-window .input-label,
-.stonetop-admin .modal-window .input-label span {
+.modal-overlay .input-label,
+.modal-overlay .input-label span {
   color: #d4c9b8;
 }
 

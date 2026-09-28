@@ -168,62 +168,10 @@
       placeholder="pc, npc, villain, ally"
     />
 
-    <div class="input-field">
-      <label>
-        <span class="input-label">Avatar</span>
-        <div class="avatar-upload">
-          <!-- LiveView upload drop zone -->
-          <div 
-            id="avatar-upload" 
-            class="upload-dropzone"
-            phx-drop="avatar"
-            phx-upload="avatar"
-            phx-click="allow_upload"
-            phx-value-avatar="true"
-          >
-            <.icon name="hero-plus-circle" class="upload-icon size-10" />
-            <p class="upload-text">Click or drag to upload avatar</p>
-            <p class="upload-hint">JPG, PNG, WebP • Max 1</p>
-          </div>
-          
-          <!-- Upload preview -->
-          <div class="upload-preview" id="avatar-preview">
-            <%= if @uploads.avatar.entries != [] do %>
-              <%= for entry <- @uploads.avatar.entries do %>
-                <img 
-                  src={entry.preview} 
-                  alt="Preview" 
-                  class="preview-img"
-                />
-                <.button 
-                  class="btn-sm remove-upload"
-                  phx-click="cancel_upload"
-                  phx-value-avatar-ref={entry.ref}
-                >
-                  <.icon name="hero-x-mark" class="size-4" />
-                </.button>
-              <% end %>
-            <% else %>
-              <%= if @character_form.params["image_url"] do %>
-                <img
-                  src={"/uploads/stonetop/" <> @character_form.params["image_url"]}
-                  alt="Preview"
-                  class="preview-img"
-                />
-              <% else %>
-                <%= if @editing_character && @editing_character.image_url do %>
-                  <img
-                    src={"/uploads/stonetop/" <> @editing_character.image_url}
-                    alt="Preview"
-                    class="preview-img"
-                  />
-                <% end %>
-              <% end %>
-            <% end %>
-          </div>
-        </div>
-      </label>
-    </div>
+    <label for={@uploads.avatar.ref} class="input-label">
+      <.live_file_input upload={@uploads.avatar} />
+    </label>
+    <button type="submit" class="input-label">Upload</button>
 
     <div class="form-actions">
       <.button type="submit" variant="primary">Save</.button>

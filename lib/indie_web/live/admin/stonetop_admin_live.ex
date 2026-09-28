@@ -23,7 +23,9 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
       |> assign(:editing_relationship, nil)
       |> assign(:show_character_modal, false)
       |> assign(:show_relationship_modal, false)
-      |> assign(:avatar_entries, [])
+      |> assign(:uploaded_files, [])
+      |> allow_upload(:avatar, accept: ~w(.jpg .jpeg .png .webp), max_entries: 1)
+      
 
     {:ok, socket}
   end
@@ -59,8 +61,7 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
      socket
      |> assign(:editing_character, character)
      |> assign(:character_form, character_form(socket, character))
-     |> assign(:show_character_modal, true)
-     |> assign(:avatar_entries, [])}
+     |> assign(:show_character_modal, true)}
   end
 
   @impl true
@@ -69,8 +70,7 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
      socket
      |> assign(:editing_character, nil)
      |> assign(:character_form, character_form(socket))
-     |> assign(:show_character_modal, true)
-     |> assign(:avatar_entries, [])}
+     |> assign(:show_character_modal, true)}
   end
 
   @impl true
@@ -82,7 +82,6 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
         |> assign(:show_character_modal, false)
         |> assign(:editing_character, nil)
         |> assign(:character_form, character_form(socket))
-        |> assign(:avatar_entries, [])
       else
         socket
       end
@@ -106,8 +105,7 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
      socket
      |> assign(:show_character_modal, false)
      |> assign(:editing_character, nil)
-     |> assign(:character_form, character_form(socket))
-     |> assign(:avatar_entries, [])}
+     |> assign(:character_form, character_form(socket))}
   end
 
   @impl true
