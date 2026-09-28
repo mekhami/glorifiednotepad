@@ -10,6 +10,8 @@ defmodule Indie.Stonetop.Character do
     field(:tags, {:array, :string}, default: [])
     field(:image_url, :string)
 
+    field(:tags_input, :string, virtual: true)
+
     has_many(:source_relationships, Indie.Stonetop.Relationship,
       foreign_key: :source_id,
       on_delete: :delete_all
@@ -35,15 +37,10 @@ defmodule Indie.Stonetop.Character do
   end
 
   defp normalize_tags(attrs) do
-    case attrs["tags"] do
-      tags when is_binary(tags) ->
-        Map.put(attrs, "tags", parse_tags(tags))
-
-      tags when is_list(tags) ->
-        attrs
-
-      _ ->
-        Map.put(attrs, "tags", [])
+    cond do
+      attrs["tags_input"] -> Map.put(attrs, "tags", parse_tags(attrs["tags_input"]))
+      is_binary(attrs["tags"]) -> Map.put(attrs, "tags", parse_tags(attrs["tags"]))
+      true -> attrs
     end
   end
 

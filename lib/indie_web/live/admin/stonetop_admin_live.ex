@@ -31,7 +31,7 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
   end
 
   defp character_form(_socket) do
-    to_form(Character.changeset(%Character{}, %{}), as: :character)
+    to_form(Character.changeset(%Character{}, %{"tags_input" => ""}), as: :character)
   end
 
   defp relationship_form(_socket) do
@@ -39,7 +39,8 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
   end
 
   defp character_form(_socket, character) do
-    to_form(Character.changeset(character, %{}), as: :character)
+    tags_string = character.tags |> Enum.join(", ")
+    to_form(Character.changeset(character, %{"tags_input" => tags_string}), as: :character)
   end
 
   defp relationship_form(_socket, relationship) do
