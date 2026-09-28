@@ -241,7 +241,6 @@ const RelationshipGraph = {
       // Start dragging this node
       e.preventDefault();
       this.draggedNode = node;
-      this.hasMoved = true;
       this.canvas.style.cursor = 'grabbing';
       return;
     }
