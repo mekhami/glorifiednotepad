@@ -57,6 +57,20 @@ const RelationshipGraph = {
     this.draggedNode = null;
     this.hasMoved = false;
 
+    // Touch state for pinch zoom
+    this.touchState = {
+      initialDistance: 0,
+      initialScale: 1,
+      initialCenterX: 0,
+      initialCenterY: 0,
+      initialOffsetX: 0,
+      initialOffsetY: 0,
+      isPinching: false,
+      isPanning: false,
+      lastTouchX: 0,
+      lastTouchY: 0
+    };
+
     // Seeded random for deterministic layout
     this.random = createSeededRandom(FORCE_PARAMS.seed);
 
@@ -71,6 +85,12 @@ const RelationshipGraph = {
     this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
     this.canvas.addEventListener('click', (e) => this.handleClick(e));
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    // Touch events for mobile pinch zoom and pan
+    this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+    this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+    this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
+    this.canvas.addEventListener('touchcancel', (e) => this.handleTouchEnd(e), { passive: false });
 
     // Listen for graph data from LiveView
     this.handleEvent("load_graph", ({ nodes, edges }) => {
@@ -343,6 +363,137 @@ const RelationshipGraph = {
     this.scale = newScale;
 
     this.render();
+  },
+
+  // Touch event handlers for mobile pinch zoom and pan
+  handleTouchStart(e) {
+    e.preventDefault();
+    const rect = this.canvas.getBoundingClientRect();
+    const touches = e.touches;
+
+    if (touches.length === 1) {
+      // Single touch - could be pan or node drag
+      const touch = touches[0];
+      const mouseX = touch.clientX - rect.left;
+      const mouseY = touch.clientY - rect.top;
+      const graphPos = this.screenToGraph(mouseX, mouseY);
+
+      // Check if touching a node
+      const node = this.getNodeAt(graphPos.x, graphPos.y);
+
+      if (node) {
+        // Start dragging this node
+        this.draggedNode = node;
+        this.touchState.isPinching = false;
+        this.touchState.isPanning = false;
+      } else {
+        // Start panning
+        this.touchState.isPanning = true;
+        this.touchState.lastTouchX = mouseX;
+        this.touchState.lastTouchY = mouseY;
+        this.touchState.isPinching = false;
+      }
+    } else if (touches.length === 2) {
+      // Two touches - pinch zoom
+      const touch1 = touches[0];
+      const touch2 = touches[1];
+
+      const x1 = touch1.clientX - rect.left;
+      const y1 = touch1.clientY - rect.top;
+      const x2 = touch2.clientX - rect.left;
+      const y2 = touch2.clientY - rect.top;
+
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      this.touchState.initialDistance = distance;
+      this.touchState.initialScale = this.scale;
+      this.touchState.initialCenterX = (x1 + x2) / 2;
+      this.touchState.initialCenterY = (y1 + y2) / 2;
+      this.touchState.initialOffsetX = this.offsetX;
+      this.touchState.initialOffsetY = this.offsetY;
+      this.touchState.isPinching = true;
+      this.touchState.isPanning = false;
+      this.draggedNode = null;
+    }
+  },
+
+  handleTouchMove(e) {
+    e.preventDefault();
+    const rect = this.canvas.getBoundingClientRect();
+    const touches = e.touches;
+
+    if (this.touchState.isPinching && touches.length === 2) {
+      // Pinch zoom
+      const touch1 = touches[0];
+      const touch2 = touches[1];
+
+      const x1 = touch1.clientX - rect.left;
+      const y1 = touch1.clientY - rect.top;
+      const x2 = touch2.clientX - rect.left;
+      const y2 = touch2.clientY - rect.top;
+
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (this.touchState.initialDistance > 0) {
+        const scaleFactor = distance / this.touchState.initialDistance;
+        const newScale = Math.max(0.1, Math.min(5, this.touchState.initialScale * scaleFactor));
+
+        // Zoom towards pinch center
+        this.offsetX = this.touchState.initialCenterX - (this.touchState.initialCenterX - this.touchState.initialOffsetX) * (newScale / this.touchState.initialScale);
+        this.offsetY = this.touchState.initialCenterY - (this.touchState.initialCenterY - this.touchState.initialOffsetY) * (newScale / this.touchState.initialScale);
+        this.scale = newScale;
+
+        this.render();
+      }
+    } else if (this.draggedNode && touches.length === 1) {
+      // Drag node
+      const touch = touches[0];
+      const mouseX = touch.clientX - rect.left;
+      const mouseY = touch.clientY - rect.top;
+      const graphPos = this.screenToGraph(mouseX, mouseY);
+      this.draggedNode.x = graphPos.x;
+      this.draggedNode.y = graphPos.y;
+      this.render();
+    } else if (this.touchState.isPanning && touches.length === 1) {
+      // Pan
+      const touch = touches[0];
+      const mouseX = touch.clientX - rect.left;
+      const mouseY = touch.clientY - rect.top;
+
+      const dx = mouseX - this.touchState.lastTouchX;
+      const dy = mouseY - this.touchState.lastTouchY;
+
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        this.hasMoved = true;
+      }
+
+      this.offsetX += dx;
+      this.offsetY += dy;
+      this.touchState.lastTouchX = mouseX;
+      this.touchState.lastTouchY = mouseY;
+      this.render();
+    }
+  },
+
+  handleTouchEnd(e) {
+    // End drag
+    if (this.draggedNode) {
+      this.draggedNode = null;
+    }
+
+    // End pinch
+    if (this.touchState.isPinching) {
+      this.touchState.isPinching = false;
+    }
+
+    // End pan
+    if (this.touchState.isPanning) {
+      this.touchState.isPanning = false;
+    }
   },
 
   handleMouseDown(e) {
