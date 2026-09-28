@@ -19,6 +19,21 @@ const FORCE_PARAMS = {
   seed: 42
 };
 
+// Responsive parameters based on viewport
+function getResponsiveParams() {
+  const canvasWidth = document.documentElement.clientWidth;
+  const isMobile = canvasWidth < 768;
+  const isSmallMobile = canvasWidth < 480;
+
+  return {
+    nodeRadius: isSmallMobile ? 28 : isMobile ? 32 : 40,
+    initialSpread: isSmallMobile ? 0.8 : isMobile ? 0.6 : 0.3, // fraction of min dimension
+    repulsionMultiplier: isSmallMobile ? 2.0 : isMobile ? 1.5 : 1.0,
+    centerGravityMultiplier: isSmallMobile ? 0.3 : isMobile ? 0.5 : 1.0,
+    idealEdgeLength: isSmallMobile ? 140 : isMobile ? 160 : 180,
+  };
+}
+
 const RelationshipGraph = {
 
   mounted() {
@@ -115,13 +130,14 @@ const RelationshipGraph = {
     const { nodes, edges } = this;
     const params = FORCE_PARAMS;
     const rand = this.random;
+    const responsive = getResponsiveParams();
 
     // Initialize positions randomly within canvas bounds
     const canvasWidth = this.canvas.width / window.devicePixelRatio;
     const canvasHeight = this.canvas.height / window.devicePixelRatio;
     const centerX = canvasWidth / 2;
     const centerY = canvasHeight / 2;
-    const spread = Math.min(canvasWidth, canvasHeight) * 0.3;
+    const spread = Math.min(canvasWidth, canvasHeight) * responsive.initialSpread;
 
     nodes.forEach(node => {
       // Random initial position around center
@@ -134,6 +150,11 @@ const RelationshipGraph = {
     // Build nodeMap once for O(1) edge lookups
     const nodeMap = new Map(nodes.map(n => [n.id, n]));
 
+    // Responsive force parameters
+    const repulsionStrength = params.repulsionStrength * responsive.repulsionMultiplier;
+    const centerGravity = params.centerGravity * responsive.centerGravityMultiplier;
+    const idealEdgeLength = responsive.idealEdgeLength;
+
     // Force-directed iterations
     for (let iter = 0; iter < params.maxIterations; iter++) {
       // Repulsion: all nodes repel each other
@@ -145,7 +166,7 @@ const RelationshipGraph = {
           const dy = n2.y - n1.y;
           const distSq = dx * dx + dy * dy;
           const dist = Math.max(1, Math.sqrt(distSq));
-          const force = params.repulsionStrength / (dist * dist);
+          const force = repulsionStrength / (dist * dist);
           const fx = (force * dx) / dist;
           const fy = (force * dy) / dist;
           n1.vx -= fx;
@@ -163,7 +184,7 @@ const RelationshipGraph = {
         const dx = target.x - source.x;
         const dy = target.y - source.y;
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const force = (dist - params.idealEdgeLength) * params.attractionStrength;
+        const force = (dist - idealEdgeLength) * params.attractionStrength;
         const fx = (force * dx) / dist;
         const fy = (force * dy) / dist;
         source.vx += fx;
@@ -176,8 +197,8 @@ const RelationshipGraph = {
       nodes.forEach(node => {
         const dx = centerX - node.x;
         const dy = centerY - node.y;
-        node.vx += dx * params.centerGravity;
-        node.vy += dy * params.centerGravity;
+        node.vx += dx * centerGravity;
+        node.vy += dy * centerGravity;
       });
 
       // Apply velocity with damping
@@ -202,7 +223,8 @@ const RelationshipGraph = {
   // Post-layout edge crossing reduction
   reduceCrossings(nodes, edges) {
     const MAX_PASSES = 5;
-    const NEIGHBOR_RADIUS = 150; // screen pixels
+    const responsive = getResponsiveParams();
+    const NEIGHBOR_RADIUS = responsive.nodeRadius * 6; // ~6x node radius
 
     const countCrossings = () => {
       let crossings = 0;
@@ -425,7 +447,7 @@ const RelationshipGraph = {
   },
 
   getNodeAt(x, y) {
-    const radius = 40; // Node radius in graph coordinates
+    const radius = getResponsiveParams().nodeRadius; // Node radius in graph coordinates
     for (const node of this.nodes) {
       const dx = node.x - x;
       const dy = node.y - y;
@@ -516,7 +538,7 @@ const RelationshipGraph = {
 
   drawNode(ctx, node) {
     const pos = this.graphToScreen(node.x, node.y);
-    const radius = 40;
+    const radius = getResponsiveParams().nodeRadius;
     const isHovered = this.hoveredNode === node;
 
     // Node background circle
@@ -554,19 +576,25 @@ const RelationshipGraph = {
       .toUpperCase()
       .slice(0, 2);
 
+    const responsive = getResponsiveParams();
+    const fontSize = Math.max(14, Math.floor(responsive.nodeRadius * 0.6));
+
     ctx.fillStyle = '#d4c9b8';
-    ctx.font = 'bold 20px monospace';
+    ctx.font = `bold ${fontSize}px monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(initials, x, y);
   },
 
   drawNodeLabel(ctx, node, x, y, radius) {
+    const responsive = getResponsiveParams();
+    const fontSize = Math.max(10, Math.floor(responsive.nodeRadius * 0.35));
+
     ctx.fillStyle = '#999';
-    ctx.font = '12px monospace';
+    ctx.font = `${fontSize}px monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillText(node.name, x, y + radius + 8);
+    ctx.fillText(node.name, x, y + radius + 6);
   },
 
   drawEdge(ctx, edge) {
