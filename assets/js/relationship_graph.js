@@ -590,6 +590,7 @@ const RelationshipGraph = {
       // Start dragging this node
       e.preventDefault();
       this.draggedNode = node;
+      this.hasMoved = true;  // Prevent click from firing after drag
       this.canvas.style.cursor = 'grabbing';
       return;
     }
