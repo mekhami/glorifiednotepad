@@ -386,24 +386,27 @@ const RelationshipGraph = {
       // Check if touching a node
       const node = this.getNodeAt(graphPos.x, graphPos.y);
 
-      // Record for tap detection
+      // Record for tap/drag detection - don't start drag yet!
       this.touchState.touchStartTime = Date.now();
       this.touchState.touchStartX = mouseX;
       this.touchState.touchStartY = mouseY;
       this.touchState.potentialTapNode = node;
+      this.touchState.potentialDragNode = node; // Track for possible drag
+      this.touchState.hasMovedEnoughForDrag = false;
 
       if (node) {
-        // Start dragging this node (but might be a tap)
-        this.draggedNode = node;
+        // Don't start dragging yet - wait for movement in handleTouchMove
         this.touchState.isPinching = false;
         this.touchState.isPanning = false;
+        this.draggedNode = null;
       } else {
-        // Start panning
+        // Start panning immediately (no tap on empty space)
         this.touchState.isPanning = true;
         this.touchState.lastTouchX = mouseX;
         this.touchState.lastTouchY = mouseY;
         this.touchState.isPinching = false;
         this.touchState.potentialTapNode = null;
+        this.touchState.potentialDragNode = null;
       }
     } else if (touches.length === 2) {
       // Two touches - pinch zoom
@@ -429,6 +432,7 @@ const RelationshipGraph = {
       this.touchState.isPanning = false;
       this.draggedNode = null;
       this.touchState.potentialTapNode = null;
+      this.touchState.potentialDragNode = null;
     }
   },
 
@@ -462,24 +466,36 @@ const RelationshipGraph = {
 
         this.render();
       }
-    } else if (this.draggedNode && touches.length === 1) {
-      // Drag node
+    } else if (this.touchState.potentialDragNode && touches.length === 1) {
+      // Potential node drag - check if moved enough to become a real drag
       const touch = touches[0];
       const mouseX = touch.clientX - rect.left;
       const mouseY = touch.clientY - rect.top;
 
-      // Check if moved enough to be a drag vs tap
+      // Track position for distance calculation
+      this.touchState.lastTouchX = mouseX;
+      this.touchState.lastTouchY = mouseY;
+
       const dx = mouseX - this.touchState.touchStartX;
       const dy = mouseY - this.touchState.touchStartY;
-      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+      const distanceMoved = Math.sqrt(dx * dx + dy * dy);
+
+      if (distanceMoved > 5 && !this.touchState.hasMovedEnoughForDrag) {
+        // Movement exceeded threshold - start dragging
+        this.touchState.hasMovedEnoughForDrag = true;
         this.hasMoved = true;
         this.touchState.potentialTapNode = null; // Not a tap anymore
+        this.draggedNode = this.touchState.potentialDragNode;
+        this.touchState.potentialDragNode = null;
       }
 
-      const graphPos = this.screenToGraph(mouseX, mouseY);
-      this.draggedNode.x = graphPos.x;
-      this.draggedNode.y = graphPos.y;
-      this.render();
+      if (this.draggedNode) {
+        // Actually dragging now
+        const graphPos = this.screenToGraph(mouseX, mouseY);
+        this.draggedNode.x = graphPos.x;
+        this.draggedNode.y = graphPos.y;
+        this.render();
+      }
     } else if (this.touchState.isPanning && touches.length === 1) {
       // Pan
       const touch = touches[0];
@@ -540,8 +556,10 @@ const RelationshipGraph = {
       this.touchState.isPanning = false;
     }
 
-    // Reset tap detection
+    // Reset all touch state
     this.touchState.potentialTapNode = null;
+    this.touchState.potentialDragNode = null;
+    this.touchState.hasMovedEnoughForDrag = false;
     this.hasMoved = false;
   },
 
