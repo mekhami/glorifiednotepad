@@ -475,6 +475,16 @@ const RelationshipGraph = {
 
         this.render();
       }
+    // Handle active node dragging (check this FIRST, before potential drag)
+    if (this.draggedNode && touches.length === 1) {
+      const touch = touches[0];
+      const mouseX = touch.clientX - rect.left;
+      const mouseY = touch.clientY - rect.top;
+
+      const graphPos = this.screenToGraph(mouseX, mouseY);
+      this.draggedNode.x = graphPos.x;
+      this.draggedNode.y = graphPos.y;
+      this.render();
     } else if (this.touchState.potentialDragNode && touches.length === 1) {
       // Potential node drag - check if moved enough to become a real drag
       const touch = touches[0];
@@ -497,13 +507,7 @@ const RelationshipGraph = {
         this.draggedNode = this.touchState.potentialDragNode;
         this.touchState.potentialDragNode = null;
       }
-
-      if (this.draggedNode) {
-        // Actually dragging now
-        const graphPos = this.screenToGraph(mouseX, mouseY);
-        this.draggedNode.x = graphPos.x;
-        this.draggedNode.y = graphPos.y;
-        this.render();
+      // Don't move yet - wait for next touchmove after drag starts
       }
     } else if (this.touchState.isPanning && touches.length === 1) {
       // Pan
