@@ -27,8 +27,12 @@
     <%= if @selected_character do %>
       <div
         id="character-popup"
-        class={["character-popup", @popup_y < 320 && "popup-below"]}
-        style={"left: #{@popup_x}px; top: #{@popup_y}px;"}
+        class={[
+          "character-popup",
+          @is_mobile && "mobile-centered",
+          !@is_mobile && @popup_y < 320 && "popup-below"
+        ]}
+        style={if @is_mobile, do: "", else: "left: #{@popup_x}px; top: #{@popup_y}px;"}
       >
         <div class="popup-header">
           <div class="popup-thumbnail">

@@ -538,7 +538,8 @@ const RelationshipGraph = {
       // Use the touch start position for the popup
       const mouseX = this.touchState.touchStartX;
       const mouseY = this.touchState.touchStartY;
-      this.pushEvent("select_character", { id: node.id, x: mouseX, y: mouseY });
+      const isMobile = window.innerWidth < 768;
+      this.pushEvent("select_character", { id: node.id, x: mouseX, y: mouseY, is_mobile: isMobile });
     }
 
     // End drag
@@ -657,7 +658,8 @@ const RelationshipGraph = {
 
     const node = this.getNodeAt(graphPos.x, graphPos.y);
     if (node) {
-      this.pushEvent("select_character", { id: node.id, x: mouseX, y: mouseY });
+      const isMobile = window.innerWidth < 768;
+      this.pushEvent("select_character", { id: node.id, x: mouseX, y: mouseY, is_mobile: isMobile });
     } else {
       // Click on empty space - close detail panel
       this.pushEvent("close_detail", {});
