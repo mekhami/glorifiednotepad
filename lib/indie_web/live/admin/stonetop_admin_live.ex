@@ -312,7 +312,7 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
   defp parse_tags(nil), do: []
 
   defp get_avatar_upload(socket) do
-    case consume_uploaded_entries(socket, :avatar, fn %{} = entry ->
+    case consume_uploaded_entries(socket, :avatar, fn _meta, entry ->
            # Generate path: uploads/stonetop/{character_id}/{filename}
            character_id =
              case socket.assigns.editing_character do

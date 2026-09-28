@@ -2130,6 +2130,58 @@ mark.hl-red {
   color: #d4c9b8;
 }
 
+/* Admin modal label color - cream on dark background */
+.stonetop-admin .modal-window .input-label,
+.stonetop-admin .modal-window .input-label span {
+  color: #d4c9b8;
+}
+
+/* Avatar upload drop zone */
+.avatar-upload .upload-dropzone {
+  border: 2px dashed #5c4a3a;
+  border-radius: 8px;
+  padding: 2rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #3d322a;
+  position: relative;
+}
+
+.avatar-upload .upload-dropzone:hover,
+.avatar-upload .upload-dropzone.phx-drop-active {
+  border-color: #d4c9b8;
+  background-color: #4a3d30;
+}
+
+.avatar-upload .upload-icon {
+  color: #8b7d6b;
+  margin-bottom: 0.5rem;
+}
+
+.avatar-upload .upload-text {
+  color: #d4c9b8;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
+.avatar-upload .upload-hint {
+  color: #8b7d6b;
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+.avatar-upload .remove-upload {
+  margin-top: 0.5rem;
+}
+
+.avatar-upload .upload-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
 .avatar-upload input[type="file"] {
   display: none;
 }
