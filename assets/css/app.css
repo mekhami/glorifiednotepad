@@ -1978,6 +1978,7 @@ mark.hl-red {
   height: 100%;
   display: block;
   background: #1a1512;
+  touch-action: none; /* Prevent browser gesture handling - critical for iOS */
 }
 
 /* Character Popup Dialog */

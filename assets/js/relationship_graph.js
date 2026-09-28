@@ -92,10 +92,11 @@ const RelationshipGraph = {
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
     // Touch events for mobile pinch zoom and pan
-    this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+    // iOS: use passive: true for touchstart, call preventDefault() only when needed in touchmove
+    this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: true });
     this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
-    this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
-    this.canvas.addEventListener('touchcancel', (e) => this.handleTouchEnd(e), { passive: false });
+    this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: true });
+    this.canvas.addEventListener('touchcancel', (e) => this.handleTouchEnd(e), { passive: true });
 
     // Listen for graph data from LiveView
     this.handleEvent("load_graph", ({ nodes, edges }) => {
@@ -372,7 +373,7 @@ const RelationshipGraph = {
 
   // Touch event handlers for mobile pinch zoom and pan
   handleTouchStart(e) {
-    e.preventDefault();
+    // iOS: don't call preventDefault() here - only in touchmove when needed
     const rect = this.canvas.getBoundingClientRect();
     const touches = e.touches;
 
@@ -437,7 +438,15 @@ const RelationshipGraph = {
   },
 
   handleTouchMove(e) {
-    e.preventDefault();
+    // Only preventDefault when actually handling a gesture (pan/drag/pinch)
+    // This allows native scrolling on elements that need it, and avoids iOS cancelling touches
+    const shouldPreventDefault = this.touchState.isPinching || 
+                                 this.touchState.isPanning || 
+                                 this.draggedNode || 
+                                 this.touchState.potentialDragNode;
+    if (shouldPreventDefault) {
+      e.preventDefault();
+    }
     const rect = this.canvas.getBoundingClientRect();
     const touches = e.touches;
 
