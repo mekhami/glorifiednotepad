@@ -1876,6 +1876,8 @@ mark.hl-red {
   background: #2d2520;
   border-bottom: 2px solid #0d0d0d;
   box-shadow: 0 4px 0 #0d0d0d;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .graph-header h1 {
@@ -1892,6 +1894,43 @@ mark.hl-red {
   font-size: 0.8rem;
   color: #999;
   font-family: monospace;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Mobile header adjustments */
+@media (max-width: 768px) {
+  .graph-header {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .graph-header h1 {
+    font-size: 1.25rem;
+    width: 100%;
+  }
+  
+  .graph-legend {
+    width: 100%;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.7rem;
+  }
+  
+  .legend-item {
+    gap: 0.35rem;
+  }
+  
+  .legend-node {
+    width: 10px;
+    height: 10px;
+  }
+  
+  .legend-edge {
+    width: 18px;
+  }
 }
 
 .legend-item {
@@ -1926,6 +1965,12 @@ mark.hl-red {
   width: 100%;
   height: calc(100vh - 80px);
   overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .graph-container {
+    height: calc(100vh - 120px);
+  }
 }
 
 .graph-canvas {
