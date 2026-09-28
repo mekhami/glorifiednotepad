@@ -25,6 +25,11 @@
     
 <!-- Character Popup Dialog -->
     <%= if @selected_character do %>
+      <!-- Mobile backdrop to catch taps outside dialog -->
+      <%= if @is_mobile do %>
+        <div class="popup-backdrop" phx-click="close_detail"></div>
+      <% end %>
+      
       <div
         id="character-popup"
         class={[

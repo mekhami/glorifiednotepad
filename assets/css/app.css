@@ -1966,10 +1966,20 @@ mark.hl-red {
     max-width: 340px;
     max-height: calc(100vh - 48px);
     overflow-y: auto;
+    z-index: 201;
   }
   
   .character-popup.mobile-centered.popup-below {
     transform: translate(-50%, -50%);
+  }
+
+  /* Backdrop behind mobile dialog */
+  .popup-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 200;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
