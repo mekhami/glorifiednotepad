@@ -682,10 +682,16 @@ const RelationshipGraph = {
 
   getNodeAt(x, y) {
     const radius = getResponsiveParams().nodeRadius; // Node radius in graph coordinates
+    // Use slightly smaller hit radius for clicks to avoid edge cases
+    const hitRadius = radius * 0.9;
+    // Also enforce minimum pixel distance in screen space (e.g., 5px)
+    const minPixelDist = 5 / this.scale;
+    const minDistSq = minPixelDist * minPixelDist;
     for (const node of this.nodes) {
       const dx = node.x - x;
       const dy = node.y - y;
-      if (dx * dx + dy * dy <= radius * radius) {
+      const distSq = dx * dx + dy * dy;
+      if (distSq <= hitRadius * hitRadius && distSq >= minDistSq) {
         return node;
       }
     }
