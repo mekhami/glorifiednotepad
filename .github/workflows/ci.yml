@@ -64,7 +64,7 @@ jobs:
   build:
     name: Build release
     needs: test
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     env:
       MIX_ENV: prod
@@ -131,6 +131,7 @@ jobs:
   deploy:
     name: Deploy to production
     needs: build
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-24.04
     environment: production
     concurrency:

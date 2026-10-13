@@ -10,10 +10,11 @@ The old layout (`/opt/indie` = the release itself) keeps serving until Phase 4.
 ## Phase 1 — CI only (no server changes)
 
 1. Push this branch and open a PR. Do **not** merge yet.
-2. In GitHub → Actions, confirm the **Test** job is green.
-   - The Build/Deploy jobs are skipped on PRs. That's expected.
+2. In GitHub → Actions, confirm the **Test** and **Build release** jobs are green.
+   - Deploy is skipped on PRs. That's expected. The release tarball is attached to the run
+     as an artifact if you want to inspect it.
 
-✅ Check: Test job green on the PR.
+✅ Check: Test + Build green on the PR.
 
 ---
 
