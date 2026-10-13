@@ -59,6 +59,7 @@
           type="partnership"
           meta={:status}
         />
+        <.sibling_slot entries={@kin.siblings} />
         <.kin_slot
           id="kin-children"
           title="Children"
@@ -106,20 +107,26 @@
       prompt="Choose…"
       options={picker_options(@characters, @selected, @kin, @picker_role)}
     />
-    <%= if @picker_role == "partner" do %>
-      <.input
-        field={@picker_form[:status]}
-        type="select"
-        label="Status"
-        options={Indie.Stonetop.Partnership.statuses()}
-      />
-    <% else %>
-      <.input
-        field={@picker_form[:kind]}
-        type="select"
-        label="Kind"
-        options={Indie.Stonetop.ParentChild.kinds()}
-      />
+    <%= cond do %>
+      <% @picker_role == "partner" -> %>
+        <.input
+          field={@picker_form[:status]}
+          type="select"
+          label="Status"
+          options={Indie.Stonetop.Partnership.statuses()}
+        />
+      <% @picker_role == "sibling" -> %>
+        <p class="kin-picker-hint">
+          They'll share {@selected.name}'s parents. If none are recorded yet, an unknown parent is
+          kept behind the scenes until you learn who it is.
+        </p>
+      <% true -> %>
+        <.input
+          field={@picker_form[:kind]}
+          type="select"
+          label="Kind"
+          options={Indie.Stonetop.ParentChild.kinds()}
+        />
     <% end %>
 
     <p :if={@picker_error} id="kin-link-error" class="text-sm text-red-700 mt-2">
@@ -156,4 +163,44 @@
       <.button type="button" phx-click="close_character_modal">Cancel</.button>
     </div>
   </.form>
+</.modal>
+
+<.modal
+  :if={@resolving}
+  id="resolve-placeholder-modal"
+  show={true}
+  on_close="close_resolve"
+  title="Who is this unknown parent?"
+>
+  <.form for={%{}} as={:name} id="name-placeholder-form" phx-submit="name_placeholder">
+    <label class="kin-resolve-label" for="placeholder-name">A new person, named…</label>
+    <div class="kin-resolve-row">
+      <input
+        type="text"
+        id="placeholder-name"
+        name="name"
+        class="kin-resolve-input"
+        placeholder="e.g. Old Hesketh"
+        autocomplete="off"
+      />
+      <.button type="submit" variant="primary">Name them</.button>
+    </div>
+  </.form>
+
+  <p class="kin-resolve-or">or</p>
+
+  <.form for={%{}} as={:merge} id="merge-placeholder-form" phx-submit="merge_placeholder">
+    <label class="kin-resolve-label" for="placeholder-target">Someone already recorded…</label>
+    <div class="kin-resolve-row">
+      <select id="placeholder-target" name="target_id" class="kin-resolve-input">
+        <option value="">Choose…</option>
+        {Phoenix.HTML.Form.options_for_select(merge_options(@characters, @resolving), nil)}
+      </select>
+      <.button type="submit" variant="primary">This is them</.button>
+    </div>
+  </.form>
+
+  <p :if={@resolve_error} id="resolve-error" class="text-sm text-red-700 mt-2">
+    {@resolve_error}
+  </p>
 </.modal>

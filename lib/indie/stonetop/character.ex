@@ -9,6 +9,7 @@ defmodule Indie.Stonetop.Character do
     field(:description, :string)
     field(:tags, {:array, :string}, default: [])
     field(:image_url, :string)
+    field(:placeholder, :boolean, default: false)
 
     field(:tags_input, :string, virtual: true)
 

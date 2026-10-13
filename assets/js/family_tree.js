@@ -5,6 +5,7 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 const INK = "#3a2a1a";
 const FOCUS_INK = "#7a2a12";
 const NODE_W = 150;
+const HIDDEN_W = 50; // unknown (placeholder) parents take a narrow, empty slot
 const UNIT_GAP = 40;
 const ROW_H = 150;
 const MARGIN = 80;
@@ -49,6 +50,7 @@ function wobblyLine(x1, y1, x2, y2) {
 
 function layout(tree) {
   const byId = new Map(tree.nodes.map(n => [n.id, n]));
+  const widthOf = id => (byId.get(id).hidden ? HIDDEN_W : NODE_W);
   const parentsOf = new Map();
   const childrenOf = new Map();
   for (const l of tree.parent_links) {
@@ -99,7 +101,7 @@ function layout(tree) {
         cur = (partnersOf.get(cur) || []).find(p => !visited.has(p));
       }
       for (const c of comp) if (!visited.has(c)) chain.push(c);
-      const unit = { members: chain, x: 0, width: chain.length * NODE_W };
+      const unit = { members: chain, x: 0, width: chain.reduce((w, m) => w + widthOf(m), 0) };
       chain.forEach(m => unitOf.set(m, unit));
       units.push(unit);
     }
@@ -108,7 +110,9 @@ function layout(tree) {
 
   const xOf = id => {
     const u = unitOf.get(id);
-    return u.x + (u.members.indexOf(id) + 0.5) * NODE_W;
+    const i = u.members.indexOf(id);
+    const before = u.members.slice(0, i).reduce((w, m) => w + widthOf(m), 0);
+    return u.x + before + widthOf(id) / 2;
   };
   const mean = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
 
@@ -176,6 +180,10 @@ function draw(svg, tree) {
   const boxes = new Map();
   for (const n of tree.nodes) {
     const { x, y } = positions.get(n.id);
+    if (n.hidden) {
+      boxes.set(n.id, { left: x, right: x, top: y, bottom: y, hidden: true });
+      continue;
+    }
     const isFocus = n.id === tree.focus_id;
     const g = el("g", { class: "ft-person", "data-id": n.id, tabindex: "0", role: "link" }, labels);
     const text = el("text", {
@@ -221,7 +229,9 @@ function draw(svg, tree) {
     groups.get(key).children.push(childId);
   }
 
-  for (const { parents, children } of groups.values()) {
+  for (const { parents: allParents, children } of groups.values()) {
+    // Unknown (placeholder) parents aren't drawn; children hang from the known ones.
+    const parents = allParents.filter(id => !byId.get(id).hidden);
     const pPos = parents.map(id => positions.get(id));
     const cPos = children.map(id => positions.get(id));
     const parentY = Math.max(...pPos.map(p => p.y));
@@ -229,7 +239,13 @@ function draw(svg, tree) {
     const barY = childY - ROW_H / 2 + 8;
 
     let ax, ay;
-    if (parents.length === 2 && partnered.has(parents.join("|")) && pPos[0].y === pPos[1].y) {
+    if (parents.length === 0) {
+      // Siblings with no known parents: a short stub fading up into nothing.
+      ax = cPos.reduce((s, c) => s + c.x, 0) / cPos.length;
+      ay = barY - 30;
+      el("path", { d: wobblyLine(ax, ay, ax, barY - 12), "stroke-dasharray": "2 4", opacity: "0.45" }, lines);
+      ay = barY - 12;
+    } else if (parents.length === 2 && partnered.has(parents.join("|")) && pPos[0].y === pPos[1].y) {
       ax = (pPos[0].x + pPos[1].x) / 2;
       ay = pPos[0].y + 24; // just below the "= wed =" label
     } else if (parents.length === 1) {
@@ -252,7 +268,7 @@ function draw(svg, tree) {
 
     for (const childId of children) {
       const c = positions.get(childId);
-      const kinds = parents.map(p => kindOf.get(`${p}>${childId}`));
+      const kinds = allParents.map(p => kindOf.get(`${p}>${childId}`));
       const kind = kinds.find(k => k && k !== "biological");
       const path = el("path", { d: wobblyLine(c.x, barY, c.x, boxes.get(childId).top - 4) }, lines);
       if (kind) {
@@ -270,7 +286,7 @@ function draw(svg, tree) {
   }
 
   // Bounds for fitting / centring
-  const all = [...boxes.values()];
+  const all = [...boxes.values()].filter(b => !b.hidden);
   const bounds = {
     minX: Math.min(...all.map(b => b.left)) - MARGIN,
     maxX: Math.max(...all.map(b => b.right)) + MARGIN,

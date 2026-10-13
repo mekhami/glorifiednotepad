@@ -4,7 +4,7 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLive do
   alias Indie.Stonetop
   alias Indie.Stonetop.{Character, ParentChild, Partnership}
 
-  @roles ~w(parent partner child)
+  @roles ~w(parent partner child sibling)
 
   @impl true
   def mount(_params, _session, socket) do
@@ -17,6 +17,8 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLive do
      |> assign(:picker_role, nil)
      |> assign(:picker_form, nil)
      |> assign(:picker_error, nil)
+     |> assign(:resolving, nil)
+     |> assign(:resolve_error, nil)
      |> assign(:show_character_modal, false)
      |> assign(:character_form, new_character_form())
      |> load_people()}
@@ -48,9 +50,11 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLive do
 
   def handle_event("open_picker", %{"role" => role}, socket) when role in @roles do
     params =
-      if role == "partner",
-        do: %{"person_id" => "", "status" => "married"},
-        else: %{"person_id" => "", "kind" => "biological"}
+      case role do
+        "partner" -> %{"person_id" => "", "status" => "married"}
+        "sibling" -> %{"person_id" => ""}
+        _ -> %{"person_id" => "", "kind" => "biological"}
+      end
 
     {:noreply,
      socket
@@ -100,6 +104,9 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLive do
             "partner_b_id" => other,
             "status" => params["status"]
           })
+
+        "sibling" ->
+          Stonetop.add_sibling(me, other)
       end
 
     case result do
@@ -118,7 +125,53 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLive do
 
   def handle_event("remove_link", %{"type" => "parent_child", "id" => id}, socket) do
     {:ok, _} = id |> Stonetop.get_parent_child!() |> Stonetop.delete_parent_child()
+    :ok = Stonetop.cleanup_placeholders()
     {:noreply, socket |> load_people() |> refresh_kin()}
+  end
+
+  def handle_event("remove_sibling", %{"id" => sibling_id}, socket) do
+    :ok = Stonetop.remove_sibling(socket.assigns.selected.id, sibling_id)
+    {:noreply, socket |> load_people() |> refresh_kin()}
+  end
+
+  # --- Resolving an unknown (placeholder) parent ---
+
+  def handle_event("resolve_placeholder", %{"id" => id}, socket) do
+    case Stonetop.get_character(id) do
+      %Character{placeholder: true} = placeholder ->
+        {:noreply, socket |> assign(:resolving, placeholder) |> assign(:resolve_error, nil)}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("close_resolve", _, socket) do
+    {:noreply, assign(socket, :resolving, nil)}
+  end
+
+  def handle_event("name_placeholder", %{"name" => name}, socket) do
+    case Stonetop.name_placeholder(socket.assigns.resolving, name) do
+      {:ok, _} ->
+        {:noreply, socket |> assign(:resolving, nil) |> load_people() |> refresh_kin()}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, :resolve_error, error_message(changeset))}
+    end
+  end
+
+  def handle_event("merge_placeholder", %{"target_id" => ""}, socket) do
+    {:noreply, assign(socket, :resolve_error, "Choose a person first.")}
+  end
+
+  def handle_event("merge_placeholder", %{"target_id" => target_id}, socket) do
+    case Stonetop.merge_placeholder(socket.assigns.resolving, target_id) do
+      {:ok, _} ->
+        {:noreply, socket |> assign(:resolving, nil) |> load_people() |> refresh_kin()}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, :resolve_error, error_message(changeset))}
+    end
   end
 
   def handle_event("remove_link", %{"type" => "partnership", "id" => id}, socket) do
@@ -225,6 +278,8 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLive do
     Enum.at(list, rem(idx + 1, length(list)))
   end
 
+  defp error_message(message) when is_binary(message), do: message
+
   defp error_message(changeset) do
     changeset
     |> Ecto.Changeset.traverse_errors(fn {msg, opts} ->
@@ -250,6 +305,7 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLive do
         "parent" -> kin.parents
         "partner" -> kin.partners
         "child" -> kin.children
+        "sibling" -> kin.siblings
       end
       |> MapSet.new(& &1.person.id)
 
@@ -259,6 +315,15 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLive do
   defp role_label("parent"), do: "Add a parent"
   defp role_label("partner"), do: "Add a partner"
   defp role_label("child"), do: "Add a child"
+  defp role_label("sibling"), do: "Add a sibling"
+
+  # Everyone the unknown parent could really be, other than their own children.
+  defp merge_options(characters, placeholder) do
+    child_ids =
+      Stonetop.get_kin(placeholder.id).children |> MapSet.new(& &1.person.id)
+
+    for c <- characters, not MapSet.member?(child_ids, c.id), do: {c.name, c.id}
+  end
 
   attr :id, :string, required: true
   attr :title, :string, required: true
@@ -272,10 +337,26 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLive do
     <section id={@id} class="kin-slot">
       <h3>{@title}</h3>
       <div class="kin-chips">
-        <span :for={%{link: link, person: person} <- @entries} class="kin-chip">
-          <.link patch={~p"/admin/stonetop/families?person=#{Character.slug(person)}"}>
-            {person.name}
-          </.link>
+        <span
+          :for={%{link: link, person: person} <- @entries}
+          class={["kin-chip", person.placeholder && "kin-chip-unknown"]}
+        >
+          <%= if person.placeholder do %>
+            <button
+              type="button"
+              id={"resolve-#{person.id}"}
+              class="kin-chip-resolve"
+              phx-click="resolve_placeholder"
+              phx-value-id={person.id}
+              title="Name them, or say who they really are"
+            >
+              unknown parent ?
+            </button>
+          <% else %>
+            <.link patch={~p"/admin/stonetop/families?person=#{Character.slug(person)}"}>
+              {person.name}
+            </.link>
+          <% end %>
           <button
             type="button"
             id={"cycle-#{@type}-#{link.id}"}
@@ -307,6 +388,50 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLive do
           class="kin-add"
           phx-click="open_picker"
           phx-value-role={@role}
+        >
+          + add
+        </button>
+      </div>
+    </section>
+    """
+  end
+
+  attr :entries, :list, required: true
+
+  defp sibling_slot(assigns) do
+    ~H"""
+    <section id="kin-siblings" class="kin-slot">
+      <h3>Siblings</h3>
+      <div class="kin-chips">
+        <span :for={%{person: person, removable: removable} <- @entries} class="kin-chip">
+          <.link patch={~p"/admin/stonetop/families?person=#{Character.slug(person)}"}>
+            {person.name}
+          </.link>
+          <%= if removable do %>
+            <button
+              type="button"
+              id={"remove-sibling-#{person.id}"}
+              class="kin-chip-remove"
+              phx-click="remove_sibling"
+              phx-value-id={person.id}
+              data-confirm={"Remove #{person.name} as a sibling?"}
+              aria-label={"Remove #{person.name}"}
+            >
+              ×
+            </button>
+          <% else %>
+            <span class="kin-chip-meta" title="Shared through a named parent; edit via that parent">
+              via parent
+            </span>
+          <% end %>
+        </span>
+        <span :if={@entries == []} class="kin-empty">none recorded</span>
+        <button
+          type="button"
+          id="add-sibling"
+          class="kin-add"
+          phx-click="open_picker"
+          phx-value-role="sibling"
         >
           + add
         </button>

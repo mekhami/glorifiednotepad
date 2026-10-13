@@ -9,9 +9,9 @@ defmodule Indie.Stonetop do
 
   # --- Characters ---
 
-  @doc "Returns all characters ordered by name"
+  @doc "Returns all real (non-placeholder) characters ordered by name"
   def list_characters do
-    Repo.all(from(c in Character, order_by: c.name))
+    Repo.all(from(c in Character, where: not c.placeholder, order_by: c.name))
   end
 
   @doc "Returns a character by id"
@@ -28,10 +28,10 @@ defmodule Indie.Stonetop do
   def get_character_by_slug(param) when is_binary(param) do
     case Ecto.UUID.cast(param) do
       {:ok, uuid} ->
-        get_character(uuid)
+        Repo.one(from(c in Character, where: c.id == ^uuid and not c.placeholder))
 
       :error ->
-        from(c in Character, order_by: c.inserted_at)
+        from(c in Character, where: not c.placeholder, order_by: c.inserted_at)
         |> Repo.all()
         |> Enum.find(&(Character.slug(&1) == param))
     end
@@ -221,12 +221,160 @@ defmodule Indie.Stonetop do
         %{link: p, person: other}
       end)
 
-    %{parents: parents, partners: partners, children: children}
+    %{parents: parents, partners: partners, children: children, siblings: siblings(character_id)}
+  end
+
+  # Siblings are the other children of any of this person's parents. A sibling
+  # is `removable` when every parent they share is a placeholder, i.e. the
+  # link exists only because it was added as a sibling.
+  defp siblings(character_id) do
+    my_parents =
+      from(pc in ParentChild, where: pc.child_id == ^character_id, preload: [:parent])
+      |> Repo.all()
+      |> Map.new(&{&1.parent_id, &1.parent})
+
+    parent_ids = Map.keys(my_parents)
+
+    from(pc in ParentChild,
+      where: pc.parent_id in ^parent_ids and pc.child_id != ^character_id,
+      preload: [:child],
+      order_by: pc.inserted_at
+    )
+    |> Repo.all()
+    |> Enum.group_by(& &1.child)
+    |> Enum.map(fn {child, links} ->
+      shared = Enum.map(links, &my_parents[&1.parent_id])
+      %{person: child, removable: Enum.all?(shared, & &1.placeholder)}
+    end)
+    |> Enum.sort_by(& &1.person.name)
+  end
+
+  # --- Family: siblings and placeholder parents ---
+
+  @placeholder_name "Unknown parent"
+
+  @doc """
+  Records `sibling_id` as a sibling of `person_id` by giving them the same
+  parents. If the person has no parents yet, a hidden placeholder parent is
+  created for both of them.
+  """
+  def add_sibling(person_id, sibling_id) when person_id == sibling_id,
+    do: {:error, "cannot be your own sibling"}
+
+  def add_sibling(person_id, sibling_id) do
+    if Enum.any?(siblings(person_id), &(&1.person.id == sibling_id)) do
+      {:error, "is already a sibling"}
+    else
+      Repo.transaction(fn ->
+        parent_ids =
+          case Repo.all(
+                 from(pc in ParentChild, where: pc.child_id == ^person_id, select: pc.parent_id)
+               ) do
+            [] ->
+              placeholder = Repo.insert!(%Character{name: @placeholder_name, placeholder: true})
+              link!(placeholder.id, person_id)
+              [placeholder.id]
+
+            ids ->
+              ids
+          end
+
+        for parent_id <- parent_ids, do: link!(parent_id, sibling_id)
+        :ok
+      end)
+    end
+  end
+
+  defp link!(parent_id, child_id) do
+    exists? =
+      Repo.exists?(
+        from(pc in ParentChild, where: pc.parent_id == ^parent_id and pc.child_id == ^child_id)
+      )
+
+    unless exists? do
+      case create_parent_child(%{"parent_id" => parent_id, "child_id" => child_id}) do
+        {:ok, _} -> :ok
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+    end
+  end
+
+  @doc """
+  Removes a sibling recorded through a placeholder parent: unlinks the
+  sibling from the placeholder parents they share with the person, then
+  deletes placeholders left with fewer than two children.
+  """
+  def remove_sibling(person_id, sibling_id) do
+    shared_placeholders =
+      from(pc in ParentChild,
+        join: c in Character,
+        on: c.id == pc.parent_id and c.placeholder,
+        where: pc.child_id == ^person_id,
+        select: pc.parent_id
+      )
+
+    from(pc in ParentChild,
+      where: pc.child_id == ^sibling_id and pc.parent_id in subquery(shared_placeholders)
+    )
+    |> Repo.delete_all()
+
+    cleanup_placeholders()
+    :ok
+  end
+
+  @doc "Deletes placeholder parents that no longer link two or more children"
+  def cleanup_placeholders do
+    lonely =
+      from(c in Character,
+        left_join: pc in ParentChild,
+        on: pc.parent_id == c.id,
+        where: c.placeholder,
+        group_by: c.id,
+        having: count(pc.id) < 2,
+        select: c.id
+      )
+      |> Repo.all()
+
+    Repo.delete_all(from(c in Character, where: c.id in ^lonely))
+    :ok
+  end
+
+  @doc "Gives a placeholder parent a name, turning them into a real character"
+  def name_placeholder(%Character{placeholder: true} = placeholder, name) do
+    placeholder
+    |> Character.changeset(%{"name" => name})
+    |> Ecto.Changeset.put_change(:placeholder, false)
+    |> Repo.update()
+  end
+
+  @doc """
+  Replaces a placeholder parent with an existing character: every child of
+  the placeholder becomes a child of the target, then the placeholder is
+  deleted.
+  """
+  def merge_placeholder(%Character{placeholder: true} = placeholder, target_id) do
+    Repo.transaction(fn ->
+      children =
+        Repo.all(from(pc in ParentChild, where: pc.parent_id == ^placeholder.id))
+
+      Repo.delete!(placeholder)
+      for link <- children, do: link!(target_id, link.child_id)
+      :ok
+    end)
+    |> case do
+      {:ok, :ok} -> {:ok, get_character(target_id)}
+      {:error, %Ecto.Changeset{} = cs} -> {:error, cs}
+    end
   end
 
   @doc "Returns characters that have at least one family link, ordered by name"
   def list_family_members do
-    Repo.all(from(c in Character, where: c.id in subquery(family_member_ids()), order_by: c.name))
+    Repo.all(
+      from(c in Character,
+        where: c.id in subquery(family_member_ids()) and not c.placeholder,
+        order_by: c.name
+      )
+    )
   end
 
   @doc "Returns true if the character has any family link"
@@ -245,7 +393,9 @@ defmodule Indie.Stonetop do
 
   @doc "Returns a random character, or nil if there are none"
   def random_character do
-    Repo.one(from(c in Character, order_by: fragment("RANDOM()"), limit: 1))
+    Repo.one(
+      from(c in Character, where: not c.placeholder, order_by: fragment("RANDOM()"), limit: 1)
+    )
   end
 
   defp family_member_ids do
@@ -276,7 +426,7 @@ defmodule Indie.Stonetop do
   """
   def get_family_tree(character_id) do
     with {:ok, uuid} <- Ecto.UUID.cast(character_id),
-         %Character{} = focus <- get_character(uuid) do
+         %Character{placeholder: false} = focus <- get_character(uuid) do
       build_family_tree(focus.id)
     else
       _ -> nil
@@ -336,8 +486,18 @@ defmodule Indie.Stonetop do
     rows = generations |> Map.values() |> Enum.uniq() |> Enum.sort()
     row_index = rows |> Enum.with_index() |> Map.new()
 
+    placeholders =
+      MapSet.new(Repo.all(from(c in Character, where: c.placeholder, select: c.id)))
+
+    # A placeholder is never drawn, so it never counts as hidden kin itself;
+    # what it stands for is the other children it links (half/full siblings).
     neighbours = fn id ->
-      Map.get(parents_of, id, []) ++ Map.get(children_of, id, []) ++ Map.get(partners_of, id, [])
+      (Map.get(parents_of, id, []) ++ Map.get(children_of, id, []) ++ Map.get(partners_of, id, []))
+      |> Enum.flat_map(fn n ->
+        if MapSet.member?(placeholders, n),
+          do: Map.get(children_of, n, []) -- [id],
+          else: [n]
+      end)
     end
 
     ids = Map.keys(generations)
@@ -353,7 +513,8 @@ defmodule Indie.Stonetop do
           pc: "pc" in c.tags or "player" in c.tags,
           deceased: "deceased" in c.tags,
           generation: row_index[generations[c.id]],
-          has_more: Enum.any?(neighbours.(c.id), &(not shown?.(&1)))
+          hidden: c.placeholder,
+          has_more: not c.placeholder and Enum.any?(neighbours.(c.id), &(not shown?.(&1)))
         }
       end)
 

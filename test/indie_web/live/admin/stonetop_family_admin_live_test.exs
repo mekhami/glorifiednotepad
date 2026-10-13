@@ -136,4 +136,68 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLiveTest do
     assert_patch(view, ~p"/admin/stonetop/families?person=#{Character.slug(isolde)}")
     assert has_element?(view, "#kin-editor h2", "Isolde")
   end
+
+  describe "siblings and unknown parents" do
+    defp parent_ids(c), do: Stonetop.get_kin(c.id).parents |> Enum.map(& &1.person.id)
+
+    test "adds a sibling with no parents via a hidden placeholder", %{
+      conn: conn,
+      aldric: a,
+      pip: p
+    } do
+      {:ok, view, _html} = live(conn, ~p"/admin/stonetop/families?person=#{Character.slug(a)}")
+      view |> element("#add-sibling") |> render_click()
+      view |> form("#kin-link-form", %{"link" => %{"person_id" => p.id}}) |> render_submit()
+
+      assert has_element?(view, "#kin-siblings .kin-chip", "Pip")
+      assert has_element?(view, "#kin-parents .kin-chip-unknown", "unknown parent")
+      [placeholder_id] = parent_ids(a)
+      refute has_element?(view, "#person-#{placeholder_id}")
+    end
+
+    test "removes a placeholder sibling and cleans up the placeholder", %{
+      conn: conn,
+      aldric: a,
+      pip: p
+    } do
+      {:ok, _} = Stonetop.add_sibling(a.id, p.id)
+      {:ok, view, _html} = live(conn, ~p"/admin/stonetop/families?person=#{Character.slug(a)}")
+
+      view |> element("#remove-sibling-#{p.id}") |> render_click()
+      refute has_element?(view, "#kin-siblings .kin-chip")
+      refute has_element?(view, "#kin-parents .kin-chip-unknown")
+      assert parent_ids(a) == []
+    end
+
+    test "names the unknown parent", %{conn: conn, aldric: a, pip: p} do
+      {:ok, _} = Stonetop.add_sibling(a.id, p.id)
+      [placeholder_id] = parent_ids(a)
+      {:ok, view, _html} = live(conn, ~p"/admin/stonetop/families?person=#{Character.slug(a)}")
+
+      view |> element("#resolve-#{placeholder_id}") |> render_click()
+      view |> form("#name-placeholder-form", %{"name" => "Old Hesketh"}) |> render_submit()
+
+      assert has_element?(view, "#kin-parents .kin-chip", "Old Hesketh")
+      refute has_element?(view, "#kin-parents .kin-chip-unknown")
+      assert has_element?(view, "#person-#{placeholder_id}", "Old Hesketh")
+    end
+
+    test "merges the unknown parent into an existing character", %{
+      conn: conn,
+      aldric: a,
+      pip: p,
+      maeve: m
+    } do
+      {:ok, _} = Stonetop.add_sibling(a.id, p.id)
+      [placeholder_id] = parent_ids(a)
+      {:ok, view, _html} = live(conn, ~p"/admin/stonetop/families?person=#{Character.slug(a)}")
+
+      view |> element("#resolve-#{placeholder_id}") |> render_click()
+      view |> form("#merge-placeholder-form", %{"target_id" => m.id}) |> render_submit()
+
+      assert has_element?(view, "#kin-parents .kin-chip", "Maeve")
+      assert parent_ids(a) == [m.id]
+      assert parent_ids(p) == [m.id]
+    end
+  end
 end

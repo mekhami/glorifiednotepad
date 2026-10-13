@@ -3122,3 +3122,62 @@ body.stonetop-body:has(.sessions-page) {
   min-height: 24rem;
   font-family: monospace;
 }
+
+.kin-chip-unknown {
+  border-style: dashed;
+  background: #fff;
+}
+
+.kin-chip-resolve {
+  border: 0;
+  background: transparent;
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #6c868f;
+  cursor: pointer;
+  padding: 0;
+}
+
+.kin-chip-resolve:hover {
+  color: #3a2a1a;
+  text-decoration: underline;
+}
+
+.kin-picker-hint {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #6c868f;
+  margin: 0.5rem 0;
+}
+
+.kin-resolve-label {
+  display: block;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #6c868f;
+  margin-bottom: 0.35rem;
+}
+
+.kin-resolve-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.kin-resolve-input {
+  flex: 1;
+  border: 1px solid #bbb;
+  padding: 0.4rem 0.6rem;
+  font-family: monospace;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+.kin-resolve-or {
+  text-align: center;
+  font-family: Georgia, serif;
+  font-style: italic;
+  color: #6c868f;
+  margin: 0.75rem 0;
+}
