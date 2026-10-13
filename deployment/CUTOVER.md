@@ -5,6 +5,11 @@ Run these by hand, in order. Each phase ends with a check. Stop if a check fails
 
 The old layout (`/opt/indie` = the release itself) keeps serving until Phase 4.
 
+Files under `deployment/` exist only on your Mac, not the server. Where a step needs one,
+copy it first, e.g. `scp deployment/indie.service indie@$HOST:~`.
+
+`.env.prod` must use plain `KEY=value` lines. systemd ignores lines that start with `export`.
+
 ---
 
 ## Phase 1 — CI only (no server changes)
@@ -35,8 +40,9 @@ The old layout (`/opt/indie` = the release itself) keeps serving until Phase 4.
    ```
    Compare the fingerprint to `ssh-keygen -lf <(ssh-keyscan $HOST)` versus what's in your
    `~/.ssh/known_hosts` for that host. They must match.
-4. **GitHub → Settings → Environments → New environment `production`.** Optionally
-   restrict it to the `main` branch under "Deployment branches". Add secrets:
+4. **GitHub → Settings → Environments → New environment `production`.** Under
+   "Deployment branches", restrict it to `main`. Then only code on `main` can use the
+   deploy key. Add secrets:
    | Secret | Value |
    |---|---|
    | `SSH_PRIVATE_KEY` | contents of `~/.ssh/indie_deploy` |
@@ -50,7 +56,7 @@ The old layout (`/opt/indie` = the release itself) keeps serving until Phase 4.
 
 ## Phase 3 — Prepare the server (old app keeps running)
 
-SSH in as a sudo-capable user (`ssh root@$HOST`).
+SSH in as `indie` (or any sudo-capable user) and prefix commands with `sudo` as needed.
 
 1. **Tools needed by the activate script:**
    ```bash
@@ -91,12 +97,15 @@ SSH in as a sudo-capable user (`ssh root@$HOST`).
    ```bash
    mkdir -p /opt/indie/shared
    cp /opt/indie/.env.prod /opt/indie/shared/.env.prod
-   echo 'export UPLOADS_DIR=/var/lib/indie/uploads' >> /opt/indie/shared/.env.prod
+   echo 'UPLOADS_DIR=/var/lib/indie/uploads' >> /opt/indie/shared/.env.prod
+   echo 'CONTENT_DIR=/opt/indie/current/content' >> /opt/indie/shared/.env.prod
    chmod 600 /opt/indie/shared/.env.prod
    chown -R indie:indie /opt/indie/shared
    ```
-7. **Install the narrowed sudoers rule.** First check for an existing rule (`sudo -l -U indie`,
-   `ls /etc/sudoers.d`). Then copy `deployment/indie.sudoers` to the server and:
+7. **Optional: install the narrowed sudoers rule.** Skip this unless you have root access
+   some other way, such as root SSH or the Digital Ocean droplet console. Removing a broad
+   `NOPASSWD: ALL` rule from `indie` can lock you out of sudo. First check for an existing
+   rule (`sudo -l -U indie`, `ls /etc/sudoers.d`). Then copy `deployment/indie.sudoers` to the server and:
    ```bash
    install -m 440 indie.sudoers /etc/sudoers.d/indie
    visudo -c
@@ -125,7 +134,8 @@ SSH in as a sudo-capable user (`ssh root@$HOST`).
    Delete `/opt/indie-old-layout` once Phase 4 passes. `/opt/indie-legacy` is the real backup.
 2. **Install the new systemd unit** (`deployment/indie.service`):
    ```bash
-   cp indie.service /etc/systemd/system/indie.service
+   # from your Mac: scp deployment/indie.service indie@$HOST:~
+   sudo cp ~/indie.service /etc/systemd/system/indie.service
    systemctl daemon-reload
    systemctl start indie
    curl -sI -H 'X-Forwarded-Proto: https' -H 'Host: glorifiednotepad.net' http://127.0.0.1:4000/ | head -1
@@ -133,9 +143,8 @@ SSH in as a sudo-capable user (`ssh root@$HOST`).
    The old release should now be running from `current`. Open the site and check that
    posts render. Posts come from `releases/legacy/content`.
 
-   The legacy release's `bin/server` has no `CONTENT_DIR` export. If posts are missing, add
-   `CONTENT_DIR=/opt/indie/current/content` to `shared/.env.prod`, or skip ahead. The first
-   CI release sets it itself.
+   If it crash-loops, check `sudo journalctl -u indie -n 80 --no-pager`. The `CONTENT_DIR`
+   line from Phase 3 step 6 is what lets the legacy release find its posts.
 3. **Update nginx.** Certbot has edited the live config, so **do not overwrite it**. Copy just
    the four new `location` blocks (`/downloads/`, `/videos/`, `/uploads/`, `@phoenix`) from
    `deployment/nginx.conf` into the `listen 443` server block of
