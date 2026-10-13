@@ -7,7 +7,7 @@ defmodule Indie.Doodle.CanvasServer do
   DB writes still go through Doodle context — this is a read cache only.
 
   Also refreshes itself from the database every 60s so that out-of-band
-  changes (e.g. the seed_logo.exs script) are picked up without restarting
+  changes (e.g. `Indie.Doodle.SeedLogo` run from another process) are picked up without restarting
   the server.
   """
   use GenServer

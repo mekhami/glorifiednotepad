@@ -41,6 +41,9 @@ case "${1:-}" in
   remote)
     ssh -t "$TARGET" 'set -a; . /opt/indie/shared/.env.prod; set +a; /opt/indie/current/bin/indie remote'
     ;;
+  seed-logo)
+    ssh "$TARGET" '/opt/indie/current/bin/indie rpc "IO.inspect(Indie.Doodle.SeedLogo.run())"'
+    ;;
   ssh)
     ssh "$TARGET"
     ;;
@@ -60,6 +63,7 @@ Usage: $0 <command>
   backup                     pg_dump to /var/lib/indie/backups
   upload <file> [kind]       Upload to /var/lib/indie/{downloads,videos}
   remote                     IEx shell into the running app
+  seed-logo                  Repaint the canvas logo now (also runs daily at 06:00 UTC)
   ssh                        SSH into the server
   nginx-logs                 Follow nginx error log
 EOF

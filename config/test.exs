@@ -21,6 +21,8 @@ config :indie, IndieWeb.Endpoint,
 # Print only warnings and errors during test
 config :logger, level: :warning
 
+config :indie, Indie.Doodle.LogoScheduler, enabled: false
+
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
 

@@ -186,9 +186,10 @@ SSH in as `indie` (or any sudo-capable user) and prefix commands with `sudo` as 
 ```bash
 rm -rf /opt/indie-legacy /opt/indie-backups
 rm -rf /opt/indie/releases/legacy     # once it's no longer the rollback target
+crontab -l | grep -v seed_logo | crontab -   # remove the old (broken) seed-logo cron entry
+rm -rf /opt/indie-repo                # no longer used: the logo repaint now runs inside the app
 ```
-Leave `/opt/indie-repo` and asdf in place until `seed_logo` is reworked to run against the
-release instead of Mix.
+asdf (`~/.asdf`) is also unused now and can be removed.
 
 Consider upgrading the server to Ubuntu 24.04 LTS or 26.04 LTS. 24.10 is end-of-life.
 Since CI builds the release, a fresh server only needs Postgres, nginx, certbot and these
