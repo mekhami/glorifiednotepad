@@ -48,7 +48,7 @@
           <ul class="family-picker-list">
             <li :for={m <- @matches}>
               <.link
-                patch={~p"/stonetop/family/#{m.id}"}
+                patch={~p"/stonetop/family/#{Indie.Stonetop.Character.slug(m)}"}
                 id={"family-picker-option-#{m.id}"}
                 class={[
                   "family-picker-option",

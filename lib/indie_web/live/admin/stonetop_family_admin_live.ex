@@ -23,8 +23,8 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLive do
   end
 
   @impl true
-  def handle_params(%{"id" => id}, _uri, socket) do
-    case Enum.find(socket.assigns.characters, &(&1.id == id)) do
+  def handle_params(%{"person" => param}, _uri, socket) do
+    case find_person(socket.assigns.characters, param) do
       nil ->
         {:noreply, push_patch(socket, to: ~p"/admin/stonetop/families")}
 
@@ -174,7 +174,7 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLive do
          socket
          |> assign(:show_character_modal, false)
          |> load_people()
-         |> push_patch(to: ~p"/admin/stonetop/families?id=#{character.id}")}
+         |> push_patch(to: ~p"/admin/stonetop/families?person=#{Character.slug(character)}")}
 
       {:error, changeset} ->
         {:noreply, assign(socket, :character_form, to_form(changeset, as: :character))}
@@ -199,6 +199,14 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLive do
     socket
     |> assign(:kin, Stonetop.get_kin(id))
     |> push_event("family_tree:render", Stonetop.get_family_tree(id))
+  end
+
+  # Characters are listed oldest-first for slug lookups so that, when two
+  # names collide, the same person always wins (matching get_character_by_slug).
+  defp find_person(characters, param) do
+    characters
+    |> Enum.sort_by(& &1.inserted_at, NaiveDateTime)
+    |> Enum.find(&(&1.id == param or Character.slug(&1) == param))
   end
 
   defp close_picker(socket) do
@@ -265,7 +273,9 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLive do
       <h3>{@title}</h3>
       <div class="kin-chips">
         <span :for={%{link: link, person: person} <- @entries} class="kin-chip">
-          <.link patch={~p"/admin/stonetop/families?id=#{person.id}"}>{person.name}</.link>
+          <.link patch={~p"/admin/stonetop/families?person=#{Character.slug(person)}"}>
+            {person.name}
+          </.link>
           <button
             type="button"
             id={"cycle-#{@type}-#{link.id}"}

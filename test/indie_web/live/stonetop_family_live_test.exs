@@ -3,6 +3,7 @@ defmodule IndieWeb.StonetopFamilyLiveTest do
 
   import Phoenix.LiveViewTest
   alias Indie.Stonetop
+  alias Indie.Stonetop.Character
 
   defp char(name) do
     {:ok, c} = Stonetop.create_character(%{"name" => name})
@@ -32,7 +33,7 @@ defmodule IndieWeb.StonetopFamilyLiveTest do
       loner = char("Loner")
 
       assert {:error, {:live_redirect, %{to: to}}} = live(conn, ~p"/stonetop/family")
-      assert to == "/stonetop/family/#{loner.id}"
+      assert to == "/stonetop/family/#{Character.slug(loner)}"
 
       {:ok, view, _html} = live(conn, to)
       assert has_element?(view, "#family-title", "Loner")
@@ -54,7 +55,7 @@ defmodule IndieWeb.StonetopFamilyLiveTest do
       assert {:error, {:live_redirect, %{to: "/stonetop/family/" <> id}}} =
                live(conn, ~p"/stonetop/family")
 
-      assert id in [m.id, a.id, p.id]
+      assert id in Enum.map([m, a, p], &Character.slug/1)
     end
 
     test "renders the tree page in the stonetop layout", %{conn: conn, aldric: a} do
@@ -73,19 +74,36 @@ defmodule IndieWeb.StonetopFamilyLiveTest do
       refute has_element?(view, "#family-picker-option-#{a.id}")
 
       view |> element("#family-picker-option-#{p.id}") |> render_click()
-      assert_patch(view, ~p"/stonetop/family/#{p.id}")
+      assert_patch(view, ~p"/stonetop/family/#{Character.slug(p)}")
       assert has_element?(view, "#family-title", "Pip")
     end
 
     test "clicking a name in the tree patches to that person", %{conn: conn, aldric: a, maeve: m} do
       {:ok, view, _html} = live(conn, ~p"/stonetop/family/#{a.id}")
       render_hook(view, "select_person", %{"id" => m.id})
-      assert_patch(view, ~p"/stonetop/family/#{m.id}")
+      assert_patch(view, ~p"/stonetop/family/#{Character.slug(m)}")
     end
 
     test "an unknown id shows not found", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/stonetop/family/#{Ecto.UUID.generate()}")
       assert has_element?(view, "#family-empty")
     end
+
+    test "people are found by their name in the url", %{conn: conn, aldric: a} do
+      {:ok, view, _html} = live(conn, ~p"/stonetop/family/aldric")
+      assert has_element?(view, "#family-title", "Aldric")
+
+      {:ok, view, _html} = live(conn, ~p"/stonetop/family/#{a.id}")
+      assert has_element?(view, "#family-title", "Aldric")
+
+      {:ok, view, _html} = live(conn, ~p"/stonetop/family/nobody-at-all")
+      assert has_element?(view, "#family-empty")
+    end
+  end
+
+  test "Character.slug/1 makes names url-friendly" do
+    assert Character.slug(%Character{name: "Maeve the Bold"}) == "maeve-the-bold"
+    assert Character.slug(%Character{name: "  Ysolde Óakheart!"}) == "ysolde-oakheart"
+    assert Character.slug(%Character{id: "abc", name: "???"}) == "abc"
   end
 end

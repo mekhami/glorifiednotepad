@@ -25,6 +25,20 @@ defmodule Indie.Stonetop.Character do
     timestamps()
   end
 
+  @doc "A URL-friendly version of the character's name, e.g. \"Maeve the Bold\" -> \"maeve-the-bold\""
+  def slug(%__MODULE__{id: id, name: name}) do
+    name
+    |> String.normalize(:nfd)
+    |> String.replace(~r/\p{Mn}/u, "")
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9]+/, "-")
+    |> String.trim("-")
+    |> case do
+      "" -> id
+      slug -> slug
+    end
+  end
+
   @doc false
   def changeset(character, attrs) do
     attrs = normalize_tags(attrs)

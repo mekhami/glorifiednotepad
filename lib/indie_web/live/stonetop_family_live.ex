@@ -2,6 +2,7 @@ defmodule IndieWeb.StonetopFamilyLive do
   use IndieWeb, :live_view
 
   alias Indie.Stonetop
+  alias Indie.Stonetop.Character
 
   @impl true
   def mount(params, _session, socket) do
@@ -13,7 +14,7 @@ defmodule IndieWeb.StonetopFamilyLive do
         {:ok, assign_defaults(socket)}
 
       {_, member} ->
-        {:ok, push_navigate(socket, to: ~p"/stonetop/family/#{member.id}")}
+        {:ok, push_navigate(socket, to: ~p"/stonetop/family/#{Character.slug(member)}")}
     end
   end
 
@@ -31,8 +32,14 @@ defmodule IndieWeb.StonetopFamilyLive do
   end
 
   @impl true
-  def handle_params(%{"id" => id}, _uri, socket) do
-    case Stonetop.get_family_tree(id) do
+  def handle_params(%{"id" => param}, _uri, socket) do
+    tree =
+      case Stonetop.get_character_by_slug(param) do
+        nil -> nil
+        character -> Stonetop.get_family_tree(character.id)
+      end
+
+    case tree do
       nil ->
         {:noreply, socket |> assign(:tree, nil) |> assign(:focus, nil)}
 
@@ -76,6 +83,9 @@ defmodule IndieWeb.StonetopFamilyLive do
   end
 
   def handle_event("select_person", %{"id" => id}, socket) do
-    {:noreply, push_patch(socket, to: ~p"/stonetop/family/#{id}")}
+    case Enum.find(socket.assigns.members, &(&1.id == id)) do
+      nil -> {:noreply, socket}
+      person -> {:noreply, push_patch(socket, to: ~p"/stonetop/family/#{Character.slug(person)}")}
+    end
   end
 end

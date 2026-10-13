@@ -25,7 +25,7 @@
       <ul>
         <li :for={c <- visible_people(@characters, @query)}>
           <.link
-            patch={~p"/admin/stonetop/families?id=#{c.id}"}
+            patch={~p"/admin/stonetop/families?person=#{Character.slug(c)}"}
             id={"person-#{c.id}"}
             class={[
               "family-admin-person",
@@ -70,7 +70,7 @@
 
         <div class="family-preview-label">
           <span>Preview</span>
-          <.link navigate={~p"/stonetop/family/#{@selected.id}"} target="_blank">
+          <.link navigate={~p"/stonetop/family/#{Character.slug(@selected)}"} target="_blank">
             open public page ↗
           </.link>
         </div>

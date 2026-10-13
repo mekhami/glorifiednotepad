@@ -3,6 +3,7 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLiveTest do
 
   import Phoenix.LiveViewTest
   alias Indie.Stonetop
+  alias Indie.Stonetop.Character
 
   setup %{conn: conn} do
     old_username = System.get_env("ADMIN_USERNAME")
@@ -49,7 +50,7 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLiveTest do
   test "selecting a person shows their kin editor", %{conn: conn, aldric: a} do
     {:ok, view, _html} = live(conn, ~p"/admin/stonetop/families")
     view |> element("#person-#{a.id}") |> render_click()
-    assert_patch(view, ~p"/admin/stonetop/families?id=#{a.id}")
+    assert_patch(view, ~p"/admin/stonetop/families?person=#{Character.slug(a)}")
     assert has_element?(view, "#kin-editor h2", "Aldric")
     assert has_element?(view, "#family-preview[phx-hook='FamilyTree']")
   end
@@ -62,7 +63,7 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLiveTest do
   end
 
   test "adds and removes a parent", %{conn: conn, aldric: a, maeve: m} do
-    {:ok, view, _html} = live(conn, ~p"/admin/stonetop/families?id=#{a.id}")
+    {:ok, view, _html} = live(conn, ~p"/admin/stonetop/families?person=#{Character.slug(a)}")
     view |> element("#add-parent") |> render_click()
 
     view
@@ -84,7 +85,7 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLiveTest do
     pip: p,
     maeve: m
   } do
-    {:ok, view, _html} = live(conn, ~p"/admin/stonetop/families?id=#{a.id}")
+    {:ok, view, _html} = live(conn, ~p"/admin/stonetop/families?person=#{Character.slug(a)}")
 
     view |> element("#add-child") |> render_click()
 
@@ -109,7 +110,7 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLiveTest do
 
   test "shows an error when a link would form a cycle", %{conn: conn, aldric: a, pip: p} do
     {:ok, _} = Stonetop.create_parent_child(%{"parent_id" => a.id, "child_id" => p.id})
-    {:ok, view, _html} = live(conn, ~p"/admin/stonetop/families?id=#{a.id}")
+    {:ok, view, _html} = live(conn, ~p"/admin/stonetop/families?person=#{Character.slug(a)}")
 
     view |> element("#add-parent") |> render_click()
 
@@ -132,7 +133,7 @@ defmodule IndieWeb.Admin.StonetopFamilyAdminLiveTest do
 
     isolde = Enum.find(Stonetop.list_characters(), &(&1.name == "Isolde"))
     assert isolde.tags == ["npc"]
-    assert_patch(view, ~p"/admin/stonetop/families?id=#{isolde.id}")
+    assert_patch(view, ~p"/admin/stonetop/families?person=#{Character.slug(isolde)}")
     assert has_element?(view, "#kin-editor h2", "Isolde")
   end
 end

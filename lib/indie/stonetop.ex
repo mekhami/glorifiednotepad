@@ -20,6 +20,23 @@ defmodule Indie.Stonetop do
   @doc "Returns a character by id or nil"
   def get_character(id), do: Repo.get(Character, id)
 
+  @doc """
+  Finds a character from a URL param: either their name slug (see
+  `Character.slug/1`) or, for older links, their id. When names collide,
+  the earliest-created character wins.
+  """
+  def get_character_by_slug(param) when is_binary(param) do
+    case Ecto.UUID.cast(param) do
+      {:ok, uuid} ->
+        get_character(uuid)
+
+      :error ->
+        from(c in Character, order_by: c.inserted_at)
+        |> Repo.all()
+        |> Enum.find(&(Character.slug(&1) == param))
+    end
+  end
+
   @doc "Creates a character"
   def create_character(attrs \\ %{}) do
     %Character{}

@@ -100,7 +100,7 @@
 
           <.link
             :if={@has_family}
-            navigate={~p"/stonetop/family/#{@selected_character.id}"}
+            navigate={~p"/stonetop/family/#{Indie.Stonetop.Character.slug(@selected_character)}"}
             id="popup-family-link"
             class="popup-family-link"
           >
