@@ -2,4 +2,5 @@
 set -eu
 
 cd -P -- "$(dirname -- "$0")"
+export CONTENT_DIR="${CONTENT_DIR:-$(cd .. && pwd)/content}"
 PHX_SERVER=true exec ./indie start

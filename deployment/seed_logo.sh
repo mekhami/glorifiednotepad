@@ -17,7 +17,7 @@ else
 fi
 
 # Load production env vars (DATABASE_PATH, SECRET_KEY_BASE, etc.)
-export $(cat "$DEPLOY_DIR/.env.prod" | xargs)
+set -a; . "$DEPLOY_DIR/shared/.env.prod"; set +a
 export MIX_ENV=prod
 
 mix run priv/scripts/seed_logo.exs

@@ -1,0 +1,3 @@
+# Allows the deploy user to restart the app and read its logs, nothing else.
+# Install: sudo install -m 440 deployment/indie.sudoers /etc/sudoers.d/indie && sudo visudo -c
+indie ALL=(root) NOPASSWD: /usr/bin/systemctl restart indie, /usr/bin/systemctl start indie, /usr/bin/systemctl stop indie, /usr/bin/systemctl status indie, /usr/bin/systemctl is-active indie, /usr/bin/journalctl -u indie *

@@ -320,7 +320,11 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
 
            ext = Path.extname(entry.client_name)
            filename = "avatar#{ext}"
-           dest_dir = Path.join("priv/static/uploads/stonetop", character_id)
+
+           dest_dir =
+             Application.get_env(:indie, :uploads_dir, "priv/static/uploads")
+             |> Path.join("stonetop")
+             |> Path.join(character_id)
 
            try do
              File.mkdir_p!(dest_dir)
