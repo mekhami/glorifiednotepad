@@ -13,6 +13,7 @@
         ↻ another
       </.link>
       <.link navigate={~p"/stonetop"} class="family-nav-link">the web of ties</.link>
+      <.link navigate={~p"/stonetop/sessions"} class="family-nav-link">the chronicle</.link>
 
       <div :if={@members != []} class="family-picker" id="family-picker">
         <button
@@ -77,7 +78,7 @@
   <% else %>
     <div id="family-empty" class="family-empty">
       <%= if @members == [] do %>
-        <p>No kin have been recorded.</p>
+        <p>No souls have been written into the register yet.</p>
       <% else %>
         <p>That name is not in the register.</p>
         <.link navigate={~p"/stonetop/family"} class="family-nav-link">

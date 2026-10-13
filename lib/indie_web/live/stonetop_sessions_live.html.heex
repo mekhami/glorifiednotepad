@@ -1,0 +1,80 @@
+<div id="stonetop-sessions-page" class="family-page sessions-page">
+  <header class="family-header">
+    <h1 id="sessions-title" class="family-title">
+      The Chronicle <span class="family-title-name">of Stonetop</span>
+    </h1>
+    <nav class="family-nav">
+      <.link navigate={~p"/stonetop"} class="family-nav-link">the web of ties</.link>
+      <.link navigate={~p"/stonetop/family"} class="family-nav-link">the kin</.link>
+    </nav>
+  </header>
+
+  <%= if @sessions == [] do %>
+    <div id="sessions-empty" class="family-empty">
+      <p>No sessions have been chronicled yet.</p>
+    </div>
+  <% else %>
+    <div class="sessions-layout">
+      <aside id="sessions-list" class="sessions-list">
+        <h2>Sessions</h2>
+        <ol>
+          <li :for={s <- @sessions}>
+            <.link
+              patch={~p"/stonetop/sessions/#{s.id}"}
+              id={"session-link-#{s.id}"}
+              class={["sessions-list-item", @current && @current.id == s.id && "is-current"]}
+            >
+              <span class="sessions-list-number">{s.number}</span>
+              <span class="sessions-list-title">{s.title || "untitled"}</span>
+            </.link>
+          </li>
+        </ol>
+      </aside>
+
+      <%= if @current do %>
+        <article id={"session-#{@current.id}"} class="session-notes">
+          <header class="session-notes-header">
+            <p class="session-notes-kicker">Session {@current.number}</p>
+            <h2 :if={@current.title}>{@current.title}</h2>
+            <p :if={@current.played_on} class="session-notes-date">
+              {format_date(@current.played_on)}
+            </p>
+          </header>
+
+          <div id="session-notes-body" class="session-notes-body">
+            <%= if String.trim(@current.notes) == "" do %>
+              <p class="session-notes-blank">The scribe has yet to write of this day.</p>
+            <% else %>
+              {Phoenix.HTML.raw(render_comment_markdown(@current.notes))}
+            <% end %>
+          </div>
+
+          <% {earlier, later} = neighbours(@sessions, @current) %>
+          <footer class="session-notes-footer">
+            <.link
+              :if={earlier}
+              patch={~p"/stonetop/sessions/#{earlier.id}"}
+              id="session-earlier"
+              class="family-nav-link"
+            >
+              ← session {earlier.number}
+            </.link>
+            <span></span>
+            <.link
+              :if={later}
+              patch={~p"/stonetop/sessions/#{later.id}"}
+              id="session-later"
+              class="family-nav-link"
+            >
+              session {later.number} →
+            </.link>
+          </footer>
+        </article>
+      <% else %>
+        <div id="session-missing" class="family-empty">
+          <p>That page has been torn from the chronicle.</p>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

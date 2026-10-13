@@ -5,7 +5,7 @@ defmodule Indie.Stonetop do
 
   import Ecto.Query
   alias Indie.Repo
-  alias Indie.Stonetop.{Character, Relationship, ParentChild, Partnership}
+  alias Indie.Stonetop.{Character, Relationship, ParentChild, Partnership, Session}
 
   # --- Characters ---
 
@@ -226,15 +226,9 @@ defmodule Indie.Stonetop do
       )
   end
 
-  @doc "Returns a random character with at least one family link, or nil"
-  def random_family_member do
-    Repo.one(
-      from(c in Character,
-        where: c.id in subquery(family_member_ids()),
-        order_by: fragment("RANDOM()"),
-        limit: 1
-      )
-    )
+  @doc "Returns a random character, or nil if there are none"
+  def random_character do
+    Repo.one(from(c in Character, order_by: fragment("RANDOM()"), limit: 1))
   end
 
   defp family_member_ids do
@@ -363,6 +357,48 @@ defmodule Indie.Stonetop do
         )
     }
   end
+
+  # --- Session notes ---
+
+  @doc "Returns all sessions, most recent first"
+  def list_sessions do
+    Repo.all(from(s in Session, order_by: [desc: s.number]))
+  end
+
+  @doc "Returns a session by id, or nil if missing or not a valid id"
+  def get_session(id) do
+    case Ecto.UUID.cast(id) do
+      {:ok, uuid} -> Repo.get(Session, uuid)
+      :error -> nil
+    end
+  end
+
+  @doc "Returns the number the next session should get"
+  def next_session_number do
+    (Repo.one(from(s in Session, select: max(s.number))) || 0) + 1
+  end
+
+  @doc "Returns a changeset for tracking session changes"
+  def change_session(%Session{} = session, attrs \\ %{}) do
+    Session.changeset(session, attrs)
+  end
+
+  @doc "Creates a session"
+  def create_session(attrs) do
+    %Session{}
+    |> Session.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc "Updates a session"
+  def update_session(%Session{} = session, attrs) do
+    session
+    |> Session.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc "Deletes a session"
+  def delete_session(%Session{} = session), do: Repo.delete(session)
 
   # --- Graph Data for Visualization ---
 

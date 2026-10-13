@@ -16,17 +16,29 @@ defmodule IndieWeb.StonetopFamilyLiveTest do
     %{maeve: maeve, aldric: aldric, pip: pip}
   end
 
-  describe "with no families" do
+  describe "with no characters" do
     test "the relationship graph header links to the family trees", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/stonetop")
       assert has_element?(view, "#family-trees-link[href='/stonetop/family']")
     end
 
     test "shows the empty state", %{conn: conn} do
-      char("Loner")
       {:ok, view, html} = live(conn, ~p"/stonetop/family")
       assert has_element?(view, "#family-empty")
       refute html =~ "phoenixframework.org"
+    end
+
+    test "a character with no family can be chosen and shows alone", %{conn: conn} do
+      loner = char("Loner")
+
+      assert {:error, {:live_redirect, %{to: to}}} = live(conn, ~p"/stonetop/family")
+      assert to == "/stonetop/family/#{loner.id}"
+
+      {:ok, view, _html} = live(conn, to)
+      assert has_element?(view, "#family-title", "Loner")
+      assert has_element?(view, "#family-tree")
+      view |> element("#family-picker-toggle") |> render_click()
+      assert has_element?(view, "#family-picker-option-#{loner.id}")
     end
   end
 

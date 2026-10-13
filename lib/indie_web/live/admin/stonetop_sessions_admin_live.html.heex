@@ -1,0 +1,74 @@
+<div class="admin-container stonetop-admin">
+  <header class="admin-header">
+    <h1>Stonetop Sessions</h1>
+    <nav class="family-admin-nav">
+      <.link navigate={~p"/admin/stonetop"} class="family-nav-link">← characters</.link>
+      <.link navigate={~p"/stonetop/sessions"} class="family-nav-link" target="_blank">
+        public page ↗
+      </.link>
+      <.button id="new-session" patch={~p"/admin/stonetop/sessions?id=new"} variant="primary">
+        <.icon name="hero-plus" class="mr-2 size-4" /> New session
+      </.button>
+    </nav>
+  </header>
+
+  <div class="family-admin-layout">
+    <aside id="session-admin-list" class="family-admin-people">
+      <ul>
+        <li :for={s <- @sessions}>
+          <.link
+            patch={~p"/admin/stonetop/sessions?id=#{s.id}"}
+            id={"admin-session-#{s.id}"}
+            class={[
+              "family-admin-person",
+              @editing && @editing.id == s.id && "is-selected"
+            ]}
+          >
+            #{s.number} {s.title}
+          </.link>
+        </li>
+        <li :if={@sessions == []} class="kin-empty px-3 py-2">no sessions yet</li>
+      </ul>
+    </aside>
+
+    <%= if @form do %>
+      <section id="session-editor" class="family-admin-editor">
+        <h2>
+          {if @editing.id, do: "Session #{@editing.number}", else: "A new session"}
+        </h2>
+        <.form for={@form} id="session-form" phx-change="validate" phx-submit="save">
+          <div class="session-admin-row">
+            <.input field={@form[:number]} type="number" label="Number" min="1" />
+            <.input field={@form[:played_on]} type="date" label="Played on" />
+          </div>
+          <.input field={@form[:title]} label="Title" placeholder="optional" />
+          <.input
+            field={@form[:notes]}
+            type="textarea"
+            label="Notes (markdown)"
+            class="input-textarea session-admin-notes"
+            phx-debounce="300"
+          />
+          <div class="form-actions">
+            <.button type="submit" variant="primary">Save</.button>
+            <.button
+              :if={@editing.id}
+              type="button"
+              id="delete-session"
+              phx-click="delete"
+              data-confirm="Delete this session's notes?"
+            >
+              Delete
+            </.button>
+          </div>
+        </.form>
+      </section>
+    <% else %>
+      <div id="session-admin-placeholder" class="family-admin-placeholder">
+        Choose a session on the left, or start a new one.
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<Layouts.flash_group flash={@flash} />

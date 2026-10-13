@@ -146,15 +146,13 @@ defmodule Indie.Stonetop.FamilyTest do
       assert Enum.map(Stonetop.list_family_members(), & &1.name) == ["Al", "Bea"]
     end
 
-    test "random_family_member returns nil without families" do
-      char("Loner")
-      assert Stonetop.random_family_member() == nil
+    test "random_character returns nil when there are no characters" do
+      assert Stonetop.random_character() == nil
     end
 
-    test "random_family_member returns a linked character" do
-      [a, b] = [char("A"), char("B")]
-      parent!(a, b)
-      assert Stonetop.random_family_member().id in [a.id, b.id]
+    test "random_character returns any character, with or without family" do
+      loner = char("Loner")
+      assert Stonetop.random_character().id == loner.id
     end
   end
 

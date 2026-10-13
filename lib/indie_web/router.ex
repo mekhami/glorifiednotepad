@@ -49,6 +49,8 @@ defmodule IndieWeb.Router do
     live("/stonetop", StonetopLive)
     live("/stonetop/family", StonetopFamilyLive, :index)
     live("/stonetop/family/:id", StonetopFamilyLive, :show)
+    live("/stonetop/sessions", StonetopSessionsLive, :index)
+    live("/stonetop/sessions/:id", StonetopSessionsLive, :show)
   end
 
   scope "/admin", IndieWeb.Admin do
@@ -58,6 +60,7 @@ defmodule IndieWeb.Router do
       live("/comments", CommentModerationLive, :index)
       live("/stonetop", StonetopAdminLive)
       live("/stonetop/families", StonetopFamilyAdminLive)
+      live("/stonetop/sessions", StonetopSessionsAdminLive)
     end
   end
 

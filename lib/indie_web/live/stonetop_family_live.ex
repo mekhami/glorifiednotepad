@@ -5,7 +5,7 @@ defmodule IndieWeb.StonetopFamilyLive do
 
   @impl true
   def mount(params, _session, socket) do
-    case {params, Stonetop.random_family_member()} do
+    case {params, Stonetop.random_character()} do
       {%{"id" => _}, _} ->
         {:ok, assign_defaults(socket)}
 
@@ -18,7 +18,7 @@ defmodule IndieWeb.StonetopFamilyLive do
   end
 
   defp assign_defaults(socket) do
-    members = Stonetop.list_family_members()
+    members = Stonetop.list_characters()
 
     socket
     |> assign(:page_title, "Family Tree")
