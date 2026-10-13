@@ -43,6 +43,10 @@ end
 
 config :indie, IndieWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+if uploads_dir = System.get_env("UPLOADS_DIR") do
+  config :indie, :uploads_dir, uploads_dir
+end
+
 # Configure database for production
 if config_env() == :prod do
   # PostgreSQL configuration via environment variables

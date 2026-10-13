@@ -1,68 +1,68 @@
 #!/bin/bash
-# Quick deployment helper script
+# Day-to-day production helpers. Reads DEPLOY_USER / DEPLOY_HOST from .deploy.config.
+set -euo pipefail
 
-case "$1" in
+cd "$(dirname "$0")"
+[ -f .deploy.config ] || { echo "Missing .deploy.config (needs DEPLOY_USER, DEPLOY_HOST)" >&2; exit 1; }
+# shellcheck disable=SC1091
+source .deploy.config
+TARGET="$DEPLOY_USER@$DEPLOY_HOST"
+
+case "${1:-}" in
   deploy)
-    echo "Deploying to production..."
-    ./deploy.sh production
+    ./deploy.sh "${2:-main}"
     ;;
   logs)
-    echo "Viewing application logs..."
-    ssh indie@45.55.203.183 'sudo journalctl -u indie -f'
+    ssh "$TARGET" 'sudo journalctl -u indie -f'
     ;;
   status)
-    echo "Checking service status..."
-    ssh indie@45.55.203.183 'sudo systemctl status indie'
+    ssh "$TARGET" 'sudo systemctl status indie; echo; echo "current -> $(readlink /opt/indie/current)"; cat /opt/indie/current/REVISION'
     ;;
-  restart)
-    echo "Restarting service..."
-    ssh indie@45.55.203.183 'sudo systemctl restart indie'
+  restart|stop|start)
+    ssh "$TARGET" "sudo systemctl $1 indie"
     ;;
-  stop)
-    echo "Stopping service..."
-    ssh indie@45.55.203.183 'sudo systemctl stop indie'
+  releases)
+    ssh "$TARGET" '/opt/indie/bin/rollback.sh --list'
     ;;
-  start)
-    echo "Starting service..."
-    ssh indie@45.55.203.183 'sudo systemctl start indie'
+  rollback)
+    ssh "$TARGET" "/opt/indie/bin/rollback.sh ${2:-}"
     ;;
   backup)
-    echo "Backing up database..."
-    ssh indie@45.55.203.183 'sudo cp /var/lib/indie/indie_prod.db /var/lib/indie/backups/indie_prod_$(date +%Y%m%d_%H%M%S).db'
-    echo "Database backed up!"
+    ssh "$TARGET" 'set -a; . /opt/indie/shared/.env.prod; set +a; f=/var/lib/indie/backups/manual-$(date +%Y%m%d_%H%M%S).sql.gz; PGPASSWORD="$DATABASE_PASSWORD" pg_dump -h "$DATABASE_HOST" -p "$DATABASE_PORT" -U "$DATABASE_USER" "$DATABASE_NAME" | gzip > "$f" && echo "Backed up to $f"'
+    ;;
+  upload)
+    file="${2:?usage: ops.sh upload <file> [downloads|videos]}"
+    kind="${3:-downloads}"
+    case "$kind" in downloads|videos) ;; *) echo "kind must be downloads or videos" >&2; exit 1 ;; esac
+    scp "$file" "$TARGET:/var/lib/indie/$kind/"
+    ssh "$TARGET" "chmod 644 /var/lib/indie/$kind/$(basename "$file")"
+    echo "Available at https://glorifiednotepad.net/$kind/$(basename "$file")"
+    ;;
+  remote)
+    ssh -t "$TARGET" 'set -a; . /opt/indie/shared/.env.prod; set +a; /opt/indie/current/bin/indie remote'
     ;;
   ssh)
-    echo "Connecting to server..."
-    ssh indie@45.55.203.183
+    ssh "$TARGET"
     ;;
   nginx-logs)
-    echo "Viewing nginx logs..."
-    ssh indie@45.55.203.183 'sudo tail -f /var/log/nginx/glorifiednotepad_error.log'
-    ;;
-  seed-logo)
-    echo "Running seed logo script..."
-    ssh indie@45.55.203.183 'bash /opt/indie-repo/deployment/seed_logo.sh'
-    ;;
-  seed-logo-cron)
-    echo "Installing daily cron job for seed logo at 6:00 AM..."
-    ssh indie@45.55.203.183 '(crontab -l 2>/dev/null | grep -v seed_logo; echo "0 6 * * * /opt/indie-repo/deployment/seed_logo.sh >> /var/log/indie/seed_logo.log 2>&1") | crontab -'
-    echo "Done. Logo will re-seed daily at 6:00 AM."
+    ssh "$TARGET" 'tail -f /var/log/nginx/glorifiednotepad_error.log'
     ;;
   *)
-    echo "Usage: $0 {deploy|logs|status|restart|stop|start|backup|ssh|nginx-logs|seed-logo|seed-logo-cron}"
-    echo ""
-    echo "Commands:"
-    echo "  deploy          - Build and deploy to production"
-    echo "  logs            - View application logs"
-    echo "  status          - Check service status"
-    echo "  restart         - Restart the service"
-    echo "  stop            - Stop the service"
-    echo "  start           - Start the service"
-    echo "  backup          - Backup the database"
-    echo "  ssh             - SSH into the server"
-    echo "  nginx-logs      - View nginx error logs"
-    echo "  seed-logo       - Run the seed logo script now"
-    echo "  seed-logo-cron  - Install a daily cron job (6 AM) for seed logo"
+    cat <<EOF
+Usage: $0 <command>
+
+  deploy [ref]               Trigger the GitHub deploy workflow (default: main)
+  logs                       Follow application logs
+  status                     Service status + deployed commit
+  restart|stop|start         Control the service
+  releases                   List releases on the server (* = current)
+  rollback [release-id]      Roll back to previous (or given) release
+  backup                     pg_dump to /var/lib/indie/backups
+  upload <file> [kind]       Upload to /var/lib/indie/{downloads,videos}
+  remote                     IEx shell into the running app
+  ssh                        SSH into the server
+  nginx-logs                 Follow nginx error log
+EOF
     exit 1
     ;;
 esac

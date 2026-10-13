@@ -77,6 +77,7 @@ defmodule Indie.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "assets.setup", "assets.build"],
+      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["compile", "tailwind indie", "esbuild indie"],
       "assets.deploy": [
@@ -95,9 +96,16 @@ defmodule Indie.MixProject do
       indie: [
         include_executables_for: [:unix],
         applications: [runtime_tools: :permanent],
-        steps: [:assemble, :tar],
+        steps: [:assemble, &copy_content/1, :tar],
         overlays: ["rel/overlays"]
       ]
     ]
+  end
+
+  defp copy_content(release) do
+    dest = Path.join(release.path, "content")
+    File.rm_rf!(dest)
+    File.cp_r!("content", dest)
+    %{release | overlays: ["content" | release.overlays]}
   end
 end

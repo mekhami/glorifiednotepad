@@ -1,14 +1,15 @@
 [Unit]
 Description=glorified notepad Phoenix application
-After=network.target
+After=network.target postgresql.service
 
 [Service]
 Type=simple
 User=indie
 Group=indie
-WorkingDirectory=/opt/indie
-EnvironmentFile=/opt/indie/.env.prod
-ExecStart=/opt/indie/bin/server
+WorkingDirectory=/opt/indie/current
+EnvironmentFile=/opt/indie/shared/.env.prod
+Environment=RELEASE_TMP=/tmp
+ExecStart=/opt/indie/current/bin/server
 Restart=on-failure
 RestartSec=5
 RemainAfterExit=no
