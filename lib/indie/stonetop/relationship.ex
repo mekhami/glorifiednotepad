@@ -33,7 +33,7 @@ defmodule Indie.Stonetop.Relationship do
         attrs
 
       _ ->
-        Map.put(attrs, "tags", [])
+        attrs
     end
   end
 

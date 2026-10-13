@@ -6,4 +6,10 @@ defmodule Indie do
   Contexts are also responsible for managing your data, regardless
   if it comes from the database, an external API or others.
   """
+
+  @doc "Directory where user uploads (e.g. Stonetop avatars) are written and served from."
+  def uploads_dir do
+    Application.get_env(:indie, :uploads_dir) ||
+      Path.join(:code.priv_dir(:indie), "static/uploads")
+  end
 end

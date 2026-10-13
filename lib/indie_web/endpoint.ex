@@ -27,6 +27,10 @@ defmodule IndieWeb.Endpoint do
     only: IndieWeb.static_paths(),
     raise_on_missing_only: code_reloading?
 
+  plug Plug.Static,
+    at: "/uploads",
+    from: {Indie, :uploads_dir, []}
+
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
   if code_reloading? do

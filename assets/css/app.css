@@ -2192,42 +2192,125 @@ mark.hl-red {
   font-size: 0.8rem;
 }
 
-/* Admin Styles */
+/* Stonetop admin */
+.stonetop-admin .admin-tabs {
+  display: flex;
+  border: 2px solid #000;
+}
+
+.stonetop-admin .admin-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  padding: 0.5rem 1rem;
+  color: #6c868f;
+  background: #fff;
+  border: 0;
+  cursor: pointer;
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.stonetop-admin .admin-tab + .admin-tab {
+  border-left: 2px solid #000;
+}
+
+.stonetop-admin .admin-tab:hover {
+  color: #3a2a1a;
+  background: #f1ece3;
+}
+
+.stonetop-admin .admin-tab.active {
+  color: #fff;
+  background: #3a2a1a;
+}
+
+.stonetop-admin .admin-tab-count {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.stonetop-admin .admin-item {
+  align-items: center;
+}
+
+.stonetop-admin .st-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
 .stonetop-admin .admin-thumb {
-  width: 48px;
-  height: 48px;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #5c4a3a;
+  border: 2px solid #3a2a1a;
   filter: sepia(0.35) grayscale(0.4);
 }
 
 .stonetop-admin .admin-thumb.placeholder {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #d4c9b8;
-  background: #5c4a3a;
-  border: 2px solid #5c4a3a;
+  font-family: Georgia, serif;
+  font-size: 1.25rem;
+  font-style: italic;
+  color: #3a2a1a;
+  background: #f1ece3;
+  filter: none;
 }
 
-.stonetop-admin .tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
+.stonetop-admin .tag {
+  font-family: monospace;
+  font-size: 0.7rem;
+  padding: 0.05rem 0.45rem;
+  border: 1px solid #ccc;
+  border-radius: 999px;
+  background: #faf8f4;
+  color: #6c868f;
 }
 
-.stonetop-admin .rel-desc {
-  max-width: 300px;
+.stonetop-admin .st-arrow {
+  font-family: monospace;
+  color: #6c868f;
+}
+
+.stonetop-admin .st-desc {
+  margin: 0;
+  font-family: monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #555;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: #d4c9b8;
+}
+
+.admin-btn-edit {
+  color: #444c72;
+}
+
+.admin-btn-edit:hover {
+  text-decoration: underline;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.avatar-upload .upload-error {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: #e57373;
 }
 
 /* Admin modal label color - cream on dark background */

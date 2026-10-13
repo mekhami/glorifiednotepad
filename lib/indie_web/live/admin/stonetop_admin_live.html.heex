@@ -1,244 +1,270 @@
-<div class="admin-container stonetop-admin">
+<div id="stonetop-admin" class="admin-container stonetop-admin">
   <header class="admin-header">
     <h1>Stonetop Admin</h1>
-    <.link
-      navigate={~p"/admin/stonetop/families"}
-      id="families-admin-link"
-      class="family-nav-link"
-    >
-      families →
-    </.link>
-    <.link
-      navigate={~p"/admin/stonetop/sessions"}
-      id="sessions-admin-link"
-      class="family-nav-link"
-    >
-      sessions →
-    </.link>
+    <nav class="family-admin-nav">
+      <.link
+        navigate={~p"/admin/stonetop/families"}
+        id="families-admin-link"
+        class="family-nav-link"
+      >
+        families →
+      </.link>
+      <.link
+        navigate={~p"/admin/stonetop/sessions"}
+        id="sessions-admin-link"
+        class="family-nav-link"
+      >
+        sessions →
+      </.link>
+      <.link navigate={~p"/stonetop"} class="family-nav-link" target="_blank">
+        public page ↗
+      </.link>
+    </nav>
   </header>
 
-  <div class="admin-tabs">
-    <button
-      class={["admin-tab", @active_tab == "characters" && "active"]}
-      phx-click="switch_tab"
-      phx-value-tab="characters"
-    >
-      Characters ({length(@characters)})
-    </button>
-    <button
-      class={["admin-tab", @active_tab == "relationships" && "active"]}
-      phx-click="switch_tab"
-      phx-value-tab="relationships"
-    >
-      Relationships ({length(@relationships)})
-    </button>
-  </div>
-  
-<!-- Characters Tab -->
-  <div class={["admin-tab-panel", @active_tab == "characters" && "active"]}>
-    <div class="admin-controls">
-      <.button phx-click="new_character" variant="primary">
-        <.icon name="hero-plus" class="mr-2 size-4" /> Add Character
-      </.button>
+  <div class="admin-controls">
+    <div class="admin-tabs" role="tablist">
+      <button
+        id="characters-tab"
+        type="button"
+        role="tab"
+        aria-selected={to_string(@active_tab == "characters")}
+        class={["admin-tab", @active_tab == "characters" && "active"]}
+        phx-click="switch_tab"
+        phx-value-tab="characters"
+      >
+        Characters <span class="admin-tab-count">{length(@characters)}</span>
+      </button>
+      <button
+        id="relationships-tab"
+        type="button"
+        role="tab"
+        aria-selected={to_string(@active_tab == "relationships")}
+        class={["admin-tab", @active_tab == "relationships" && "active"]}
+        phx-click="switch_tab"
+        phx-value-tab="relationships"
+      >
+        Relationships <span class="admin-tab-count">{length(@relationships)}</span>
+      </button>
     </div>
 
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Image</th>
-          <th>Name</th>
-          <th>Tags</th>
-          <th class="table-actions">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr :for={character <- @characters}>
-          <td>
-            <%= if character.image_url do %>
-              <img
-                src={"/uploads/stonetop/" <> character.image_url}
-                alt={character.name}
-                class="admin-thumb"
-              />
-            <% else %>
-              <div class="admin-thumb placeholder">{String.first(character.name)}</div>
-            <% end %>
-          </td>
-          <td>{character.name}</td>
-          <td>
-            <span class="tags">
-              <%= for tag <- character.tags do %>
-                <span class="tag">{tag}</span>
-              <% end %>
-            </span>
-          </td>
-          <td class="table-actions">
-            <div class="table-actions-wrapper">
-              <.button
-                phx-click="open_character_modal"
-                phx-value-id={character.id}
-                variant="primary"
-                class="btn-sm"
-              >
-                Edit
-              </.button>
-              <.button
-                phx-click="delete_character"
-                phx-value-id={character.id}
-                class="btn-sm admin-btn-danger"
-                phx-confirm="Delete this character?"
-              >
-                Delete
-              </.button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <%= if @characters == [] do %>
-      <div class="admin-empty">No characters yet. Click "Add Character" to create one.</div>
-    <% end %>
+    <.button
+      :if={@active_tab == "characters"}
+      id="new-character"
+      phx-click="new_character"
+      variant="primary"
+    >
+      <.icon name="hero-plus" class="mr-2 size-4" /> New character
+    </.button>
+    <.button
+      :if={@active_tab == "relationships"}
+      id="new-relationship"
+      phx-click="new_relationship"
+      variant="primary"
+      disabled={length(@characters) < 2}
+    >
+      <.icon name="hero-plus" class="mr-2 size-4" /> New relationship
+    </.button>
   </div>
-  
-<!-- Relationships Tab -->
-  <div class={["admin-tab-panel", @active_tab == "relationships" && "active"]}>
-    <div class="admin-controls">
-      <.button phx-click="new_relationship" variant="primary">
-        <.icon name="hero-plus" class="mr-2 size-4" /> Add Relationship
-      </.button>
+
+  <section :if={@active_tab == "characters"} id="characters-panel" class="admin-list">
+    <div :if={@characters == []} id="characters-empty" class="admin-empty">
+      No characters yet
     </div>
+    <div :for={character <- @characters} id={"character-#{character.id}"} class="admin-item">
+      <div class="st-row">
+        <img :if={avatar_src(character)} src={avatar_src(character)} alt="" class="admin-thumb" />
+        <div :if={!avatar_src(character)} class="admin-thumb placeholder">
+          {String.first(character.name)}
+        </div>
+        <div class="admin-item-content">
+          <div class="admin-item-header">
+            <span class="comment-author">{character.name}</span>
+            <span :for={tag <- character.tags} class="tag">{tag}</span>
+          </div>
+          <p :if={character.description} class="st-desc">{character.description}</p>
+        </div>
+      </div>
+      <div class="admin-buttons">
+        <button
+          id={"edit-character-#{character.id}"}
+          type="button"
+          phx-click="edit_character"
+          phx-value-id={character.id}
+          class="admin-btn admin-btn-edit"
+        >
+          Edit
+        </button>
+        <button
+          id={"delete-character-#{character.id}"}
+          type="button"
+          phx-click="delete_character"
+          phx-value-id={character.id}
+          data-confirm={"Delete #{character.name}? Their relationships go too."}
+          class="admin-btn admin-btn-danger"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  </section>
 
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Source</th>
-          <th>Target</th>
-          <th>Description</th>
-          <th>Tags</th>
-          <th class="table-actions">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr :for={rel <- @relationships}>
-          <td>{rel.source.name}</td>
-          <td>{rel.target.name}</td>
-          <td class="rel-desc">{rel.description}</td>
-          <td>
-            <span class="tags">
-              <%= for tag <- rel.tags do %>
-                <span class="tag">{tag}</span>
-              <% end %>
-            </span>
-          </td>
-          <td class="table-actions">
-            <div class="table-actions-wrapper">
-              <.button
-                phx-click="open_relationship_modal"
-                phx-value-id={rel.id}
-                variant="primary"
-                class="btn-sm"
-              >
-                Edit
-              </.button>
-              <.button
-                phx-click="delete_relationship"
-                phx-value-id={rel.id}
-                class="btn-sm admin-btn-danger"
-                phx-confirm="Delete this relationship?"
-              >
-                Delete
-              </.button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <%= if @relationships == [] do %>
-      <div class="admin-empty">No relationships yet. Click "Add Relationship" to create one.</div>
-    <% end %>
-  </div>
+  <section :if={@active_tab == "relationships"} id="relationships-panel" class="admin-list">
+    <div :if={@relationships == []} id="relationships-empty" class="admin-empty">
+      {if length(@characters) < 2,
+        do: "Add at least two characters first",
+        else: "No relationships yet"}
+    </div>
+    <div :for={rel <- @relationships} id={"relationship-#{rel.id}"} class="admin-item">
+      <div class="admin-item-content">
+        <div class="admin-item-header">
+          <span class="comment-author">{rel.source.name}</span>
+          <span class="st-arrow">→</span>
+          <span class="comment-author">{rel.target.name}</span>
+          <span :for={tag <- rel.tags} class="tag">{tag}</span>
+        </div>
+        <p :if={rel.description} class="st-desc">{rel.description}</p>
+      </div>
+      <div class="admin-buttons">
+        <button
+          id={"edit-relationship-#{rel.id}"}
+          type="button"
+          phx-click="edit_relationship"
+          phx-value-id={rel.id}
+          class="admin-btn admin-btn-edit"
+        >
+          Edit
+        </button>
+        <button
+          id={"delete-relationship-#{rel.id}"}
+          type="button"
+          phx-click="delete_relationship"
+          phx-value-id={rel.id}
+          data-confirm="Delete this relationship?"
+          class="admin-btn admin-btn-danger"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  </section>
 </div>
 
-<!-- Character Modal -->
 <.modal
+  :if={@modal == :character}
   id="character-modal"
-  show={@show_character_modal}
-  on_close="close_character_modal"
-  title={(@editing_character && "Edit Character") || "New Character"}
+  show={true}
+  on_close="close_modal"
+  title={if @editing.id, do: "Edit #{@editing.name}", else: "New Character"}
 >
   <.form
-    for={@character_form}
+    for={@form}
     id="character-form"
     phx-change="validate_character"
     phx-submit="save_character"
   >
-    <.input field={@character_form[:name]} label="Name" required />
-    <.input field={@character_form[:description]} label="Description" type="textarea" rows={4} />
+    <.input field={@form[:name]} label="Name" required />
+    <.input field={@form[:description]} label="Description" type="textarea" rows={4} />
     <.input
-      field={@character_form[:tags_input]}
+      field={@form[:tags_input]}
       label="Tags (comma-separated)"
-      placeholder="pc, npc, villain, ally"
+      placeholder="pc, npc, villain"
     />
 
-    <label for={@uploads.avatar.ref} class="input-label">
-      <.live_file_input upload={@uploads.avatar} />
-    </label>
-    <button type="submit" class="input-label">Upload</button>
+    <div class="input-field avatar-upload">
+      <span class="input-label">Portrait</span>
+      <label
+        for={@uploads.avatar.ref}
+        class="upload-dropzone"
+        phx-drop-target={@uploads.avatar.ref}
+      >
+        <.live_file_input upload={@uploads.avatar} />
+        <.icon name="hero-photo" class="upload-icon size-8" />
+        <p class="upload-text">Drop an image or click to choose</p>
+        <p class="upload-hint">jpg, png, or webp · up to 8MB</p>
+      </label>
+
+      <div :for={entry <- @uploads.avatar.entries} class="upload-preview">
+        <.live_img_preview entry={entry} class="preview-img" />
+        <div>
+          <p class="upload-text">{entry.client_name}</p>
+          <p :for={err <- upload_errors(@uploads.avatar, entry)} class="upload-error">
+            {upload_error(err)}
+          </p>
+          <button
+            type="button"
+            phx-click="cancel_avatar"
+            phx-value-ref={entry.ref}
+            class="admin-btn admin-btn-danger remove-upload"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+
+      <div :if={@uploads.avatar.entries == [] && avatar_src(@editing)} class="upload-preview">
+        <img src={avatar_src(@editing)} alt="" class="preview-img" />
+        <p class="upload-hint">Current portrait. Choose a new image to replace it.</p>
+      </div>
+
+      <p :for={err <- upload_errors(@uploads.avatar)} class="upload-error">{upload_error(err)}</p>
+    </div>
 
     <div class="form-actions">
-      <.button type="submit" variant="primary">Save</.button>
-      <.button type="button" phx-click="close_character_modal">Cancel</.button>
+      <.button type="submit" variant="primary" phx-disable-with="Saving…">Save</.button>
+      <.button type="button" phx-click="close_modal">Cancel</.button>
     </div>
   </.form>
 </.modal>
 
-<!-- Relationship Modal -->
 <.modal
+  :if={@modal == :relationship}
   id="relationship-modal"
-  show={@show_relationship_modal}
-  on_close="close_relationship_modal"
-  title={(@editing_relationship && "Edit Relationship") || "New Relationship"}
+  show={true}
+  on_close="close_modal"
+  title={if @editing.id, do: "Edit Relationship", else: "New Relationship"}
 >
   <.form
-    for={@relationship_form}
+    for={@form}
     id="relationship-form"
     phx-change="validate_relationship"
     phx-submit="save_relationship"
   >
     <.input
-      field={@relationship_form[:source_id]}
-      label="Source Character"
+      field={@form[:source_id]}
+      label="From"
       type="select"
       options={Enum.map(@characters, &{&1.name, &1.id})}
-      prompt="Select source..."
+      prompt="Choose…"
       required
     />
     <.input
-      field={@relationship_form[:target_id]}
-      label="Target Character"
+      field={@form[:target_id]}
+      label="To"
       type="select"
       options={Enum.map(@characters, &{&1.name, &1.id})}
-      prompt="Select target..."
+      prompt="Choose…"
       required
     />
     <.input
-      field={@relationship_form[:description]}
+      field={@form[:description]}
       label="Description"
       type="textarea"
       rows={4}
-      placeholder="e.g., Childhood rivals, compete for village elder's favor"
+      placeholder="e.g. Childhood rivals, compete for the elder's favor"
     />
     <.input
-      field={@relationship_form[:tags]}
+      field={@form[:tags]}
+      value={tags_value(@form)}
       label="Tags (comma-separated)"
       placeholder="rivalry, childhood, politics"
     />
 
     <div class="form-actions">
-      <.button type="submit" variant="primary">Save</.button>
-      <.button type="button" phx-click="close_relationship_modal">Cancel</.button>
+      <.button type="submit" variant="primary" phx-disable-with="Saving…">Save</.button>
+      <.button type="button" phx-click="close_modal">Cancel</.button>
     </div>
   </.form>
 </.modal>
+
+<Layouts.flash_group flash={@flash} />
