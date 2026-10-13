@@ -13,7 +13,7 @@ const STATUS_LABEL = {
   married: "= wed =",
   partnered: "~ bound ~",
   divorced: "≠ parted ≠",
-  widowed: "= wed ="
+  widowed: "= wed, till death ="
 };
 
 const KIND_NOTE = { adopted: "(taken in)", step: "(step)" };
@@ -208,7 +208,7 @@ function draw(svg, tree) {
     const x1 = boxes.get(l).right + 6;
     const x2 = boxes.get(r).left - 6;
     const path = el("path", { d: wobblyLine(x1, a.y, x2, a.y) }, lines);
-    if (p.status === "divorced") path.setAttribute("stroke-dasharray", "4 5");
+    if (p.status === "divorced" || p.status === "widowed") path.setAttribute("stroke-dasharray", "4 5");
     const label = el("text", { x: (x1 + x2) / 2, y: a.y + 16, "text-anchor": "middle", class: "ft-note", fill: INK }, labels);
     label.textContent = STATUS_LABEL[p.status] || "";
   }
