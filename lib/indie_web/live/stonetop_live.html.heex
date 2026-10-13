@@ -1,6 +1,9 @@
 <div id="stonetop-graph-page" class="stonetop-graph-page">
   <header class="graph-header">
     <h1>Stonetop Campaign</h1>
+    <.link navigate={~p"/stonetop/family"} id="family-trees-link" class="graph-header-link">
+      Family trees →
+    </.link>
     <div class="graph-legend">
       <span class="legend-item">
         <span class="legend-node pc"></span> Player Characters
@@ -32,7 +35,7 @@
       <%= if @is_mobile do %>
         <div class="popup-backdrop" phx-click="close_detail"></div>
       <% end %>
-      
+
       <div
         id="character-popup"
         class={[
@@ -91,6 +94,15 @@
               <p class="no-relationships">No relationships yet.</p>
             <% end %>
           </div>
+
+          <.link
+            :if={@has_family}
+            navigate={~p"/stonetop/family/#{@selected_character.id}"}
+            id="popup-family-link"
+            class="popup-family-link"
+          >
+            Family tree →
+          </.link>
         </div>
       </div>
     <% end %>

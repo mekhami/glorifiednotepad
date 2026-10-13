@@ -47,6 +47,8 @@ defmodule IndieWeb.Router do
     pipe_through(:stonetop)
 
     live("/stonetop", StonetopLive)
+    live("/stonetop/family", StonetopFamilyLive, :index)
+    live("/stonetop/family/:id", StonetopFamilyLive, :show)
   end
 
   scope "/admin", IndieWeb.Admin do
@@ -55,6 +57,7 @@ defmodule IndieWeb.Router do
     live_session :admin, on_mount: {IndieWeb.Admin.AdminLive, :admin} do
       live("/comments", CommentModerationLive, :index)
       live("/stonetop", StonetopAdminLive)
+      live("/stonetop/families", StonetopFamilyAdminLive)
     end
   end
 

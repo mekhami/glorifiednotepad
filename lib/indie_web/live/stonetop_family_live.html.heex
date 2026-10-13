@@ -1,0 +1,89 @@
+<div id="stonetop-family-page" class="family-page">
+  <header class="family-header">
+    <h1 id="family-title" class="family-title">
+      <%= if @focus do %>
+        The kin of <span class="family-title-name">{@focus.name}</span>
+      <% else %>
+        The Kin of Stonetop
+      <% end %>
+    </h1>
+
+    <nav class="family-nav">
+      <.link navigate={~p"/stonetop/family"} id="family-random" class="family-nav-link">
+        ↻ another
+      </.link>
+      <.link navigate={~p"/stonetop"} class="family-nav-link">the web of ties</.link>
+
+      <div :if={@members != []} class="family-picker" id="family-picker">
+        <button
+          type="button"
+          id="family-picker-toggle"
+          class="family-picker-toggle"
+          phx-click="toggle_picker"
+        >
+          {if @focus, do: @focus.name, else: "Choose a person"} <span aria-hidden="true">▾</span>
+        </button>
+
+        <div
+          :if={@picker_open}
+          id="family-picker-panel"
+          class="family-picker-panel"
+          phx-click-away="close_picker"
+          phx-window-keydown="close_picker"
+          phx-key="Escape"
+        >
+          <.form for={%{}} as={:picker} id="family-picker-form" phx-change="search">
+            <input
+              type="text"
+              name="q"
+              value={@query}
+              placeholder="seek a name…"
+              autocomplete="off"
+              phx-debounce="100"
+              phx-mounted={JS.focus()}
+              class="family-picker-search"
+            />
+          </.form>
+          <ul class="family-picker-list">
+            <li :for={m <- @matches}>
+              <.link
+                patch={~p"/stonetop/family/#{m.id}"}
+                id={"family-picker-option-#{m.id}"}
+                class={[
+                  "family-picker-option",
+                  @focus && @focus.id == m.id && "is-current"
+                ]}
+              >
+                {m.name}
+              </.link>
+            </li>
+            <li :if={@matches == []} class="family-picker-none">no such name in the register</li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <%= if @tree do %>
+    <div
+      id="family-tree"
+      class="family-tree"
+      phx-hook="FamilyTree"
+      phx-update="ignore"
+      data-interactive="true"
+    >
+    </div>
+    <p class="family-hint">drag to wander · scroll to look closer · click a name to follow it</p>
+  <% else %>
+    <div id="family-empty" class="family-empty">
+      <%= if @members == [] do %>
+        <p>No kin have been recorded.</p>
+      <% else %>
+        <p>That name is not in the register.</p>
+        <.link navigate={~p"/stonetop/family"} class="family-nav-link">
+          turn to another page
+        </.link>
+      <% end %>
+    </div>
+  <% end %>
+</div>

@@ -14,7 +14,11 @@ defmodule IndieWeb.StonetopLive do
   end
 
   @impl true
-  def handle_event("select_character", %{"id" => id, "x" => x, "y" => y, "is_mobile" => is_mobile}, socket) do
+  def handle_event(
+        "select_character",
+        %{"id" => id, "x" => x, "y" => y, "is_mobile" => is_mobile},
+        socket
+      ) do
     character = Stonetop.get_character(id)
     relationships = Stonetop.get_relationships_for_character(id)
 
@@ -22,6 +26,7 @@ defmodule IndieWeb.StonetopLive do
      socket
      |> assign(:selected_character, character)
      |> assign(:character_relationships, relationships)
+     |> assign(:has_family, Stonetop.has_family?(id))
      |> assign(:popup_x, x)
      |> assign(:popup_y, y)
      |> assign(:is_mobile, is_mobile)}

@@ -1,0 +1,159 @@
+<div class="admin-container stonetop-admin">
+  <header class="admin-header">
+    <h1>Stonetop Families</h1>
+    <nav class="family-admin-nav">
+      <.link navigate={~p"/admin/stonetop"} class="family-nav-link">← characters</.link>
+      <.button id="new-character" phx-click="new_character" variant="primary">
+        <.icon name="hero-plus" class="mr-2 size-4" /> New character
+      </.button>
+    </nav>
+  </header>
+
+  <div class="family-admin-layout">
+    <aside id="family-people" class="family-admin-people">
+      <.form for={%{}} as={:people} id="people-search-form" phx-change="search_people">
+        <input
+          type="text"
+          name="q"
+          value={@query}
+          placeholder="search…"
+          autocomplete="off"
+          phx-debounce="100"
+          class="family-admin-search"
+        />
+      </.form>
+      <ul>
+        <li :for={c <- visible_people(@characters, @query)}>
+          <.link
+            patch={~p"/admin/stonetop/families?id=#{c.id}"}
+            id={"person-#{c.id}"}
+            class={[
+              "family-admin-person",
+              @selected && @selected.id == c.id && "is-selected"
+            ]}
+          >
+            {c.name}
+            <span :if={MapSet.member?(@family_ids, c.id)} class="kin-dot" title="has kin"></span>
+          </.link>
+        </li>
+      </ul>
+    </aside>
+
+    <%= if @selected do %>
+      <section id="kin-editor" class="family-admin-editor">
+        <h2>{@selected.name}</h2>
+
+        <.kin_slot
+          id="kin-parents"
+          title="Parents"
+          role="parent"
+          entries={@kin.parents}
+          type="parent_child"
+          meta={:kind}
+        />
+        <.kin_slot
+          id="kin-partners"
+          title="Partners"
+          role="partner"
+          entries={@kin.partners}
+          type="partnership"
+          meta={:status}
+        />
+        <.kin_slot
+          id="kin-children"
+          title="Children"
+          role="child"
+          entries={@kin.children}
+          type="parent_child"
+          meta={:kind}
+        />
+
+        <div class="family-preview-label">
+          <span>Preview</span>
+          <.link navigate={~p"/stonetop/family/#{@selected.id}"} target="_blank">
+            open public page ↗
+          </.link>
+        </div>
+        <div
+          id="family-preview"
+          class="family-preview"
+          phx-hook="FamilyTree"
+          phx-update="ignore"
+          data-interactive="false"
+        >
+        </div>
+      </section>
+    <% else %>
+      <div id="family-admin-placeholder" class="family-admin-placeholder">
+        Choose someone on the left to record their kin.
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<.modal
+  :if={@picker_role}
+  id="kin-link-modal"
+  show={true}
+  on_close="close_picker"
+  title={role_label(@picker_role)}
+>
+  <.form for={@picker_form} id="kin-link-form" phx-change="validate_link" phx-submit="save_link">
+    <.input
+      field={@picker_form[:person_id]}
+      type="select"
+      label="Person"
+      prompt="Choose…"
+      options={picker_options(@characters, @selected, @kin, @picker_role)}
+    />
+    <%= if @picker_role == "partner" do %>
+      <.input
+        field={@picker_form[:status]}
+        type="select"
+        label="Status"
+        options={Indie.Stonetop.Partnership.statuses()}
+      />
+    <% else %>
+      <.input
+        field={@picker_form[:kind]}
+        type="select"
+        label="Kind"
+        options={Indie.Stonetop.ParentChild.kinds()}
+      />
+    <% end %>
+
+    <p :if={@picker_error} id="kin-link-error" class="text-sm text-red-700 mt-2">
+      {@picker_error}
+    </p>
+
+    <div class="form-actions">
+      <.button type="submit" variant="primary">Save</.button>
+      <.button type="button" phx-click="close_picker">Cancel</.button>
+    </div>
+  </.form>
+</.modal>
+
+<.modal
+  id="quick-character-modal"
+  show={@show_character_modal}
+  on_close="close_character_modal"
+  title="New Character"
+>
+  <.form
+    for={@character_form}
+    id="quick-character-form"
+    phx-change="validate_character"
+    phx-submit="save_character"
+  >
+    <.input field={@character_form[:name]} label="Name" required />
+    <.input
+      field={@character_form[:tags_input]}
+      label="Tags (comma-separated)"
+      placeholder="pc, npc, deceased"
+    />
+    <div class="form-actions">
+      <.button type="submit" variant="primary">Save</.button>
+      <.button type="button" phx-click="close_character_modal">Cancel</.button>
+    </div>
+  </.form>
+</.modal>

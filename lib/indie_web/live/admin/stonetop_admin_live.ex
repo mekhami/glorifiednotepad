@@ -25,7 +25,6 @@ defmodule IndieWeb.Admin.StonetopAdminLive do
       |> assign(:show_relationship_modal, false)
       |> assign(:uploaded_files, [])
       |> allow_upload(:avatar, accept: ~w(.jpg .jpeg .png .webp), max_entries: 1)
-      
 
     {:ok, socket}
   end

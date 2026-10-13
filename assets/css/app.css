@@ -1898,6 +1898,25 @@ mark.hl-red {
   justify-content: flex-end;
 }
 
+.graph-header-link {
+  margin-right: auto;
+  color: #c4a882;
+  font-family: monospace;
+  font-size: 0.85rem;
+  text-decoration: none;
+  border: 2px solid #0d0d0d;
+  background: #1a1512;
+  padding: 0.3rem 0.7rem;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.5);
+  transition: transform 120ms ease, box-shadow 120ms ease, color 120ms ease;
+}
+
+.graph-header-link:hover {
+  color: #e8dcc8;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.55);
+}
+
 /* Mobile header adjustments */
 @media (max-width: 768px) {
   .graph-header {
@@ -2370,4 +2389,501 @@ mark.hl-red {
 /* Stop propagation utility */
 .stop-propagation {
   /* This class is used with phx-click="stopPropagation" to prevent modal close on window click */
+}
+
+/* ===========================================
+   Stonetop family tree (parchment chronicle)
+   =========================================== */
+
+body.stonetop-body:has(.family-page) {
+  background-color: #d9c9a3;
+}
+
+.family-page {
+  --parchment: #d9c9a3;
+  --parchment-deep: #b9a57a;
+  --parchment-light: #e8dcc0;
+  --ink: #3a2a1a;
+  --ink-red: #7a2a12;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(255, 248, 225, 0.45), transparent 60%),
+    radial-gradient(ellipse at 85% 90%, rgba(120, 90, 50, 0.18), transparent 55%),
+    var(--parchment);
+}
+
+.family-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  background: var(--parchment-deep);
+  border-bottom: 2px solid var(--ink);
+  position: relative;
+  z-index: 2;
+}
+
+.family-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-style: italic;
+  font-weight: normal;
+}
+
+.family-title-name {
+  font-weight: bold;
+  color: var(--ink-red);
+}
+
+.family-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.family-nav-link {
+  color: var(--ink, #3a2a1a);
+  font-style: italic;
+  font-size: 0.9rem;
+  text-decoration: none;
+  border-bottom: 1px dotted transparent;
+  transition: border-color 150ms ease;
+}
+
+.family-nav-link:hover {
+  border-bottom-color: var(--ink, #3a2a1a);
+}
+
+.family-admin-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.family-picker {
+  position: relative;
+}
+
+.family-picker-toggle {
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--parchment-light);
+  border: 2px solid var(--ink);
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 rgba(58, 42, 26, 0.35);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.family-picker-toggle:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 rgba(58, 42, 26, 0.4);
+}
+
+.family-picker-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  width: 240px;
+  background: var(--parchment-light);
+  border: 2px solid var(--ink);
+  box-shadow: 5px 5px 0 rgba(58, 42, 26, 0.35);
+  animation: family-unfurl 140ms ease-out;
+}
+
+@keyframes family-unfurl {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.family-picker-search {
+  width: 100%;
+  box-sizing: border-box;
+  border: 0;
+  border-bottom: 1.5px solid var(--ink);
+  background: transparent;
+  padding: 0.5rem 0.75rem;
+  font-family: inherit;
+  font-style: italic;
+  color: var(--ink);
+  outline: none;
+}
+
+.family-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.family-picker-option {
+  display: block;
+  padding: 0.25rem 0.9rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.family-picker-option:hover,
+.family-picker-option:focus {
+  background: var(--ink);
+  color: var(--parchment-light);
+  outline: none;
+}
+
+.family-picker-option.is-current {
+  font-weight: bold;
+  color: var(--ink-red);
+}
+
+.family-picker-option.is-current:hover {
+  color: var(--parchment-light);
+}
+
+.family-picker-none {
+  padding: 0.4rem 0.9rem;
+  font-style: italic;
+  opacity: 0.65;
+  font-size: 0.85rem;
+}
+
+.family-tree {
+  flex: 1;
+  position: relative;
+  min-height: 60vh;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+}
+
+.family-tree:active {
+  cursor: grabbing;
+}
+
+.ft-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+}
+
+.ft-name {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-size: 16px;
+}
+
+.ft-name.ft-focus {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.ft-note {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 10px;
+  opacity: 0.85;
+}
+
+.ft-more {
+  font-style: normal;
+  font-weight: normal;
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+
+.ft-person {
+  cursor: pointer;
+  outline: none;
+}
+
+.ft-person .ft-name {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: fill 150ms ease;
+}
+
+.ft-person:hover .ft-name,
+.ft-person:focus .ft-name {
+  text-decoration: underline;
+  fill: #7a2a12;
+}
+
+.family-hint {
+  margin: 0;
+  padding: 0.5rem 2rem 0.75rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-style: italic;
+  opacity: 0.6;
+}
+
+.family-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-style: italic;
+  font-size: 1.15rem;
+}
+
+@media (max-width: 768px) {
+  .family-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.75rem 1rem;
+  }
+
+  .family-title {
+    font-size: 1.2rem;
+  }
+
+  .family-nav {
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+}
+
+.popup-family-link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  color: #c4a882;
+  font-style: italic;
+  text-decoration: none;
+  border-bottom: 1px dotted #c4a882;
+}
+
+.popup-family-link:hover {
+  color: #e8dcc8;
+}
+
+/* --- Family admin --- */
+
+.family-admin-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.family-admin-people {
+  border: 1px solid #ccc;
+  background: #fff;
+  position: sticky;
+  top: 1rem;
+}
+
+.family-admin-search {
+  width: 100%;
+  box-sizing: border-box;
+  border: 0;
+  border-bottom: 1px solid #ccc;
+  padding: 0.5rem 0.75rem;
+  font-family: monospace;
+}
+
+.family-admin-people ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.family-admin-person {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #222;
+  text-decoration: none;
+  transition: background 120ms ease;
+}
+
+.family-admin-person:hover {
+  background: #f1ece3;
+}
+
+.family-admin-person.is-selected {
+  background: #3a2a1a;
+  color: #fff;
+}
+
+.family-admin-person .kin-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #8b7355;
+}
+
+.family-admin-editor h2 {
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 1.5rem;
+  margin: 0 0 1rem;
+  color: #3a2a1a;
+}
+
+.kin-slot {
+  border: 1px dashed #bbb;
+  background: #fff;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.kin-slot h3 {
+  margin: 0 0 0.5rem;
+  font-family: monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #6c868f;
+}
+
+.kin-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.kin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #bbb;
+  border-radius: 999px;
+  padding: 0.15rem 0.35rem 0.15rem 0.7rem;
+  font-family: monospace;
+  font-size: 0.85rem;
+  background: #faf8f4;
+  transition: border-color 120ms ease;
+}
+
+.kin-chip:hover {
+  border-color: #3a2a1a;
+}
+
+.kin-chip a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.kin-chip a:hover {
+  text-decoration: underline;
+}
+
+.kin-chip-meta {
+  font-size: 0.7rem;
+  opacity: 0.6;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: monospace;
+  cursor: pointer;
+}
+
+.kin-chip-meta:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.kin-chip-remove {
+  border: 0;
+  background: transparent;
+  color: #a33;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 0.2rem;
+  border-radius: 50%;
+}
+
+.kin-chip-remove:hover {
+  background: #f6dede;
+}
+
+.kin-add {
+  border: 1px solid #3a2a1a;
+  background: #fff;
+  color: #3a2a1a;
+  font-family: monospace;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.kin-add:hover {
+  background: #3a2a1a;
+  color: #fff;
+}
+
+.kin-empty {
+  font-family: monospace;
+  font-size: 0.8rem;
+  opacity: 0.5;
+  font-style: italic;
+}
+
+.family-preview {
+  border: 2px solid #3a2a1a;
+  background: #d9c9a3;
+  margin-top: 1rem;
+  height: 320px;
+  position: relative;
+  color: #3a2a1a;
+}
+
+.family-preview .ft-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.family-preview-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #6c868f;
+  margin-top: 1rem;
+}
+
+.family-admin-placeholder {
+  font-family: monospace;
+  color: #6c868f;
+  padding: 3rem 1rem;
+  text-align: center;
+  border: 1px dashed #ccc;
+}
+
+@media (max-width: 768px) {
+  .family-admin-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .family-admin-people {
+    position: static;
+  }
+
+  .family-admin-people ul {
+    max-height: 30vh;
+  }
 }
