@@ -41,11 +41,11 @@
             </p>
           </header>
 
-          <div id="session-notes-body" class="session-notes-body">
+          <div id="session-notes-body" class="session-notes-body" phx-hook="CharacterTooltip">
             <%= if String.trim(@current.notes) == "" do %>
               <p class="session-notes-blank">The scribe has yet to write of this day.</p>
             <% else %>
-              {Phoenix.HTML.raw(render_comment_markdown(@current.notes))}
+              {Phoenix.HTML.raw(render_notes(@current.notes, @characters))}
             <% end %>
           </div>
 

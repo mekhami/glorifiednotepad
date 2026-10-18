@@ -27,13 +27,14 @@ import ImageMagnifier from "./image_magnifier"
 import SidenotesAlign from "./sidenotes_align"
 import RelationshipGraph from "./relationship_graph"
 import FamilyTree from "./family_tree"
+import CharacterTooltip from "./character_tooltip"
 import "./audio_player"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {DoodleCanvas, ExpandOnClick, ImageMagnifier, SidenotesAlign, RelationshipGraph, FamilyTree},
+  hooks: {DoodleCanvas, ExpandOnClick, ImageMagnifier, SidenotesAlign, RelationshipGraph, FamilyTree, CharacterTooltip},
 })
 
 // Show progress bar on live navigation and form submits

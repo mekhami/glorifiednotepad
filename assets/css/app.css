@@ -3097,6 +3097,78 @@ body.stonetop-body:has(.sessions-page) {
   line-height: 1.7;
 }
 
+.character-mention {
+  cursor: help;
+  border-bottom: 1px dotted rgba(122, 42, 18, 0.55);
+  transition: color 150ms ease, border-color 150ms ease;
+}
+
+.character-mention:hover,
+.character-mention:focus-visible {
+  color: var(--ink-red);
+  border-bottom-color: var(--ink-red);
+  outline: none;
+}
+
+.character-tooltip {
+  position: fixed;
+  z-index: 50;
+  max-width: 18rem;
+  padding: 0.6rem 0.8rem;
+  pointer-events: none;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #3a2a1a;
+  background: #e8dcc0;
+  border: 1px solid #b9a57a;
+  border-radius: 3px;
+  box-shadow: 0 6px 18px rgba(58, 42, 26, 0.25);
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.character-tooltip.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.character-tooltip-name {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-style: italic;
+  font-weight: normal;
+  color: #7a2a12;
+}
+
+.character-tooltip-kind {
+  display: inline-block;
+  margin-left: 0.45rem;
+  padding: 0.05rem 0.35rem;
+  vertical-align: 0.1rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.65rem;
+  font-style: normal;
+  letter-spacing: 0.08em;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+}
+
+.character-tooltip-kind.is-pc {
+  color: #e8dcc0;
+  background: #7a2a12;
+  border-color: #7a2a12;
+}
+
+.character-tooltip-kind.is-npc {
+  color: #6b5a3e;
+}
+
+.character-tooltip-description {
+  margin: 0;
+}
+
 .session-notes-body > p:first-child::first-letter {
   float: left;
   font-size: 3.2rem;

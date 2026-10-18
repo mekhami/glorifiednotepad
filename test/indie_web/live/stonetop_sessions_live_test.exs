@@ -44,4 +44,31 @@ defmodule IndieWeb.StonetopSessionsLiveTest do
     {:ok, view, _html} = live(conn, ~p"/stonetop/sessions/nope")
     assert has_element?(view, "#session-missing")
   end
+
+  test "marks character mentions with their description", %{conn: conn} do
+    {:ok, _} =
+      Stonetop.create_character(%{
+        "name" => "Lewela",
+        "description" => "A sharp-eyed hunter",
+        "tags" => ["pc"]
+      })
+
+    {:ok, _} =
+      Stonetop.create_session(%{
+        "number" => 1,
+        "notes" => "Lewela went north. [Lewela](https://example.com) waved. Lewelan didn't."
+      })
+
+    {:ok, view, _html} = live(conn, ~p"/stonetop/sessions")
+
+    assert has_element?(
+             view,
+             ~s(#session-notes-body .character-mention[data-kind="pc"][data-description="A sharp-eyed hunter"]),
+             "Lewela"
+           )
+
+    refute has_element?(view, "#session-notes-body a .character-mention")
+    html = view |> element("#session-notes-body") |> render()
+    assert length(String.split(html, "character-mention")) == 2
+  end
 end
