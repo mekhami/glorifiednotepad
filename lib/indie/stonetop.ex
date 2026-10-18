@@ -551,6 +551,23 @@ defmodule Indie.Stonetop do
     end
   end
 
+  @doc """
+  Finds a session from a URL param: either its title slug (see
+  `Session.slug/1`) or, for older links, its id. When titles collide,
+  the earliest session wins.
+  """
+  def get_session_by_slug(param) when is_binary(param) do
+    case Ecto.UUID.cast(param) do
+      {:ok, uuid} ->
+        Repo.get(Session, uuid)
+
+      :error ->
+        from(s in Session, order_by: s.number)
+        |> Repo.all()
+        |> Enum.find(&(Session.slug(&1) == param))
+    end
+  end
+
   @doc "Returns the number the next session should get"
   def next_session_number do
     (Repo.one(from(s in Session, select: max(s.number))) || 0) + 1

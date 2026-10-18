@@ -20,7 +20,7 @@
         <ol>
           <li :for={s <- @sessions}>
             <.link
-              patch={~p"/stonetop/sessions/#{s.id}"}
+              patch={~p"/stonetop/sessions/#{Indie.Stonetop.Session.slug(s)}"}
               id={"session-link-#{s.id}"}
               class={["sessions-list-item", @current && @current.id == s.id && "is-current"]}
             >
@@ -53,7 +53,7 @@
           <footer class="session-notes-footer">
             <.link
               :if={earlier}
-              patch={~p"/stonetop/sessions/#{earlier.id}"}
+              patch={~p"/stonetop/sessions/#{Indie.Stonetop.Session.slug(earlier)}"}
               id="session-earlier"
               class="family-nav-link"
             >
@@ -62,7 +62,7 @@
             <span></span>
             <.link
               :if={later}
-              patch={~p"/stonetop/sessions/#{later.id}"}
+              patch={~p"/stonetop/sessions/#{Indie.Stonetop.Session.slug(later)}"}
               id="session-later"
               class="family-nav-link"
             >

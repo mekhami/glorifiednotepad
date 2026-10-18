@@ -21,7 +21,22 @@ defmodule IndieWeb.StonetopSessionsLiveTest do
     refute has_element?(view, "#session-later")
 
     view |> element("#session-link-#{one.id}") |> render_click()
+    assert_patch(view, ~p"/stonetop/sessions/arrival")
     assert has_element?(view, "#session-notes-body strong", "Hi")
+  end
+
+  test "finds sessions by title slug, fallback slug, or old id", %{conn: conn} do
+    {:ok, one} = Stonetop.create_session(%{"number" => 1, "title" => "Éclair Road!"})
+    {:ok, two} = Stonetop.create_session(%{"number" => 2})
+
+    {:ok, view, _html} = live(conn, ~p"/stonetop/sessions/eclair-road")
+    assert has_element?(view, "#session-#{one.id}")
+
+    {:ok, view, _html} = live(conn, ~p"/stonetop/sessions/session-2")
+    assert has_element?(view, "#session-#{two.id}")
+
+    {:ok, view, _html} = live(conn, ~p"/stonetop/sessions/#{one.id}")
+    assert has_element?(view, "#session-#{one.id}")
   end
 
   test "unknown session shows a missing notice", %{conn: conn} do

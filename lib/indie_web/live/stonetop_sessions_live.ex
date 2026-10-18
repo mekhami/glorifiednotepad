@@ -16,7 +16,7 @@ defmodule IndieWeb.StonetopSessionsLive do
 
   @impl true
   def handle_params(%{"id" => id}, _uri, socket) do
-    case Stonetop.get_session(id) do
+    case Stonetop.get_session_by_slug(id) do
       nil ->
         {:noreply, assign(socket, :current, nil)}
 

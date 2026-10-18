@@ -12,6 +12,23 @@ defmodule Indie.Stonetop.Session do
     timestamps()
   end
 
+  @doc """
+  A URL-friendly version of the session's title, e.g. "The Hollow Road" ->
+  "the-hollow-road". Untitled sessions fall back to "session-<number>".
+  """
+  def slug(%__MODULE__{title: title, number: number}) do
+    (title || "")
+    |> String.normalize(:nfd)
+    |> String.replace(~r/\p{Mn}/u, "")
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9]+/, "-")
+    |> String.trim("-")
+    |> case do
+      "" -> "session-#{number}"
+      slug -> slug
+    end
+  end
+
   @doc false
   def changeset(session, attrs) do
     session
