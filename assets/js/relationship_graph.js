@@ -88,6 +88,7 @@ const RelationshipGraph = {
     this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
     this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
     this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+    this.canvas.addEventListener('mouseleave', () => this.handleMouseLeave());
     this.canvas.addEventListener('click', (e) => this.handleClick(e));
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
@@ -635,12 +636,25 @@ const RelationshipGraph = {
 
     // Check hover
     const graphPos = this.screenToGraph(mouseX, mouseY);
+    const prevNode = this.hoveredNode;
+    const prevEdge = this.hoveredEdge;
     this.hoveredNode = this.getNodeAt(graphPos.x, graphPos.y);
-    this.hoveredEdge = !this.hoveredNode ? this.getEdgeAt(graphPos.x, graphPos.y) : null;
+    const edgeAtCursor = !this.hoveredNode ? this.getEdgeAt(mouseX, mouseY) : null;
+    // Reciprocal edges share a line; keep the current one so hover state stays stable
+    this.hoveredEdge = edgeAtCursor && prevEdge && this.sameLink(edgeAtCursor, prevEdge) ? prevEdge : edgeAtCursor;
 
     this.canvas.style.cursor = this.hoveredNode || this.hoveredEdge ? 'pointer' : 'default';
 
+    if (this.hoveredNode !== prevNode || this.hoveredEdge !== prevEdge) {
+      this.render();
+    }
+  },
+
+  handleMouseLeave() {
     if (this.hoveredNode || this.hoveredEdge) {
+      this.hoveredNode = null;
+      this.hoveredEdge = null;
+      this.canvas.style.cursor = 'default';
       this.render();
     }
   },
@@ -684,34 +698,50 @@ const RelationshipGraph = {
     const radius = getResponsiveParams().nodeRadius; // Node radius in graph coordinates
     // Use slightly smaller hit radius for clicks to avoid edge cases
     const hitRadius = radius * 0.9;
-    // Also enforce minimum pixel distance in screen space (e.g., 5px)
-    const minPixelDist = 5 / this.scale;
-    const minDistSq = minPixelDist * minPixelDist;
     for (const node of this.nodes) {
       const dx = node.x - x;
       const dy = node.y - y;
       const distSq = dx * dx + dy * dy;
-      if (distSq <= hitRadius * hitRadius && distSq >= minDistSq) {
+      if (distSq <= hitRadius * hitRadius) {
         return node;
       }
     }
     return null;
   },
 
-  getEdgeAt(x, y) {
-    const threshold = 8 / this.scale; // Hit threshold in graph coordinates
-    for (const edge of this.edges) {
-      const source = this.nodes.find(n => n.id === edge.source);
-      const target = this.nodes.find(n => n.id === edge.target);
-      if (!source || !target) continue;
+  // Screen-space segment for an edge. Reciprocal edges (A->B and B->A) share
+  // the same line; their arrowheads land at different points along it.
+  edgeSegment(edge) {
+    const source = this.nodes.find(n => n.id === edge.source);
+    const target = this.nodes.find(n => n.id === edge.target);
+    if (!source || !target) return null;
 
-      // Distance from point to line segment
-      const dist = this.pointToLineDistance(x, y, source.x, source.y, target.x, target.y);
-      if (dist < threshold) {
-        return edge;
+    const start = this.graphToScreen(source.x, source.y);
+    const end = this.graphToScreen(target.x, target.y);
+    return { x1: start.x, y1: start.y, x2: end.x, y2: end.y };
+  },
+
+  sameLink(a, b) {
+    return (a.source === b.source && a.target === b.target) ||
+      (a.source === b.target && a.target === b.source);
+  },
+
+  // x, y are screen coordinates
+  getEdgeAt(x, y) {
+    const threshold = 8;
+    let closest = null;
+    let closestDist = threshold;
+    for (const edge of this.edges) {
+      const seg = this.edgeSegment(edge);
+      if (!seg) continue;
+
+      const dist = this.pointToLineDistance(x, y, seg.x1, seg.y1, seg.x2, seg.y2);
+      if (dist < closestDist) {
+        closest = edge;
+        closestDist = dist;
       }
     }
-    return null;
+    return closest;
   },
 
   pointToLineDistance(px, py, x1, y1, x2, y2) {
@@ -839,74 +869,28 @@ const RelationshipGraph = {
   },
 
   drawEdge(ctx, edge) {
-    const source = this.nodes.find(n => n.id === edge.source);
-    const target = this.nodes.find(n => n.id === edge.target);
-    if (!source || !target) return;
+    const seg = this.edgeSegment(edge);
+    if (!seg) return;
 
-    const start = this.graphToScreen(source.x, source.y);
-    const end = this.graphToScreen(target.x, target.y);
-
-    // Curved line - quadratic bezier
-    const midX = (start.x + end.x) / 2;
-    const midY = (start.y + end.y) / 2;
-
-    // Perpendicular offset for curve
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const dist = Math.hypot(dx, dy);
-    const curveAmount = Math.min(dist * 0.15, 50);
-    const perpX = -dy / dist * curveAmount;
-    const perpY = dx / dist * curveAmount;
-
-    const isHovered = this.hoveredEdge === edge;
+    const isHovered = !!this.hoveredEdge && this.sameLink(this.hoveredEdge, edge);
+    const color = isHovered ? '#c4a882' : 'rgba(139,115,85,0.6)'; // sepia on hover, muted sepia normal
 
     ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    ctx.quadraticCurveTo(midX + perpX, midY + perpY, end.x, end.y);
-
-    ctx.strokeStyle = isHovered ? '#c4a882' : 'rgba(139,115,85,0.6)'; // sepia on hover, muted sepia normal
+    ctx.moveTo(seg.x1, seg.y1);
+    ctx.lineTo(seg.x2, seg.y2);
+    ctx.strokeStyle = color;
     ctx.lineWidth = isHovered ? 3 : 2;
     ctx.stroke();
 
-    // Draw arrowhead
-    this.drawArrowhead(ctx, start.x, start.y, midX + perpX, midY + perpY, edge);
+    this.drawArrowhead(ctx, seg, color);
   },
 
-  drawArrowhead(ctx, fromX, fromY, toX, toY, edge) {
-    // Actually draw arrow at 60% along the curve
+  drawArrowhead(ctx, seg, color) {
+    // Draw arrow 60% of the way along the line
     const t = 0.6;
-    const source = this.nodes.find(n => n.id === edge.source);
-    const target = this.nodes.find(n => n.id === edge.target);
-    if (!source || !target) return;
-
-    const start = this.graphToScreen(source.x, source.y);
-    const end = this.graphToScreen(target.x, target.y);
-    const midX = (start.x + end.x) / 2;
-    const midY = (start.y + end.y) / 2;
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const dist = Math.hypot(dx, dy);
-    const curveAmount = Math.min(dist * 0.15, 50);
-    const perpX = -dy / dist * curveAmount;
-    const perpY = dx / dist * curveAmount;
-
-    // Point at t along curve
-    const x1 = start.x;
-    const y1 = start.y;
-    const xc = midX + perpX;
-    const yc = midY + perpY;
-    const x2 = end.x;
-    const y2 = end.y;
-
-    // Quadratic bezier point at t
-    const mt = 1 - t;
-    const px = mt * mt * x1 + 2 * mt * t * xc + t * t * x2;
-    const py = mt * mt * y1 + 2 * mt * t * yc + t * t * y2;
-
-    // Derivative for angle
-    const dx_dt = 2 * mt * (xc - x1) + 2 * t * (x2 - xc);
-    const dy_dt = 2 * mt * (yc - y1) + 2 * t * (y2 - yc);
-    const angle = Math.atan2(dy_dt, dx_dt);
+    const px = seg.x1 + (seg.x2 - seg.x1) * t;
+    const py = seg.y1 + (seg.y2 - seg.y1) * t;
+    const angle = Math.atan2(seg.y2 - seg.y1, seg.x2 - seg.x1);
 
     const arrowSize = 8;
     ctx.beginPath();
@@ -914,47 +898,77 @@ const RelationshipGraph = {
     ctx.lineTo(px - arrowSize * Math.cos(angle - Math.PI / 6), py - arrowSize * Math.sin(angle - Math.PI / 6));
     ctx.lineTo(px - arrowSize * Math.cos(angle + Math.PI / 6), py - arrowSize * Math.sin(angle + Math.PI / 6));
     ctx.closePath();
-    ctx.fillStyle = 'rgba(139,115,85,0.6)';
+    ctx.fillStyle = color;
     ctx.fill();
   },
 
   drawEdgeTooltip(ctx, edge) {
-    const source = this.nodes.find(n => n.id === edge.source);
-    const target = this.nodes.find(n => n.id === edge.target);
-    if (!source || !target) return;
+    const seg = this.edgeSegment(edge);
+    if (!seg) return;
 
-    const start = this.graphToScreen(source.x, source.y);
-    const end = this.graphToScreen(target.x, target.y);
-    const midX = (start.x + end.x) / 2;
-    const midY = (start.y + end.y) / 2;
+    const midX = (seg.x1 + seg.x2) / 2;
+    const midY = (seg.y1 + seg.y2) / 2;
 
-    const text = edge.description || 'Relationship';
-    const tags = edge.tags?.join(', ') || '';
+    // One section per direction, in a stable order
+    const linked = this.edges.filter(e => this.sameLink(e, edge));
+    const nameOf = id => this.nodes.find(n => n.id === id)?.name || '?';
 
-    ctx.font = '11px monospace';
+    const lines = [];
+    linked.forEach((e, i) => {
+      if (i > 0) lines.push({ gap: true });
+      lines.push({ text: `${nameOf(e.source)} → ${nameOf(e.target)}`, font: 'bold 10px monospace', color: '#c4a882', height: 15 });
+      lines.push({ text: e.description || 'Relationship', font: '11px monospace', color: '#d4c9b8', height: 16 });
+      const tags = e.tags?.join(', ');
+      if (tags) lines.push({ text: tags, font: '10px monospace', color: '#999', height: 14 });
+    });
+
     const padding = 8;
-    const textWidth = Math.max(ctx.measureText(text).width, ctx.measureText(tags).width);
+    const gapHeight = 10;
+    let textWidth = 0;
+    let textHeight = 0;
+    for (const line of lines) {
+      if (line.gap) {
+        textHeight += gapHeight;
+        continue;
+      }
+      ctx.font = line.font;
+      textWidth = Math.max(textWidth, ctx.measureText(line.text).width);
+      textHeight += line.height;
+    }
+
     const boxWidth = textWidth + padding * 2;
-    const boxHeight = 44;
+    const boxHeight = textHeight + padding * 2;
+    const boxX = midX - boxWidth / 2;
+    const boxY = midY - boxHeight - 10;
 
     // Background
     ctx.fillStyle = 'rgba(45,37,32,0.95)'; // dark sepia
-    ctx.fillRect(midX - boxWidth / 2, midY - boxHeight - 10, boxWidth, boxHeight);
+    ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
 
     // Border
     ctx.strokeStyle = '#8b7355';
     ctx.lineWidth = 1;
-    ctx.strokeRect(midX - boxWidth / 2, midY - boxHeight - 10, boxWidth, boxHeight);
+    ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
 
     // Text
-    ctx.fillStyle = '#d4c9b8';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillText(text, midX, midY - boxHeight - 10 + padding);
-    if (tags) {
-      ctx.font = '10px monospace';
-      ctx.fillStyle = '#999';
-      ctx.fillText(tags, midX, midY - boxHeight - 10 + padding + 18);
+    let y = boxY + padding;
+    for (const line of lines) {
+      if (line.gap) {
+        // Divider between directions
+        ctx.strokeStyle = 'rgba(139,115,85,0.4)';
+        ctx.beginPath();
+        ctx.moveTo(boxX + padding, y + gapHeight / 2 - 2);
+        ctx.lineTo(boxX + boxWidth - padding, y + gapHeight / 2 - 2);
+        ctx.stroke();
+        y += gapHeight;
+        continue;
+      }
+      ctx.font = line.font;
+      ctx.fillStyle = line.color;
+      ctx.fillText(line.text, midX, y);
+      y += line.height;
     }
   }
 };
