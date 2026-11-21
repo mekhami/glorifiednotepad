@@ -1,4 +1,12 @@
 <div>
+  <div :if={@snapshot_hash} id="doodle-snapshot" phx-update="ignore">
+    <img
+      id="doodle-snapshot-img"
+      src={~p"/doodle/snapshot/#{@snapshot_hash}"}
+      alt=""
+      fetchpriority="high"
+    />
+  </div>
   <canvas id="doodle-canvas" phx-hook="DoodleCanvas" phx-target={@myself} phx-update="ignore">
   </canvas>
 

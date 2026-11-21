@@ -13,6 +13,8 @@ defmodule IndieWeb.DoodleCanvasComponent do
 
   @impl true
   def update(_assigns, socket) do
+    socket = assign(socket, :snapshot_hash, snapshot_hash())
+
     socket =
       if connected?(socket) and !Map.has_key?(socket.assigns, :pixels_loaded) do
         t0 = System.monotonic_time(:millisecond)
@@ -41,6 +43,13 @@ defmodule IndieWeb.DoodleCanvasComponent do
       end
 
     {:ok, socket}
+  end
+
+  defp snapshot_hash do
+    case CanvasServer.snapshot() do
+      {hash, _png} -> hash
+      nil -> nil
+    end
   end
 
   @impl true

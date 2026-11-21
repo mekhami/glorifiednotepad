@@ -405,6 +405,25 @@ body.stonetop-body {
   cursor: crosshair;
 }
 
+/* Board snapshot shown until the canvas takes over. Matches the canvas
+   transform: scale 2 x PIXEL_SIZE 2, centered, nearest-neighbor. */
+#doodle-snapshot img {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 7680px;
+  height: 4320px;
+  margin: -2160px 0 0 -3840px;
+  max-width: none;
+  image-rendering: pixelated;
+  z-index: 0;
+  pointer-events: none;
+}
+
+html.canvas-hidden #doodle-snapshot {
+  display: none;
+}
+
 /* Canvas margin zones for wheel interaction */
 .canvas-margin-zone {
   position: fixed;
