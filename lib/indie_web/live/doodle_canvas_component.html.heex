@@ -5,6 +5,7 @@
       src={~p"/doodle/snapshot/#{@snapshot_hash}"}
       alt=""
       fetchpriority="high"
+      elementtiming="doodle-snapshot"
     />
   </div>
   <canvas id="doodle-canvas" phx-hook="DoodleCanvas" phx-target={@myself} phx-update="ignore">
