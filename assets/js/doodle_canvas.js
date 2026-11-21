@@ -32,6 +32,7 @@ const DoodleCanvas = {
       if (!initialRenderLogged && initialPixelsLoaded && initialAnimationsLoaded) {
         initialRenderLogged = true;
         requestAnimationFrame(() => {
+          document.getElementById('doodle-snapshot')?.remove();
           perfMark('first full render complete (RAF fired)');
         });
       }

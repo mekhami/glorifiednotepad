@@ -30,6 +30,10 @@ import FamilyTree from "./family_tree"
 import CharacterTooltip from "./character_tooltip"
 import "./audio_player"
 
+if (localStorage.getItem("canvas_visible") === "false") {
+  document.documentElement.classList.add("canvas-hidden")
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
