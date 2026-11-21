@@ -13,8 +13,11 @@ defmodule Indie.Doodle.CanvasServer do
   use GenServer
 
   @refresh_interval 60_000
+  @snapshot_debounce 1_000
+  @snapshot_table :doodle_snapshot
 
   alias Indie.Doodle
+  alias Indie.Doodle.Snapshot
 
   ## Client API
 
@@ -71,19 +74,54 @@ defmodule Indie.Doodle.CanvasServer do
     GenServer.call(__MODULE__, :reload)
   end
 
+  @doc """
+  Returns `{hash, png}` for the most recently built board snapshot, or nil
+  before the first build. Reads ETS directly, so it never queues behind the server.
+  """
+  def snapshot do
+    case :ets.lookup(@snapshot_table, :current) do
+      [{:current, hash, png}] -> {hash, png}
+      [] -> nil
+    end
+  end
+
+  @doc "Builds and publishes the snapshot immediately. Used for test isolation."
+  def rebuild_snapshot_now do
+    GenServer.call(__MODULE__, :rebuild_snapshot_now, 30_000)
+  end
+
   ## Server Callbacks
 
   @impl true
   def init(_) do
-    state = load_initial_state()
+    :ets.new(@snapshot_table, [:named_table, :protected, read_concurrency: true])
+    state = Map.merge(load_initial_state(), snapshot_bookkeeping())
     :timer.send_interval(@refresh_interval, self(), :refresh_from_db)
-    {:ok, state}
+    {:ok, schedule_snapshot(state, 0)}
   end
 
   @impl true
-  def handle_info(:refresh_from_db, _state) do
-    {:noreply, load_initial_state()}
+  def handle_info(:refresh_from_db, state) do
+    {:noreply, state |> Map.merge(load_initial_state()) |> schedule_snapshot()}
   end
+
+  def handle_info(:build_snapshot, state) do
+    seq = state.build_seq + 1
+    parent = self()
+    pixels = state.formatted_pixels
+    animations = state.formatted_animations
+
+    Task.start(fn -> send(parent, {:snapshot_built, seq, Snapshot.build(pixels, animations)}) end)
+
+    {:noreply, %{state | snapshot_timer: nil, build_seq: seq}}
+  end
+
+  def handle_info({:snapshot_built, seq, png}, state) when seq > state.last_inserted_seq do
+    publish_snapshot(png)
+    {:noreply, %{state | last_inserted_seq: seq}}
+  end
+
+  def handle_info({:snapshot_built, _stale_seq, _png}, state), do: {:noreply, state}
 
   @impl true
   def handle_call(:get_pixels, _from, state) do
@@ -96,8 +134,12 @@ defmodule Indie.Doodle.CanvasServer do
   end
 
   @impl true
-  def handle_call(:reload, _from, _state) do
-    {:reply, :ok, load_initial_state()}
+  def handle_call(:reload, _from, state) do
+    {:reply, :ok, state |> Map.merge(load_initial_state()) |> build_snapshot_now()}
+  end
+
+  def handle_call(:rebuild_snapshot_now, _from, state) do
+    {:reply, :ok, build_snapshot_now(state)}
   end
 
   @impl true
@@ -111,7 +153,8 @@ defmodule Indie.Doodle.CanvasServer do
         Enum.reduce(deleted, acc, fn p, m -> Map.delete(m, "#{p.x},#{p.y}") end)
       end)
 
-    {:noreply, %{state | pixel_map: pixel_map, formatted_pixels: Map.values(pixel_map)}}
+    {:noreply,
+     schedule_snapshot(%{state | pixel_map: pixel_map, formatted_pixels: Map.values(pixel_map)})}
   end
 
   @impl true
@@ -122,7 +165,11 @@ defmodule Indie.Doodle.CanvasServer do
       formatted_animations = build_formatted_animations(state.animations_map, animation_pixels)
 
       {:noreply,
-       %{state | animation_pixels: animation_pixels, formatted_animations: formatted_animations}}
+       schedule_snapshot(%{
+         state
+         | animation_pixels: animation_pixels,
+           formatted_animations: formatted_animations
+       })}
     else
       {:noreply, state}
     end
@@ -135,12 +182,12 @@ defmodule Indie.Doodle.CanvasServer do
     formatted_animations = build_formatted_animations(animations_map, animation_pixels)
 
     {:noreply,
-     %{
+     schedule_snapshot(%{
        state
        | animations_map: animations_map,
          animation_pixels: animation_pixels,
          formatted_animations: formatted_animations
-     }}
+     })}
   end
 
   @impl true
@@ -150,15 +197,41 @@ defmodule Indie.Doodle.CanvasServer do
     formatted_animations = build_formatted_animations(animations_map, animation_pixels)
 
     {:noreply,
-     %{
+     schedule_snapshot(%{
        state
        | animations_map: animations_map,
          animation_pixels: animation_pixels,
          formatted_animations: formatted_animations
-     }}
+     })}
   end
 
   ## Private
+
+  defp snapshot_bookkeeping do
+    %{snapshot_timer: nil, build_seq: 0, last_inserted_seq: 0}
+  end
+
+  defp schedule_snapshot(state, delay \\ @snapshot_debounce)
+
+  defp schedule_snapshot(%{snapshot_timer: nil} = state, delay) do
+    %{state | snapshot_timer: Process.send_after(self(), :build_snapshot, delay)}
+  end
+
+  defp schedule_snapshot(state, _delay), do: state
+
+  defp build_snapshot_now(state) do
+    if state.snapshot_timer, do: Process.cancel_timer(state.snapshot_timer)
+    seq = state.build_seq + 1
+
+    publish_snapshot(Snapshot.build(state.formatted_pixels, state.formatted_animations))
+
+    %{state | snapshot_timer: nil, build_seq: seq, last_inserted_seq: seq}
+  end
+
+  defp publish_snapshot(png) do
+    hash = :crypto.hash(:sha256, png) |> Base.encode16(case: :lower) |> binary_part(0, 16)
+    :ets.insert(@snapshot_table, {:current, hash, png})
+  end
 
   defp load_initial_state do
     pixels = Doodle.list_pixels()

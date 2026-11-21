@@ -192,4 +192,40 @@ defmodule Indie.Doodle.CanvasServerTest do
       assert CanvasServer.get_animations() == []
     end
   end
+
+  describe "snapshot/0" do
+    test "returns a png with a stable hash for an unchanged board" do
+      Doodle.save_pixels([%{"x" => 10, "y" => 20, "color" => "#FF0000"}])
+      CanvasServer.reload()
+
+      {hash, png} = CanvasServer.snapshot()
+      assert byte_size(hash) == 16
+      assert binary_part(png, 1, 3) == "PNG"
+
+      CanvasServer.reload()
+      assert {^hash, _png} = CanvasServer.snapshot()
+    end
+
+    test "hash changes when the board changes" do
+      CanvasServer.reload()
+      {before_hash, _png} = CanvasServer.snapshot()
+
+      Doodle.save_pixels([%{"x" => 1, "y" => 1, "color" => "#00FF00"}])
+      CanvasServer.reload()
+
+      {after_hash, _png} = CanvasServer.snapshot()
+      refute before_hash == after_hash
+    end
+
+    test "a debounced rebuild after an update publishes the new board" do
+      CanvasServer.reload()
+      {before_hash, _png} = CanvasServer.snapshot()
+
+      CanvasServer.update_pixels([%{x: 3, y: 3, color: "#123456"}], [])
+      :ok = CanvasServer.rebuild_snapshot_now()
+
+      {after_hash, _png} = CanvasServer.snapshot()
+      refute before_hash == after_hash
+    end
+  end
 end
