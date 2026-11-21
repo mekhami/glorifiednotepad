@@ -34,6 +34,10 @@ defmodule IndieWeb.Router do
   end
 
   scope "/", IndieWeb do
+    get("/doodle/snapshot/:hash", DoodleSnapshotController, :show)
+  end
+
+  scope "/", IndieWeb do
     pipe_through(:browser)
 
     live("/", HomeLive)
